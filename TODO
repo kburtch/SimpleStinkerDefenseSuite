@@ -1,0 +1,8 @@
+- releasing btree transactions
+- test with plain text disabled...does it still work?
+- import into tables
+- don't read the whole file
+- statistics
+
+
+
