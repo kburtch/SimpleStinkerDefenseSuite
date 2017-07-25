@@ -1,8 +1,23 @@
+- ping
+  - ping greatly slows the responsiveness...we need to defer it to the wash phase
+  - ping errors
+    - ping: 207-191-192-126.cpe.imoncommunications.net: Name or service not known
+    - ping: 207-191-192-126.cpe.imoncommunications.net
+  - we need "placeholder ip's" as ping is not guaranteed to find the domain
+    name.  Placeholder ip's can be checked later, but also cannot be blocked
+    since they are not real ip numbers.  Probably already blocked anyway.
+  - AllowedUsers line
+- whitelist should be broken down
+  - i.e. customers, trusted machines
+- handling test data (not blocking, washing out (optionally?))
 - releasing btree transactions
 - test with plain text disabled...does it still work?
 - import into tables
-- don't read the whole file
-- statistics
+- database tables, statistics gathering and reports
+- team include
 
+- web blocker
+- mail blocker
 
+- dan notes SNMP interface, etc. must be considered
 

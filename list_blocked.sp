@@ -6,8 +6,11 @@ procedure list_blocked is
                 @( description, "standard output." )
                 @( author, "Ken O. Burtch" );
   pragma license( gplv3 );
+  pragma software_model( shell_script );
 
-  with separate "world.inc.sp";
+  with separate "lib/world.inc.sp";
+  with separate "config/config.inc.sp";
+  with separate "lib/common.inc.sp";
 
   pragma restriction( no_external_commands );
 
@@ -16,18 +19,29 @@ procedure list_blocked is
   key : string;
   source_ip : a_blocked_ip;
   j : json_string;
+
+  countries_file : btree_io.file( country_data );
+  country : country_data;
+  country_name : string;
 begin
+  btree_io.open( countries_file, countries_path, countries_width, countries_width );
   btree_io.open( abt, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
   btree_io.open_cursor( abt, abtc );
   btree_io.get_first( abt, abtc, key, source_ip );
   loop
+     country_name := "unknown";
+     begin
+       btree_io.get( countries_file, string( source_ip.source_country ), country );
+       country_name := country.common_name;
+     exception when others => null; --- TODO: fix this
+     end;
      put_line( source_ip.source_ip )
-            @( "  DNS:        " & source_ip.source_name )
-            @( "  Country:    " & source_ip.source_country )
-            @( "  Location:   " & source_ip.location )
-            @( "  SSHD:      " & strings.image( source_ip.sshd_offenses ) )
-            @( "  SMTP:      " & strings.image( source_ip.smtp_offenses ) )
-            @( "  HTTP:      " & strings.image( source_ip.http_offenses ) );
+            @( "  DNS:       " & source_ip.source_name )
+            @( "  Country:   " & country_name )
+            @( "  Location:  " & source_ip.location )
+            @( "  SSHD:     " & strings.image( source_ip.sshd_offenses ) )
+            @( "  SMTP:     " & strings.image( source_ip.smtp_offenses ) )
+            @( "  HTTP:     " & strings.image( source_ip.http_offenses ) );
      case source_ip.sshd_blocked is
      when unblocked_blocked =>
        put_line( "  SSHD Status:       unblocked" );
@@ -64,6 +78,7 @@ begin
 exception when others =>
   btree_io.close_cursor( abt, abtc );
   btree_io.close( abt );
+  btree_io.close( countries_file );
 end list_blocked;
 
 -- vim: ft=spar

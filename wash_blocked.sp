@@ -6,9 +6,12 @@ procedure wash_blocked is
                 @( description, "IP numbers." )
                 @( author, "Ken O. Burtch" );
   pragma license( gplv3 );
+  pragma software_model( shell_script );
 
-  with separate "world.inc.sp";
-  with separate "blocking.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+with separate "lib/common.inc.sp";
+with separate "lib/blocking.inc.sp";
 
   pragma annotate( todo, "GeoIP should probably be moved to central server so it doesn't have to be install" );
 
@@ -223,12 +226,13 @@ end is_south_american_ip;
      tmp := `echo "$geoip_info" | fgrep "Country Edition";`;
      tmp := strings.field( tmp, 2, ":" );
      country := country_string( strings.field( tmp, 1, "," ) );
-     country := country_string( strings.trim( string( country ) ) );
+     country := country_string( strings.trim( string( @ ) ) );
      if strings.length( country ) /= 2 then
         country := "";
      end if;
      tmp := `echo "$geoip_info" | fgrep "City Edition";`;
      location := strings.field( tmp, 2, ":" );
+     location := strings.trim( @ );
      if strings.index( location, " not found" ) > 0 then
         if is_asian_ip( ip ) then
            location := "unknown asian source";
@@ -351,17 +355,28 @@ begin
         updating_cnt := @+1;
         needs_updating := false;
         source_ip.updated_on := this_run_on;
-        btree_io.set( abt, key, source_ip );
+        begin
+           btree_io.set( abt, key, source_ip );
+        exception when others =>
+           log_error( source_info.source_location )
+                   @( exceptions.exception_info );
+        end;
+        btree_io.get( abt, key, source_ip );
      end if;
+     btree_io.raise_exceptions( abt, false );
      btree_io.get_next( abt, abtc, key, source_ip );
+     exit when btree_io.last_error( abt ) = bdb.DB_NOTFOUND;
+     btree_io.raise_exceptions( abt, true );
   end loop;
-  shutdownWorld;
-exception when others =>
   btree_io.close_cursor( abt, abtc );
   btree_io.close( abt );
   log_info( source_info.source_location ) @
      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
      ( "; Updated" ) @ ( strings.image( updating_cnt ) );
+  shutdownWorld;
+exception when others =>
+  btree_io.close_cursor( abt, abtc );
+  btree_io.close( abt );
   shutdownWorld;
 end wash_blocked;
 

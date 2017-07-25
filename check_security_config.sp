@@ -1,6 +1,15 @@
 #!/usr/local/bin/spar
 
 procedure check_security_config is
+  pragma annotate( summary, "check_security_config" )
+                @( description, "Check the system's security configuration." )
+                @( author, "Ken O. Burtch" );
+  pragma license( gplv3 );
+  pragma software_model( shell_script );
+
+  with separate "lib/world.inc.sp";
+  with separate "config/config.inc.sp";
+
   i : integer;
   s : string;
   p : natural;

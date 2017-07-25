@@ -6,8 +6,11 @@ procedure import_logins is
                 @( description, "format from a file." )
                 @( author, "Ken O. Burtch" );
   pragma license( gplv3 );
+  pragma software_model( shell_script );
 
-  with separate "world.inc.sp";
+  with separate "lib/world.inc.sp";
+  with separate "config/config.inc.sp";
+  with separate "lib/common.inc.sp";
 
   pragma restriction( no_external_commands );
 
