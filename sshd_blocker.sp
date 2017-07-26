@@ -14,6 +14,7 @@ pragma annotate( summary, "sshd_blocker [--version][-D][-f violations_file]" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
+with separate "config/contributors.inc.sp";
 with separate "lib/world.inc.sp";
 with separate "config/config.inc.sp";
 with separate "lib/common.inc.sp";
@@ -261,6 +262,74 @@ begin
    end if;
 end get_raw_username_and_ip_number;
 
+-- SHOW PROGRESS LINE
+--
+-- Show the status when processing a file with sshd violations
+------------------------------------------------------------------------------
+
+show_progress_line_size_cache : natural := 0;
+show_progress_line_last_modified : calendar.time;
+
+procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : string ) is
+  now       : timestamp_string;
+  elapsed   : universal_numeric;
+  estimated_cnt : natural;
+  last_modified : calendar.time;
+  minutes_left : universal_typeless := " ??";
+  percent   : universal_typeless := " ??";
+begin
+  -- Move up one line to the start of the progress line
+
+  tput cuu1;
+
+  -- Get the time and number of lines in the file
+  -- (This assumes the file can change size during the run, but we don't want
+  -- to spend a lot of time counting lines so we cache it.  Every 1500 lines
+  -- check to see if the file was modified.  If it was, update the line count.)
+
+  now := get_timestamp;
+  if show_progress_line_size_cache = 0 then
+     show_progress_line_last_modified := files.last_modified( violations_file );
+     show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file";` ) );
+  elsif current_cnt mod 1500 = 0 then
+     last_modified := files.last_modified( violations_file );
+     if last_modified /= show_progress_line_last_modified then
+        show_progress_line_last_modified := last_modified;
+        show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file";` ) );
+    end if;
+  end if;
+
+  estimated_cnt := show_progress_line_size_cache;
+
+  -- Compute the percentage complete and time remaining
+  -- Delay the status until we've at least done 1000 records, as initial
+  -- stats won't be meaningful.  Use floor to favour 99% over 100%.
+
+  elapsed := numerics.value( string( now ) ) - numerics.value( string( start_time ) );
+  if processing_cnt >= 1000 then
+     minutes_left := numerics.unbiased_rounding( elapsed * float( estimated_cnt ) / float( current_cnt ) );
+     minutes_left := numerics.floor( (@ - elapsed )/60 );
+  end if;
+  if estimated_cnt > 0 then
+     percent := 100 * current_cnt / estimated_cnt;
+  end if;
+
+  -- Display the line
+
+  put( current_cnt )
+   @ ( " of" )
+   @ ( estimated_cnt )
+   @ ( " records (" )
+   @ ( percent )
+   @ ( "%, est." )
+   @ ( minutes_left )
+   @ ( " min remaining)" );
+  tput el;
+  new_line;
+exception when others =>
+  put_line( "error calculating the progress line" );
+end show_progress_line;
+
 begin
 
 setupWorld( "SSHD blocker", "log/blocker.log" );
@@ -295,6 +364,11 @@ else
    btree_io.create( blocked_ip_file, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
 end if;
 
+if not opt_daemon and not opt_verbose then
+   put_line( "File: " & sshd_violations_file_path );
+   put_line( "Scanning records..." ); -- this will be overwritten
+end if;
+
 -- this is the sshd log
 
 open( f, in_file, sshd_violations_file_path );
@@ -312,10 +386,12 @@ create_login_hostname_variants( hostname_base, hostname_stub );
 process := false;
 while not end_of_file( f ) loop
    processing_cnt := @+1;
-   -- blip line
+
+   -- show progress line
+
    if not opt_daemon and not opt_verbose then
       if processing_cnt mod 250 = 0 then
-         put( '.' );
+         show_progress_line( this_run_on, processing_cnt, sshd_violations_file_path );
       end if;
    end if;
 
@@ -478,8 +554,10 @@ while not end_of_file( f ) loop
    end if;
 end loop;
 
--- Complete progress blip line
+-- Complete progress line
 if not opt_daemon and not opt_verbose then
+   tput cuu1;
+   tput el;
    new_line;
 end if;
 

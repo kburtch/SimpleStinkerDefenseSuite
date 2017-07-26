@@ -1,4 +1,6 @@
 procedure reset_firewall is
+
+with separate "config/contributors.inc.sp";
 with separate "lib/world.inc.sp";
 with separate "config/config.inc.sp";
 with separate "lib/common.inc.sp";

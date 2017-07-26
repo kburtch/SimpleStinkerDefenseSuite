@@ -7,6 +7,7 @@ procedure blacklist_ip is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
+  with separate "config/contributors.inc.sp";
   with separate "lib/world.inc.sp";
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
