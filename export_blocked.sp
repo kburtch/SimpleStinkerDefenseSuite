@@ -12,28 +12,30 @@ procedure export_blocked is
   with separate "lib/world.inc.sp";
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
+  with separate "lib/blocking.inc.sp";
 
   pragma restriction( no_external_commands );
 
-  abt : btree_io.file( a_blocked_ip );
-  abtc : btree_io.cursor( a_blocked_ip );
-  key : string;
-  source_ip : a_blocked_ip;
+  offender_cursor : btree_io.cursor( an_offender );
+  offender_key : string;
+  offender : an_offender;
   j : json_string;
 begin
-  btree_io.open( abt, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
-  btree_io.open_cursor( abt, abtc );
-  btree_io.get_first( abt, abtc, key, source_ip );
-  records.to_json( j, source_ip );
+  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+  btree_io.open_cursor( offender_file, offender_cursor );
+  btree_io.get_first( offender_file, offender_cursor, offender_key, offender );
+  records.to_json( j, offender );
   put_line( j );
   loop
-     btree_io.get_next( abt, abtc, key, source_ip );
-     records.to_json( j, source_ip );
+     btree_io.get_next( offender_file, offender_cursor, offender_key, offender );
+     records.to_json( j, offender );
      put_line( j );
   end loop;
 exception when others =>
-  btree_io.close_cursor( abt, abtc );
-  btree_io.close( abt );
+  if btree_io.is_open( offender_file ) then
+     btree_io.close_cursor( offender_file, offender_cursor );
+     btree_io.close( offender_file );
+  end if;
 end export_blocked;
 
 -- vim: ft=spar

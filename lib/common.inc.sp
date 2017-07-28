@@ -323,41 +323,9 @@ end record;
 sshd_logins_path : constant string := "data/sshd_logins.btree";
 sshd_logins_buffer_width : constant positive := 2048;
 
--- ALREADY BLOCKING
-
-type blocking_status is (
-  unblocked_blocked,
-  probation_blocked,
-  short_blocked,
-  banned_blocked,
-  blacklisted_blocked
-);
-
-type a_blocked_ip is record
-     source_ip       : ip_string;
-     source_name     : dns_string;
-     source_country  : country_string;
-     location        : string;
-     sshd_blocked    : blocking_status;
-     sshd_blocked_on : timestamp_string;
-     sshd_offenses   : natural;
-     smtp_blocked    : blocking_status;
-     smtp_blocked_on : timestamp_string;
-     smtp_offenses   : natural;
-     http_blocked    : blocking_status;
-     http_blocked_on : timestamp_string;
-     http_offenses   : natural;
-     created_on      : timestamp_string;
-     logged_on       : timestamp_string;
-     updated_on      : timestamp_string;
-     data_type       : data_types;
-end record;
--- TODO: offenses is american, offences is Canadian
-
-blocked_ip_path : constant string := "data/blocked_ip.btree";
-blocked_ip_buffer_width : constant positive := 2048;
 
 -- STATISTICS
+-- TODO: not done
 
 type ip_statistics is record
      daily_count_min : natural;
@@ -369,7 +337,14 @@ type ip_statistics is record
      seconds_daily_on : calendar.day_duration;
 end record;
 
+------------------------------------------------------------------------------
 -- KNOWN LOGINS
+------------------------------------------------------------------------------
+
+-- CHECK KNOWN LOGINS
+--
+-- Read the password file and make a list of known logins.
+------------------------------------------------------------------------------
 
 known_logins : dynamic_hash_tables.table( user_string );
 
@@ -392,7 +367,56 @@ end check_known_logins;
 
 ip_whitelist : dynamic_hash_tables.table( ip_string );
 
--- IP BLACKLIST
+
+-- GET IP NUMBER
+--
+-- Look up the IP number for a given DNS address.
+------------------------------------------------------------------------------
+
+-- TODO: ping may not always work
+
+-- The odds are that we will be attacked multiple times in a row by one or two
+-- IP numbers.  For our purposes, cache only the most recent 8 IP's.  We could
+-- use a dynamic hash table, but then we have to clear it out on a regular
+-- basis...
+
+type a_dns_cache is array(1..9) of dns_string;
+type a_ip_cache is array(1..9) of ip_string;
+
+cache_last_ip_addr_addr : a_dns_cache := ("-","-","-","-","-","-","-","-","-");
+cache_last_ip_addr_ip   : a_ip_cache; -- ip_string;
+
+function get_ip_number( addr : dns_string ) return ip_string is
+  s : string;
+begin
+  -- Check to see if we already looked it up
+  for i in arrays.first( cache_last_ip_addr_addr )..arrays.last( cache_last_ip_addr_addr ) loop
+      if cache_last_ip_addr_addr( i ) = addr then
+         return cache_last_ip_addr_ip( i );
+      end if;
+  end loop;
+  -- Lookup the the ip with ping.  If found, cache it.
+  s := `ping -c 1 -W 5 "$addr" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
+  if $? = 0 then
+    arrays.shift_right( cache_last_ip_addr_addr );
+    cache_last_ip_addr_addr( 1 ) := addr;
+    arrays.shift_right( cache_last_ip_addr_ip );
+    cache_last_ip_addr_ip( 1 ) := ip_string( s );
+  else
+    log_warning( source_info.file ) @ ( "ping unable to identify host " & addr );
+  end if;
+  return cache_last_ip_addr_ip( 1 );
+end get_ip_number;
+
+------------------------------------------------------------------------------
+-- Housekeeping
+------------------------------------------------------------------------------
+
+
+-- SETUP WORLD
+--
+-- Startup the common features such as the log file.
+------------------------------------------------------------------------------
 
 procedure setupWorld( the_program_name : string; the_log_path : string ) is
 begin
@@ -424,6 +448,10 @@ begin
 
   check_known_logins;
 end setupWorld;
+
+-- SHUTDOWN WORLD
+--
+------------------------------------------------------------------------------
 
 procedure shutdownWorld is
 begin

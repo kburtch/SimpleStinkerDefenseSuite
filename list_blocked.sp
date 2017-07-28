@@ -12,13 +12,13 @@ procedure list_blocked is
   with separate "lib/world.inc.sp";
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
+  with separate "lib/blocking.inc.sp";
 
   pragma restriction( no_external_commands );
 
-  abt : btree_io.file( a_blocked_ip );
-  abtc : btree_io.cursor( a_blocked_ip );
-  key : string;
-  source_ip : a_blocked_ip;
+  offender_cursor : btree_io.cursor( an_offender );
+  offender_key : string;
+  offender : an_offender;
   j : json_string;
 
   countries_file : btree_io.file( country_data );
@@ -26,24 +26,24 @@ procedure list_blocked is
   country_name : string;
 begin
   btree_io.open( countries_file, countries_path, countries_width, countries_width );
-  btree_io.open( abt, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
-  btree_io.open_cursor( abt, abtc );
-  btree_io.get_first( abt, abtc, key, source_ip );
+  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+  btree_io.open_cursor( offender_file, offender_cursor );
+  btree_io.get_first( offender_file, offender_cursor, offender_key, offender );
   loop
      country_name := "unknown";
      begin
-       btree_io.get( countries_file, string( source_ip.source_country ), country );
+       btree_io.get( countries_file, string( offender.source_country ), country );
        country_name := country.common_name;
      exception when others => null; --- TODO: fix this
      end;
-     put_line( source_ip.source_ip )
-            @( "  DNS:       " & source_ip.source_name )
+     put_line( offender.source_ip )
+            @( "  DNS:       " & offender.source_name )
             @( "  Country:   " & country_name )
-            @( "  Location:  " & source_ip.location )
-            @( "  SSHD:     " & strings.image( source_ip.sshd_offenses ) )
-            @( "  SMTP:     " & strings.image( source_ip.smtp_offenses ) )
-            @( "  HTTP:     " & strings.image( source_ip.http_offenses ) );
-     case source_ip.sshd_blocked is
+            @( "  Location:  " & offender.location )
+            @( "  SSHD:     " & strings.image( offender.sshd_offenses ) )
+            @( "  SMTP:     " & strings.image( offender.smtp_offenses ) )
+            @( "  HTTP:     " & strings.image( offender.http_offenses ) );
+     case offender.sshd_blocked is
      when unblocked_blocked =>
        put_line( "  SSHD Status:       unblocked" );
      when probation_blocked =>
@@ -58,28 +58,16 @@ begin
        put_line( "  SSHD Status:       unknown" );
      end case;
 
-     -- source_ip       : ip_string;
-     -- source_name     : dns_string;
-     -- source_country  : country_string;
-     -- location        : string;
-     -- sshd_blocked    : blocking_status;
-     -- sshd_blocked_on : timestamp_string;
-     -- sshd_offenses   : natural;
-     -- smtp_blocked    : blocking_status;
-     -- smtp_blocked_on : timestamp_string;
-     -- smtp_offenses   : natural;
-     -- http_blocked    : blocking_status;
-     -- http_blocked_on : timestamp_string;
-     -- http_offenses   : natural;
-     -- created_on      : timestamp_string;
-     -- updated_on      : timestamp_string;
-
-     btree_io.get_next( abt, abtc, key, source_ip );
+     btree_io.get_next( offender_file, offender_cursor, offender_key, offender );
   end loop;
 exception when others =>
-  btree_io.close_cursor( abt, abtc );
-  btree_io.close( abt );
-  btree_io.close( countries_file );
+  if btree_io.is_open( offender_file ) then
+     btree_io.close_cursor( offender_file, offender_cursor );
+     btree_io.close( offender_file );
+  end if;
+  if btree_io.is_open( countries_file ) then
+     btree_io.close( countries_file );
+  end if;
 end list_blocked;
 
 -- vim: ft=spar

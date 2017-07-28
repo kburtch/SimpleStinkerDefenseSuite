@@ -14,7 +14,7 @@ procedure edit_login is
 
   pragma restriction( no_external_commands );
 
-  bt : btree_io.file( a_sshd_login );
+  sshd_logins_file : btree_io.file( a_sshd_login );
   key : string;
   login : a_sshd_login;
   cnt : natural := 0;
@@ -26,8 +26,8 @@ begin
      return;
   end if;
 
-  btree_io.open( bt, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
-  btree_io.get( bt, key, login );
+  btree_io.open( sshd_logins_file, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+  btree_io.get( sshd_logins_file, key, login );
 
   put( "Username: " ) @ ( login.username ); new_line;
   put( "Count:    " ) @ ( login.count  ); new_line;
@@ -52,9 +52,9 @@ begin
   login.comment := get_line;
   login.comment := comment_string( strings.trim( @ ) );
   if login.comment /= "" then
-     btree_io.replace( bt, key, login );
+     btree_io.replace( sshd_logins_file, key, login );
   end if;
-  btree_io.close( bt );
+  btree_io.close( sshd_logins_file );
 end edit_login;
 
 -- vim: ft=spar

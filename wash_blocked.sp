@@ -145,10 +145,10 @@ begin
   return lacnic;
 end is_south_american_ip;
 
-  abt : btree_io.file( a_blocked_ip );
-  abtc : btree_io.cursor( a_blocked_ip );
+  --abt : btree_io.file( a_blocked_ip );
+  abtc : btree_io.cursor( an_offender );
   key : string;
-  source_ip : a_blocked_ip;
+  source_ip : an_offender;
   j : json_string;
   source_host : dns_string;
   source_country : country_string;
@@ -259,9 +259,9 @@ begin
 
   this_run_on := get_timestamp;
 
-  btree_io.open( abt, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
-  btree_io.open_cursor( abt, abtc );
-  btree_io.get_first( abt, abtc, key, source_ip );
+  startup_blocking;
+  btree_io.open_cursor( offender_file, abtc );
+  btree_io.get_first( offender_file, abtc, key, source_ip );
   loop
      processing_cnt := @+1;
      sip := source_ip.source_ip;
@@ -326,7 +326,7 @@ begin
              unblock( sip );
              needs_updating;
           end if;
-     when probation_blocked => null;
+     when probation_blocked => null; -- TODO: record expiry
      when banned_blocked => null;
      when others => null;
      end case;
@@ -357,27 +357,29 @@ begin
         needs_updating := false;
         source_ip.updated_on := this_run_on;
         begin
-           btree_io.set( abt, key, source_ip );
+           btree_io.set( offender_file, key, source_ip );
         exception when others =>
            log_error( source_info.source_location )
                    @( exceptions.exception_info );
         end;
-        btree_io.get( abt, key, source_ip );
+        btree_io.get( offender_file, key, source_ip );
      end if;
-     btree_io.raise_exceptions( abt, false );
-     btree_io.get_next( abt, abtc, key, source_ip );
-     exit when btree_io.last_error( abt ) = bdb.DB_NOTFOUND;
-     btree_io.raise_exceptions( abt, true );
+     btree_io.raise_exceptions( offender_file, false );
+     btree_io.get_next( offender_file, abtc, key, source_ip );
+     exit when btree_io.last_error( offender_file ) = bdb.DB_NOTFOUND;
+     btree_io.raise_exceptions( offender_file, true );
   end loop;
-  btree_io.close_cursor( abt, abtc );
-  btree_io.close( abt );
+  btree_io.close_cursor( offender_file, abtc );
+  shutdown_blocking;
   log_info( source_info.source_location ) @
      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
      ( "; Updated" ) @ ( strings.image( updating_cnt ) );
   shutdownWorld;
 exception when others =>
-  btree_io.close_cursor( abt, abtc );
-  btree_io.close( abt );
+  if btree_io.is_open( offender_file ) then
+     btree_io.close_cursor( offender_file, abtc );
+  end if;
+  shutdown_blocking;
   shutdownWorld;
 end wash_blocked;
 

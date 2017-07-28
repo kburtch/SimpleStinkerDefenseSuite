@@ -15,25 +15,27 @@ procedure export_logins is
 
   pragma restriction( no_external_commands );
 
-  bt : btree_io.file( a_sshd_login );
-  btc : btree_io.cursor( a_sshd_login );
-  key : string;
+  sshd_logins_file : btree_io.file( a_sshd_login );
+  sshd_cursor : btree_io.cursor( a_sshd_login );
+  login_key : string;
   login : a_sshd_login;
   j : json_string;
 begin
-  btree_io.open( bt, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
-  btree_io.open_cursor( bt, btc );
-  btree_io.get_first( bt, btc, key, login );
+  btree_io.open( sshd_logins_file, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+  btree_io.open_cursor( sshd_logins_file, sshd_cursor );
+  btree_io.get_first( sshd_logins_file, sshd_cursor, login_key, login );
   records.to_json( j, login );
   put_line( j );
   loop
-     btree_io.get_next( bt, btc, key, login );
+     btree_io.get_next( sshd_logins_file, sshd_cursor, login_key, login );
      records.to_json( j, login );
      put_line( j );
   end loop;
 exception when others =>
-  btree_io.close_cursor( bt, btc );
-  btree_io.close( bt );
+  if btree_io.is_open( sshd_logins_file ) then
+     btree_io.close_cursor( sshd_logins_file, sshd_cursor );
+     btree_io.close( sshd_logins_file );
+  end if;
 end export_logins;
 
 -- vim: ft=spar

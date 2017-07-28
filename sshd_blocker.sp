@@ -72,99 +72,7 @@ found : boolean;
 process : boolean;
 this_run_on : timestamp_string;
 
-blocked_ip_file : btree_io.file( a_blocked_ip );
 sshd_logins_file : btree_io.file( a_sshd_login );
-
-procedure block_if_not( source_ip : ip_string; logged_on : timestamp_string ) is
-  ab : a_blocked_ip;
-begin
-  if not btree_io.has_element( blocked_ip_file, string( source_ip ) ) then
-     ab.source_ip       := source_ip;
-     ab.source_name     := "";
-     ab.source_country  := "";
-     ab.location        := "";
-     ab.sshd_blocked    := short_blocked;
-     ab.sshd_blocked_on := this_run_on;
-     ab.sshd_offenses   := 1;
-     ab.smtp_blocked    := unblocked_blocked;
-     ab.smtp_blocked_on := this_run_on;
-     ab.smtp_offenses   := 0;
-     ab.http_blocked    := unblocked_blocked;
-     ab.http_blocked_on := this_run_on;
-     ab.http_offenses   := 0;
-     ab.created_on      := this_run_on;
-     ab.logged_on       := logged_on;
-     ab.updated_on      := this_run_on;
-     ab.data_type       := real_data;
-     btree_io.set( blocked_ip_file, string( source_ip ), ab );
-     block( source_ip );
-  else
-     btree_io.get( blocked_ip_file, string( source_ip ), ab );
-     -- TODO: not a guarantee since could be overlap
-     if ab.logged_on < logged_on then
-        if ab.sshd_blocked <= probation_blocked then
-   --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
-           ab.sshd_blocked    := short_blocked;
-           ab.sshd_blocked_on := this_run_on;
-           ab.sshd_offenses   := @+1;
-           ab.logged_on       := logged_on;
-           ab.updated_on      := this_run_on;
-           -- TODO: banned escallation
-           btree_io.set( blocked_ip_file, string( source_ip ), ab );
-           if ab.http_blocked > probation_blocked then
-              log_info( source_info.file ) @ ( "already HTML blocked " & source_ip );
-           elsif ab.smtp_blocked > probation_blocked then
-              log_info( source_info.file ) @ ( "already SMTP blocked " & source_ip );
-           else
-              block( source_ip );
-           end if;
-        --else -- DEBUG
-        --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
-        end if;
-     --else
-        --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
-     end if;
-  end if;
-end block_if_not;
-
-
--- GET IP ADDRESS
---
--- TODO: ping may not always work
-------------------------------------------------------------------------------
-
--- The odds are that we will be attacked multiple times in a row by one or two
--- IP numbers.  For our purposes, cache only the most recent 8 IP's.  We could
--- use a dynamic hash table, but then we have to clear it out on a regular
--- basis...
-
-type a_dns_cache is array(1..9) of dns_string;
-type a_ip_cache is array(1..9) of ip_string;
-
-cache_last_ip_addr_addr : a_dns_cache := ("-","-","-","-","-","-","-","-","-");
-cache_last_ip_addr_ip   : a_ip_cache; -- ip_string;
-
-function get_ip_address( addr : dns_string ) return ip_string is
-  s : string;
-begin
-  -- Check to see if we already looked it up
-  for i in arrays.first( cache_last_ip_addr_addr )..arrays.last( cache_last_ip_addr_addr ) loop
-      if cache_last_ip_addr_addr( i ) = addr then
-         return cache_last_ip_addr_ip( i );
-      end if;
-  end loop;
-  -- Lookup the the ip with ping.  If found, cache it.
-  s := `ping -c 1 -W 5 "$addr" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
-  if $? = 0 then
-    arrays.shift_right( cache_last_ip_addr_addr );
-    cache_last_ip_addr_addr( 1 ) := addr;
-    arrays.shift_right( cache_last_ip_addr_ip );
-    cache_last_ip_addr_ip( 1 ) := ip_string( s );
-  else
-    log_warning( source_info.file ) @ ( "ping unable to identify host " & addr );
-  end if;
-  return cache_last_ip_addr_ip( 1 );
-end get_ip_address;
 
 --lock_file_path : constant string := "sshd_blocker.lck"; -- DEBUG: no := storage error
 
@@ -183,6 +91,7 @@ hostname_stub : string;          -- x   of x-y.cloud.com
 
 opt_daemon  : boolean := false;   -- true of -D used
 
+
 -- USAGE
 --
 -- Show the help
@@ -192,6 +101,7 @@ procedure usage is
 begin
   help( source_info.enclosing_entity );
 end usage;
+
 
 -- HANDLE COMMAND OPTIONS
 --
@@ -232,6 +142,7 @@ begin
   return quit;
 end handle_command_options;
 
+
 -- GET RAW USERNAME AND IP NUMBER
 --
 -- The username can be blank or contain spaces.  We have to handle
@@ -261,6 +172,7 @@ begin
       raw_source_ip := raw_ip_string( strings.field( s, 6, ' ' ) );
    end if;
 end get_raw_username_and_ip_number;
+
 
 -- SHOW PROGRESS LINE
 --
@@ -358,11 +270,7 @@ if mode in monitor_mode..honeypot_mode then
    end if;
 end if;
 
-if files.exists( blocked_ip_path ) then
-   btree_io.open( blocked_ip_file, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
-else
-   btree_io.create( blocked_ip_file, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
-end if;
+startup_blocking;
 
 if not opt_daemon and not opt_verbose then
    put_line( "File: " & sshd_violations_file_path );
@@ -439,40 +347,44 @@ while not end_of_file( f ) loop
          -- Edge-case: If line reads "User User", the username will have been
          -- removed by remove_token.  Same with "User from".  Blank username
          -- is also possible.
-         if strings.index( s_original, "User User " ) > 0 then
-            r.username := "User";
-            source_ip := get_ip_address( dns_string( strings.field( s, 6, ' ' ) ) );
-         elsif strings.index( s_original, "User from " ) > 0 then
-            r.username := "from";
-            source_ip := get_ip_address( dns_string( strings.field( s, 6, ' ' ) ) );
-         else
-            raw_username := raw_user_string( strings.field( s, 6, ' ' ) );
-            r.username := validate_user( raw_username );
-            if validate_ip( raw_ip_string( raw_username ) ) /= "" then
-               log_warning( source_info.source_location ) @ ("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
+         declare
+            source_addr : dns_string;
+         begin
+            if strings.index( s_original, "User User " ) > 0 then
+               r.username := "User";
+               source_addr :=dns_string( strings.field( s, 6, ' ' ) );
+               source_ip := get_ip_number( source_addr );
+            elsif strings.index( s_original, "User from " ) > 0 then
+               r.username := "from";
+               source_addr :=dns_string( strings.field( s, 6, ' ' ) );
+               source_ip := get_ip_number( source_addr );
             else
-               if raw_username /= "" and r.username = "" then
-                  log_warning( source_info.source_location ) @ ("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
+               raw_username := raw_user_string( strings.field( s, 6, ' ' ) );
+               r.username := validate_user( raw_username );
+               if validate_ip( raw_ip_string( raw_username ) ) /= "" then
+                  log_warning( source_info.source_location ) @ ("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
+               else
+                  if raw_username /= "" and r.username = "" then
+                     log_warning( source_info.source_location ) @ ("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
+                  end if;
                end if;
-            end if;
-            declare
-               source_addr : dns_string := dns_string( strings.field( s, 7, ' ' ) );
-            begin
+               source_addr  := dns_string( strings.field( s, 7, ' ' ) );
                if source_addr = "" then
                   r.username := "";
-                  source_ip := get_ip_address( dns_string( strings.field( s, 6, ' ' ) ) );
+                  source_addr  := dns_string( strings.field( s, 6, ' ' ) );
+                  source_ip := get_ip_number( source_addr );
                else
-                  source_ip := get_ip_address( source_addr );
+                  source_ip := get_ip_number( source_addr );
                end if;
-            end;
-         end if;
-         -- TODO: remove token could have removed the username if it was "User"
-         r.ssh_disallowed := true;
-         if source_ip /= "" then
-            process;
-         else
-            log_warning( source_info.source_location ) @ ("skipping invalid ip " & strings.to_escaped( source_ip ) );
-         end if;
+            end if;
+            -- TODO: remove token could have removed the username if it was "User"
+            r.ssh_disallowed := true;
+            if source_ip /= "" then
+               process;
+            else
+               log_warning( source_info.source_location ) @ ( "ip not found for address '" & source_addr & "'" );
+            end if;
+         end;
       end if;
       -- Entry: "Failed password" entries appear with SSH PasswordAuthentication
       -- e.g. Failed password for invalid user root from 180.128.21.46 port 52988 ssh2
@@ -549,7 +461,7 @@ while not end_of_file( f ) loop
                end if;
             end if;
          end if;
-         block_if_not( source_ip, r.logged_on );
+         record_and_block( source_ip, r.logged_on, this_run_on );
       end if;
    end if;
 end loop;
@@ -563,7 +475,7 @@ end if;
 
 -- Close files
 close( f );
-btree_io.close( blocked_ip_file );
+shutdown_blocking;
 if mode in monitor_mode..honeypot_mode then
    btree_io.close( sshd_logins_file );
 end if;
@@ -587,9 +499,11 @@ exception when others =>
   -- Log the exception and close files
   log_error( source_info.source_location ) @ ( exceptions.exception_info );
   close( f );
-  btree_io.close( blocked_ip_file );
+  shutdown_blocking;
   if mode in monitor_mode..honeypot_mode then
-     btree_io.close( sshd_logins_file );
+     if btree_io.is_open( sshd_logins_file ) then
+        btree_io.close( sshd_logins_file );
+     end if;
   end if;
   --lock_files.unlock_file( lock_file_path );
   shutdownWorld;

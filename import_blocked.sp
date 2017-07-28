@@ -12,11 +12,11 @@ procedure import_logins is
   with separate "lib/world.inc.sp";
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
+  with separate "lib/blocking.inc.sp";
 
   pragma restriction( no_external_commands );
 
-  abt : btree_io.file( a_blocked_ip );
-  blocked_ip : a_blocked_ip;
+  offender : an_offender;
   j : json_string;
   json_file : file_type;
   json_path : string;
@@ -28,18 +28,18 @@ begin
   end if;
   json_path := command_line.argument( 1 );
 
-  btree_io.open( abt, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
+  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
   open( json_file, in_file, json_path );
   while not end_of_file( json_file ) loop
      j := json_string( get_line( json_file ) );
-     records.to_record( blocked_ip, j );
-     btree_io.set( abt, string( blocked_ip.source_ip ), blocked_ip );
+     records.to_record( offender, j );
+     btree_io.set( offender_file, string( offender.source_ip ), offender );
   end loop;
-  btree_io.close( abt );
+  btree_io.close( offender_file );
   close( json_file );
 exception when others =>
-  if btree_io.is_open( abt ) then
-     btree_io.close( abt );
+  if btree_io.is_open( offender_file ) then
+     btree_io.close( offender_file );
   end if;
   if is_open( json_file ) then
      close( json_file );

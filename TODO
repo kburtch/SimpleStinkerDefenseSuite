@@ -14,10 +14,17 @@
 - test with plain text disabled...does it still work?
 - import into tables
 - database tables, statistics gathering and reports
-- team include
+
+- phantom newline
 
 - web blocker
 - mail blocker
 
+- other services
+  - virus scan on changed files
+  - network listener scan
 - dan notes SNMP interface, etc. must be considered
+
+- numerics.value(...) should probably take universal_string not string
+- unable to find record field ken_burtch.member.description
 
