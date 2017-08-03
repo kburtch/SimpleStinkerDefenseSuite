@@ -396,7 +396,12 @@ begin
       end if;
   end loop;
   -- Lookup the the ip with ping.  If found, cache it.
-  s := `ping -c 1 -W 5 "$addr" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
+  -- This is broken into two lines because SparForte cannot (yet) redirect
+  -- and pipe at the same time.
+  --s := `ping -c 1 -W 5 "$addr" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
+  s := `ping -c 1 -W 5 "$addr" 2> /dev/null;`;
+  -- TODO: head -1 can be done without head... a little more efficient
+  s := `echo "$s" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
   if $? = 0 then
     arrays.shift_right( cache_last_ip_addr_addr );
     cache_last_ip_addr_addr( 1 ) := addr;

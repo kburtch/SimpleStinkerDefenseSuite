@@ -21,7 +21,9 @@ declare    OPT_VERBOSE=
 # ----------------------------------------------------------------------------
 
 function cleanup {
-  echo `date`": $SCRIPT: $LINENO: Stopping tail"
+  if [ -n "$OPT_VERBOSE" ] ; then
+     echo `date`": $SCRIPT: $LINENO: Stopping tail"
+  fi
 
   if [ "$TAIL_PID" -ne 0 ] ; then
      /bin/ps -p "$TAIL_PID" > /dev/null
@@ -34,7 +36,9 @@ function cleanup {
   # wait and force sshd blocker to stop if necessary.
   sleep 5
 
-  echo `date`": $SCRIPT: $LINENO: Stopping sshd_blocker"
+  if [ -n "$OPT_VERBOSE" ] ; then
+     echo `date`": $SCRIPT: $LINENO: Stopping sshd_blocker"
+  fi
 
   if [ "$BLOCKER_PID" -ne 0 ] ; then
      /bin/ps -p "$BLOCKER_PID" > /dev/null
@@ -45,10 +49,14 @@ function cleanup {
 
   # Remove the named pipe
 
-  echo `date`": $SCRIPT: $LINENO: Removing named pipe"
+  if [ -n "$OPT_VERBOSE" ] ; then
+     echo `date`": $SCRIPT: $LINENO: Removing named pipe"
+  fi
 
   rm "$SSHD_PIPE"
-  echo `date`": $SCRIPT: $LINENO: Done"
+  if [ -n "$OPT_VERBOSE" ] ; then
+     echo `date`": $SCRIPT: $LINENO: Done"
+  fi
   rm "$SSHD_PID_FILE"
 }
 
@@ -112,14 +120,18 @@ fi
 
 # Create a named pipe
 
-echo `date`": $SCRIPT: $LINENO: Creating named pipe $SSHD_PIPE"
+if [ -n "$OPT_VERBOSE" ] ; then
+   echo `date`": $SCRIPT: $LINENO: Creating named pipe $SSHD_PIPE"
+fi
 
 if [ -w "$SSHD_PIPE" ] ; then
    rm "$SSHD_PIPE"
 fi
 mkfifo -m 600 "$SSHD_PIPE"
 
-echo `date`": $SCRIPT: $LINENO: Starting sshd blocker"
+if [ -n "$OPT_VERBOSE" ] ; then
+   echo `date`": $SCRIPT: $LINENO: Starting sshd blocker"
+fi
 
 # Handle interrupts
 
@@ -134,12 +146,16 @@ if [ $? -ne 0 ] ; then
    exit
 fi
 BLOCKER_PID=$!
-echo `date`": $SCRIPT: $LINENO: sshd_blocker pid: $BLOCKER_PID"
+if [ -n "$OPT_VERBOSE" ] ; then
+   echo `date`": $SCRIPT: $LINENO: sshd_blocker pid: $BLOCKER_PID"
+fi
 
 # Start a tail command, writing the sshd log to the pipe
 # Continue reading even if the log file is rotated.
 
-echo `date`": $SCRIPT: $LINENO: Starting tail"
+if [ -n "$OPT_VERBOSE" ] ; then
+   echo `date`": $SCRIPT: $LINENO: Starting tail"
+fi
 
 nice tail --follow=name --retry "/var/log/secure" > "$SSHD_PIPE" &
 if [ $? -ne 0 ] ; then
@@ -148,11 +164,15 @@ if [ $? -ne 0 ] ; then
    exit
 fi
 TAIL_PID=$!
-echo `date`": $SCRIPT: $LINENO: tail pid: $TAIL_PID"
+if [ -n "$OPT_VERBOSE" ] ; then
+   echo `date`": $SCRIPT: $LINENO: tail pid: $TAIL_PID"
+fi
 
 # Wait until finished (if ever)
 
-echo `date`": $SCRIPT: $LINENO: Waiting while running"
+if [ -n "$OPT_VERBOSE" ] ; then
+   echo `date`": $SCRIPT: $LINENO: Waiting on running subprocesses"
+fi
 wait
 cleanup
 

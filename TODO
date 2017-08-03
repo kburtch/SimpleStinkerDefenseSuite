@@ -1,8 +1,10 @@
+- records.to_record giving too many identifiers / symbol table overflow error
+  - this should not be possible
+  - is it a json conversion error?
+
 - ping
   - ping greatly slows the responsiveness...we need to defer it to the wash phase
   - ping errors
-    - ping: 207-191-192-126.cpe.imoncommunications.net: Name or service not known
-    - ping: 207-191-192-126.cpe.imoncommunications.net
   - we need "placeholder ip's" as ping is not guaranteed to find the domain
     name.  Placeholder ip's can be checked later, but also cannot be blocked
     since they are not real ip numbers.  Probably already blocked anyway.
@@ -15,7 +17,13 @@
 - import into tables
 - database tables, statistics gathering and reports
 
-- phantom newline
+- security patch metrics
+  - which patches, when, how recently, how many over time
+
+tail: ‘/var/log/secure’ has been replaced;  following end of new file
+
+- progress bar on sshd blocker sometimes has a phantom newline / erases
+  whatever message was there.
 
 - web blocker
 - mail blocker

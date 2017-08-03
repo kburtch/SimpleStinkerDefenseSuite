@@ -7,6 +7,12 @@ separate;
 version : constant string := "0.1";
 
 ------------------------------------------------------------------------------
+-- Shell Imports
+------------------------------------------------------------------------------
+
+type shell_import_string is new string;
+
+------------------------------------------------------------------------------
 -- STANDARD DATA TYPES
 --
 -- TODO: raw types (vs. validated types)
@@ -18,6 +24,8 @@ type comment_string is new string;
 type date_string is new string;
 type timestamp_string is new string;
 type country_string is new string;
+type http_status_string is new string;
+type url_string is new string;
 
 ------------------------------------------------------------------------------
 -- Usernames

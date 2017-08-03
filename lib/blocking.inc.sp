@@ -233,13 +233,13 @@ end reset_firewall;
 -----------------------------------------------------------------------------
 
 
--- RECORD AND BLOCK
+-- SSH RECORD AND BLOCK
 --
--- Record the offending IP and block it with the configured firewall.  If it
--- already has a record, update the existing record.
+-- Record the offending IP number and block it with the configured firewall.
+-- If it already has a record, update the existing record.
 -----------------------------------------------------------------------------
 
-procedure record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string ) is
+procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
@@ -264,8 +264,11 @@ begin
      block( source_ip );
   else
      btree_io.get( offender_file, string( source_ip ), ab );
-     -- TODO: not a guarantee since could be overlap
-     if ab.logged_on < logged_on then
+     -- TODO: logged_on is not a guarantee of uniqueness since there could
+     -- be multiple attacks in a single second.  Also, this test only applies
+     -- when reading the whole log file.  In daemon mode, we know all entries
+     -- are new.
+     if is_daemon or ab.logged_on < logged_on then
         if ab.sshd_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            ab.sshd_blocked    := short_blocked;
@@ -289,7 +292,68 @@ begin
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
-end record_and_block;
+end sshd_record_and_block;
+
+-- HTTP RECORD AND BLOCK
+--
+-- Record the offending IP number and block it with the configured firewall.
+-- If it already has a record, update the existing record.
+-----------------------------------------------------------------------------
+
+procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
+  ab : an_offender;
+begin
+  if not btree_io.has_element( offender_file, string( source_ip ) ) then
+     ab.source_ip       := source_ip;
+     ab.source_name     := "";
+     ab.source_country  := "";
+     ab.location        := "";
+     ab.sshd_blocked    := unblocked_blocked;
+     ab.sshd_blocked_on := ts;
+     ab.sshd_offenses   := 0;
+     ab.smtp_blocked    := unblocked_blocked;
+     ab.smtp_blocked_on := ts;
+     ab.smtp_offenses   := 0;
+     ab.http_blocked    := short_blocked;
+     ab.http_blocked_on := ts;
+     ab.http_offenses   := 1;
+     ab.created_on      := ts;
+     ab.logged_on       := logged_on;
+     ab.updated_on      := ts;
+     ab.data_type       := real_data;
+     btree_io.set( offender_file, string( source_ip ), ab );
+     block( source_ip );
+  else
+     btree_io.get( offender_file, string( source_ip ), ab );
+     -- TODO: logged_on is not a guarantee of uniqueness since there could
+     -- be multiple attacks in a single second.  Also, this test only applies
+     -- when reading the whole log file.  In daemon mode, we know all entries
+     -- are new.
+     if is_daemon or ab.logged_on < logged_on then
+        if ab.sshd_blocked <= probation_blocked then
+   --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
+           ab.http_blocked    := short_blocked;
+           ab.http_blocked_on := ts;
+           ab.http_offenses   := @+1;
+           ab.logged_on       := logged_on;
+           ab.updated_on      := ts;
+         -- TODO: banned escallation
+           btree_io.set( offender_file, string( source_ip ), ab );
+           if ab.sshd_blocked > probation_blocked then
+              log_info( source_info.file ) @ ( "already SSHD blocked " & source_ip );
+           elsif ab.smtp_blocked > probation_blocked then
+              log_info( source_info.file ) @ ( "already SMTP blocked " & source_ip );
+           else
+              block( source_ip );
+           end if;
+        --else -- DEBUG
+        --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
+        end if;
+     --else
+        --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
+     end if;
+  end if;
+end http_record_and_block;
 
 
 ------------------------------------------------------------------------------

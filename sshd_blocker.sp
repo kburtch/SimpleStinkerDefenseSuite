@@ -20,8 +20,6 @@ with separate "config/config.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 
-type shell_import_string is new string;
-
 HOSTNAME : constant shell_import_string := "";
 pragma import( shell, HOSTNAME );
 
@@ -390,11 +388,19 @@ while not end_of_file( f ) loop
       -- e.g. Failed password for invalid user root from 180.128.21.46 port 52988 ssh2
       found := remove_token( s, "Failed password" );
       if found then
+         -- "user port from...port" is a possibility.  Unfortunately, sshd doesn't
+         -- clearly deliniate the username.
+         -- TODO: remove_last_token to remove "port" furthest from the end.
+         if strings.index( s, " user port from " ) = 0 then
+            found := remove_token( s, " port  " );
+         end if;
          -- if waiting on a named pipe, refresh current time.
          -- remove noise
          found := remove_token( s, " for " );
+         -- "user from from" is a possibility, but it is safe to leave one as
+         -- we delete one "from" and leave the other to be treated as a
+         -- username
          found := remove_token( s, " from " );
-         found := remove_token( s, " port  " );
          found := remove_token( s, "invalid user" );
          r.ssh_disallowed := found;
          fix( s );
@@ -461,7 +467,7 @@ while not end_of_file( f ) loop
                end if;
             end if;
          end if;
-         record_and_block( source_ip, r.logged_on, this_run_on );
+         sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon);
       end if;
    end if;
 end loop;

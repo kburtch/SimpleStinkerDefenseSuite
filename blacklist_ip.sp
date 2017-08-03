@@ -11,12 +11,12 @@ procedure blacklist_ip is
   with separate "lib/world.inc.sp";
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
+  with separate "lib/blocking.inc.sp";
 
   pragma restriction( no_external_commands );
 
-  blocked_ip_file : btree_io.file( a_blocked_ip );
   source_ip : ip_string;
-  ab : a_blocked_ip;
+  offender : an_offender;
   this_run_on : timestamp_string;
 begin
 
@@ -31,36 +31,36 @@ begin
 
   this_run_on := get_timestamp;
 
-  btree_io.open( blocked_ip_file, blocked_ip_path, blocked_ip_buffer_width, blocked_ip_buffer_width );
+  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
 
-  if btree_io.has_element( blocked_ip_file, string( source_ip ) ) then
-     btree_io.get( blocked_ip_file, string( source_ip ), ab );
+  if btree_io.has_element( offender_file, string( source_ip ) ) then
+     btree_io.get( offender_file, string( source_ip ), offender );
   else
-     ab.source_ip       := source_ip;
-     ab.source_name     := "";
-     ab.source_country  := "";
-     ab.location        := "";
-     ab.sshd_offenses   := 0;
-     ab.smtp_offenses   := 0;
-     ab.http_offenses   := 0;
+     offender.source_ip       := source_ip;
+     offender.source_name     := "";
+     offender.source_country  := "";
+     offender.location        := "";
+     offender.sshd_offenses   := 0;
+     offender.smtp_offenses   := 0;
+     offender.http_offenses   := 0;
   end if;
 
-  ab.sshd_blocked    := blacklisted_blocked;
-  ab.sshd_blocked_on := this_run_on;
-  ab.smtp_blocked    := blacklisted_blocked;
-  ab.smtp_blocked_on := this_run_on;
-  ab.http_blocked    := blacklisted_blocked;
-  ab.http_blocked_on := this_run_on;
-  ab.created_on      := this_run_on;
-  ab.logged_on       := this_run_on;
-  ab.updated_on      := this_run_on;
+  offender.sshd_blocked    := blacklisted_blocked;
+  offender.sshd_blocked_on := this_run_on;
+  offender.smtp_blocked    := blacklisted_blocked;
+  offender.smtp_blocked_on := this_run_on;
+  offender.http_blocked    := blacklisted_blocked;
+  offender.http_blocked_on := this_run_on;
+  offender.created_on      := this_run_on;
+  offender.logged_on       := this_run_on;
+  offender.updated_on      := this_run_on;
 
-  btree_io.set( blocked_ip_file, string( source_ip ), ab );
-  btree_io.close( blocked_ip_file );
+  btree_io.set( offender_file, string( source_ip ), offender );
+  btree_io.close( offender_file );
   put_line( source_ip & " has been blacklisted" );
 exception when others =>
-  if btree_io.is_open( blocked_ip_file ) then
-     btree_io.close( blocked_ip_file );
+  if btree_io.is_open( offender_file ) then
+     btree_io.close( offender_file );
   end if;
   raise;
 end blacklist_ip;

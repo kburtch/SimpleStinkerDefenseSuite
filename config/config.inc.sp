@@ -4,6 +4,10 @@ separate;
 
 sshd_violations_file_path : string := "/var/log/secure";
 
+-- The location of the Apache web server log file
+
+http_violations_file_path : string := "/var/log/httpd/pegasoft-access_log";
+
 -- The operating mode
 -- as defind in lib/world.inc.sp
 
