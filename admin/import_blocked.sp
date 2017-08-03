@@ -8,11 +8,11 @@ procedure import_logins is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "config/contributors.inc.sp";
-  with separate "lib/world.inc.sp";
-  with separate "config/config.inc.sp";
-  with separate "lib/common.inc.sp";
-  with separate "lib/blocking.inc.sp";
+  with separate "../config/contributors.inc.sp";
+  with separate "../lib/world.inc.sp";
+  with separate "../config/config.inc.sp";
+  with separate "../lib/common.inc.sp";
+  with separate "../lib/blocking.inc.sp";
 
   pragma restriction( no_external_commands );
 
@@ -28,6 +28,7 @@ begin
   end if;
   json_path := command_line.argument( 1 );
 
+  cd .. ;
   btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
   open( json_file, in_file, json_path );
   while not end_of_file( json_file ) loop
