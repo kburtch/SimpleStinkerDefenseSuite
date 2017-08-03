@@ -1,0 +1,446 @@
+#!/usr/local/bin/spar
+
+procedure http_blocker is
+
+pragma annotate( summary, "http_blocker [--version][-D][-f violations_file]" )
+              @( description, "Process a http log file (violations file) and block " )
+              @( description, "suspicious IP numbers.  By default, the violations " )
+              @( description, "file is /var/log/httpd/access_log." )
+              @( param, "-D - daemon mode (run continually from sshd_daemon)" )
+              @( param, "-f - path to the violations file" )
+              @( param, "--version - print version and quit" )
+              --@( errors, " - " )
+              @( author, "Ken O. Burtch" );
+pragma license( gplv3 );
+pragma software_model( shell_script );
+
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+with separate "lib/common.inc.sp";
+with separate "lib/blocking.inc.sp";
+
+-- Command line options
+
+opt_daemon  : boolean := false;   -- true of -D used
+
+-----------------------------------------------------------------------------
+-- Notes on implementation
+--
+-- For our purposes, we will:
+--
+-- 1. Group attack vector substrings into categories call key codes.
+-- 2. Record the key codes in the web request.
+-- 3. Finally, check the web request for the attack vectors starting with
+--   those key codes.
+--
+-- This is an attempt to filter out substrings by ignoring substrings that
+-- start with characters not in the request.  It also attempts to each for
+-- each substring no more than once.
+--
+-- Originally, using a keycode from 1..30 (basically, a single letter) often
+-- generated 23 to 27 matches out of 30 (only filtering out 10% to 24% of
+-- search strings).  Two characters gave 50% to 80% filtering out.
+--
+-- There is no doubt room for improvement, but there aren't a lot of
+-- attack substrings yet.
+--
+-- Substring search approaches such as Rabin-Karp are either too inefficient
+-- to implement without pointers, or are just overkill for the number of
+-- strings we have.
+-----------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+-- Key Codes
+--
+-- The hash table key codes are a number from 1..30, each number representing
+-- the first character of a string.  In some cases, characters are grouped
+-- under one number.  The number 30 is for catch-all / ignored cases.
+-----------------------------------------------------------------------------
+
+  type key_codes is new positive;
+
+
+-- TO BASIC KEY CODE
+--
+-- Return the hash key code for a single character.  "Basic" here means if
+-- the key code is 30, it is returned as-is.
+-----------------------------------------------------------------------------
+
+  function to_basic_key_code( ch : character ) return key_codes is
+    letter : key_codes;
+  begin
+    if ch in 'A'..'Z' then
+       letter := key_codes( numerics.pos( ch )-64 );
+    elsif ch in 'a'..'z' then
+       letter := key_codes( numerics.pos( ch )-96 );
+    elsif ch in '0'..'9' then
+       letter := 27;
+    -- special cases
+    elsif ch = '/' then
+       letter := 30;
+    elsif ch = '?' then
+       letter := 30;
+    elsif ch = '&' then
+       letter := 30;
+    elsif ch <= 'A' then
+       letter := 28;
+    elsif ch > 'Z' then
+       letter := 29;
+    else
+       letter := 30;
+    end if;
+--put( ch ) @ (letter); new_line;
+    return letter;
+  end to_basic_key_code;
+
+
+-- TO KEY CODE
+--
+-- Return the hash key code for a string.  If the first character is code 30,
+-- keep looking at subsequent characters until you get a non-30 code.
+-----------------------------------------------------------------------------
+
+  function to_key_code( candidate : string ) return key_codes is
+    key_code : key_codes;
+    key_code_1 : key_codes;
+    key_code_2 : key_codes;
+    ch : character;
+    p : positive := 1;
+  begin
+--put_line( candidate );
+--put( "key_code: " ) @ ( strings.element( candidate, i ) ) @ ( key_code );
+--new_line;
+
+    --key_code := 30;
+    --for i in 1..strings.length( candidate ) loop
+    --    key_code := to_basic_key_code( strings.element( candidate, i ) );
+    --    exit when key_code /= 30;
+    --end loop;
+
+    key_code_1 := 30;
+    while p <= strings.length( candidate ) loop
+       ch := strings.element( candidate, p );
+       key_code_1 := to_basic_key_code( ch );
+       exit when key_code_1 /= 30;
+       p := @+1;
+    end loop;
+
+    p := @+1;
+    key_code_2 := 30;
+    while p <= strings.length( candidate ) loop
+       ch := strings.element( candidate, p );
+       key_code_2 := to_basic_key_code( ch );
+       exit when key_code_2 /= 30;
+       p := @+1;
+    end loop;
+
+    key_code := key_code_2 + 30 * ( key_code_1 -1 );
+
+--log_info( source_info.source_location ) @
+--   ( candidate ) @ ( " => key_code " ) @ ( strings.image( integer( key_code ) ) );
+
+    return key_code;
+  end to_key_code;
+
+-----------------------------------------------------------------------------
+-- Attack Vectors
+-----------------------------------------------------------------------------
+
+  attack_vectors : dynamic_hash_tables.table( string );
+
+
+-- SET ATTACK VECTOR
+--
+-- Setup an web log attack vector substring by adding it to the hash table.
+-----------------------------------------------------------------------------
+
+  procedure set_attack_vector( candidate : string ) is
+     key_code : key_codes;
+     key_code_string : string;
+  begin
+     key_code := to_key_code( candidate );
+     key_code_string := strings.image( key_code );
+     if dynamic_hash_tables.has_element( attack_vectors, key_code_string ) then
+        dynamic_hash_tables.append( attack_vectors, key_code_string, ASCII.LF & candidate );
+     else
+        dynamic_hash_tables.set( attack_vectors, key_code_string, candidate );
+     end if;
+  end set_attack_vector;
+
+
+-- LOAD ATTACK VECTORS
+--
+-- Read the attack vector file, setting up each attack vector in the hash
+-- table.  This should be done once, to load the vectors into memory.
+-----------------------------------------------------------------------------
+
+  procedure load_attack_vectors is
+     f : file_type;
+     s : string;
+  begin
+    open (f, in_file, "data/attack_vectors.txt" );
+    while not end_of_file( f ) loop
+       s := get_line( f );
+       set_attack_vector( s );
+    end loop;
+    close( f );
+  end load_attack_vectors;
+
+-----------------------------------------------------------------------------
+-- Web requests
+-----------------------------------------------------------------------------
+
+  candidate_key_codes : dynamic_hash_tables.table( key_codes );
+
+
+-- COUNT WEB REQUEST CODES
+--
+-- For debugging
+-----------------------------------------------------------------------------
+
+procedure count_web_request_codes is
+   key_code : key_codes;
+   eof : boolean;
+   cnt : natural := 0;
+   s   : string;
+begin
+    dynamic_hash_tables.get_first( candidate_key_codes, key_code, eof );
+    while not eof loop
+       cnt := @+1;
+       dynamic_hash_tables.get_next( candidate_key_codes, key_code, eof );
+    end loop;
+    log_info( source_info.source_location ) @ ( "there are" &
+       strings.image( cnt ) & " request key codes" );
+    cnt := 0;
+    dynamic_hash_tables.get_first( attack_vectors, s, eof );
+    while not eof loop
+       cnt := @+1;
+       dynamic_hash_tables.get_next( attack_vectors, s, eof );
+    end loop;
+    log_info( source_info.source_location ) @ ( "there are" &
+       strings.image( cnt ) & " attack vector key codes" );
+end count_web_request_codes;
+
+-- PREPARE WEB REQUEST
+--
+-- Parse the web requests, identifying all the key codes in the request.
+-- Mark these in the candidate key codes hash table.  In this way, only
+-- attack vectors starting with key codes in the web request will be tested.
+-----------------------------------------------------------------------------
+
+  procedure prepare_web_request( request : string ) is
+     key_code : key_codes;
+     key_code_1 : key_codes;
+     key_code_2 : key_codes;
+     key_code_string : string;
+  begin
+    dynamic_hash_tables.reset( candidate_key_codes );
+    for i in 1..strings.length( request )-2 loop
+      --key_code := to_basic_key_code( strings.element( request, i ) );
+      key_code := to_key_code( strings.slice( request, i, strings.length( request ) ) );
+      key_code_string := strings.image( key_code );
+      dynamic_hash_tables.add( candidate_key_codes, key_code_string, key_code );
+    end loop;
+    -- count_web_request_codes;
+  end prepare_web_request;
+
+
+-- SUSPICIOUS WEB REQUEST
+--
+-- Process all the key codes identifed by prepare_web_request, searching
+-- the web request for the presence of attack vector substrings.
+-----------------------------------------------------------------------------
+
+  function suspicious_web_request( request : string ) return boolean is
+    key_code : key_codes;
+    eof : boolean;
+    key_code_string : string;
+    vectors : string;
+    vector : string;
+    v : natural;
+    found : boolean := false;
+  begin
+    dynamic_hash_tables.get_first( candidate_key_codes, key_code, eof );
+    while not eof and not found loop
+         --if key_code /= 30 then
+         if key_code /= 300 then
+            key_code_string := strings.image( key_code );
+            if dynamic_hash_tables.has_element( attack_vectors, key_code_string ) then
+               vectors := dynamic_hash_tables.get( attack_vectors, key_code_string );
+               v := 1;
+               loop
+                  vector := strings.field( vectors, v, ASCII.LF );
+                  exit when vector = "";
+                  if strings.index( request, vector ) > 0 then
+                     log_info( source_info.source_location ) @ (
+                       "found suspicious web request '" &
+                        strings.to_escaped( request ) &
+                        "' with '" &
+                        strings.to_escaped( vector ) & "'" );
+                     found;
+                     exit;
+                  end if;
+                  v := @+1;
+               end loop;
+            end if;
+         end if;
+         dynamic_hash_tables.get_next( candidate_key_codes, key_code, eof );
+    end loop;
+    return found;
+  end suspicious_web_request;
+
+
+-----------------------------------------------------------------------------
+-- Housekeeping
+-----------------------------------------------------------------------------
+
+
+-- USAGE
+--
+-- Show the help
+-----------------------------------------------------------------------------
+
+procedure usage is
+begin
+  help( source_info.enclosing_entity );
+end usage;
+
+
+-- HANDLE COMMAND OPTIONS
+--
+-----------------------------------------------------------------------------
+
+function handle_command_options return boolean is
+  quit : boolean := false;
+  arg_pos : natural := 1;
+  arg : string;
+begin
+  while arg_pos <= command_line.argument_count loop
+    arg := command_line.argument( arg_pos );
+    if arg = "-h" or arg = "--help" then
+       usage;
+       quit;
+    elsif arg = "-v" or arg = "--verbose" then
+       opt_verbose;
+    elsif arg = "-V" or arg = "--version" then
+       put_line( version );
+       quit;
+    elsif arg = "-D" then
+       opt_daemon;
+    else
+       put_line( standard_error, "unknown option: " & arg );
+       quit;
+    end if;
+    arg_pos := @+1;
+  end loop;
+  return quit;
+end handle_command_options;
+
+-----------------------------------------------------------------------------
+
+  f : file_type;
+  this_run_on : timestamp_string;
+  log_line : string;
+  tmp : string;
+  tmp2 : string;
+  http_status : http_status_string;
+  logged_on : timestamp_string;
+  raw_source_ip : raw_ip_string;
+  source_ip : ip_string;
+  request : string;
+
+  record_cnt : natural;
+  attack_cnt : natural;
+
+begin
+  setupWorld( "HTTP Blocker", "log/blocker.log" );
+
+  -- Process command options
+
+  if handle_command_options then
+     command_line.set_exit_status( 1 );
+     return;
+  end if;
+
+  startup_blocking;
+
+  load_attack_vectors;
+
+  this_run_on := get_timestamp;
+  record_cnt := 0;
+  attack_cnt := 0;
+
+  open( f, in_file, http_violations_file_path );
+  while not end_of_file( f ) loop
+     log_line := get_line( f );
+     record_cnt := @+1;
+     tmp := strings.field( log_line, 3, '"' );
+     http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
+     if strings.index( " 400 401 403 404 405 413 414 500 ", string( http_status ) ) > 0 then
+        request := strings.field( log_line, 2, '"' ) & strings.field( log_line, 6, '"' );
+        prepare_web_request( request );
+        if suspicious_web_request( request ) then
+           -- remove colon in middle of date/time
+           raw_source_ip := raw_ip_string( strings.field( log_line, 1, ' ' ) );
+           -- convert month to number
+           tmp := strings.field( log_line, 2, '[' );
+           tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
+           tmp := strings.replace_slice( tmp, 12, 12, ' ' );
+           if strings.index( tmp, "Jan" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "01" );
+           elsif strings.index( tmp, "Feb" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "02" );
+           elsif strings.index( tmp, "Mar" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "03" );
+           elsif strings.index( tmp, "Apr" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "04" );
+           elsif strings.index( tmp, "May" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "05" );
+           elsif strings.index( tmp, "Jun" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "06" );
+           elsif strings.index( tmp, "Jul" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "07" );
+           elsif strings.index( tmp, "Aug" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "08" );
+           elsif strings.index( tmp, "Sep" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "09" );
+           elsif strings.index( tmp, "Oct" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "10" );
+           elsif strings.index( tmp, "Nov" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "11" );
+           elsif strings.index( tmp, "Dec" ) > 0 then
+             tmp := strings.replace_slice( tmp, 4, 6, "12" );
+           end if;
+           -- swap day and month
+           tmp2 := strings.head( tmp, 3 );
+           tmp := strings.delete( tmp, 1, 3 );
+           tmp := strings.insert( tmp, 4, tmp2 );
+           logged_on := parse_timestamp( date_string( tmp ) );
+           source_ip := validate_ip( raw_source_ip );
+           -- http_record_and_block( source_ip, logged_on, this_run_on, true );
+           attack_cnt := @+1;
+        end if;
+     end if;
+  end loop;
+  close( f );
+
+  log_info( source_info.source_location )
+     @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
+     @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
+
+  shutdown_blocking;
+  shutdownWorld;
+
+exception when others =>
+  log_error( source_info.source_location ) @ ( exceptions.exception_info );
+  if is_open( f ) then
+     close( f );
+  end if;
+  shutdown_blocking;
+  shutdownWorld;
+  raise;
+end http_blocker;
+
+-- vim: ft=spar
+
