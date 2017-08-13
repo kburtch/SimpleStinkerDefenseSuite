@@ -19,9 +19,7 @@ with separate "lib/world.inc.sp";
 with separate "config/config.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
-
-HOSTNAME : constant shell_import_string := "";
-pragma import( shell, HOSTNAME );
+with separate "lib/logins.inc.sp";
 
 procedure create_login_hostname_variants( base : in out string; stub : in out string ) is
   p : natural;

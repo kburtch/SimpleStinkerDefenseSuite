@@ -5,6 +5,20 @@ separate;
 opt_verbose : boolean := false;   -- true of -v used
 
 ------------------------------------------------------------------------------
+-- Data categories
+------------------------------------------------------------------------------
+
+type data_types is (
+  real_data,
+  proxy_data,
+  test_data
+);
+pragma todo( team,
+  "ability to mark test data should be used throughout btree files",
+  work_measure.story_points, 3,
+  work_priority.level, 'l' );
+
+------------------------------------------------------------------------------
 -- Usernames
 ------------------------------------------------------------------------------
 
@@ -277,50 +291,6 @@ begin
   log_info( "End " & program_name & " run" );
 end log_end;
 
--- COUNTRIES
-
-type country_data is record
-   iso3166 : string;
-   common_name : string;
-   suffix : string;
-end record;
-
-countries_path : constant string := "data/countries.btree";
-countries_width : constant positive := 128;
-
--- SUSPICIOUS LOGINS
-
-type data_types is (
-  real_data,
-  proxy_data,
-  test_data
-);
-
-type login_kind is (
-   privileged_login,
-   service_login,
-   dictionary_login,
-   existing_login,
-   unknown_login_kind
--- calling card
-);
-
-type a_sshd_login is record
-     username   : user_string;
-     count      : natural;
-     ssh_disallowed : boolean;
-     kind       : login_kind;
-     comment    : comment_string;
-     created_on : timestamp_string;
-     logged_on  : timestamp_string;
-     updated_on : timestamp_string;
-     data_type       : data_types;
-end record;
-
-sshd_logins_path : constant string := "data/sshd_logins.btree";
-sshd_logins_buffer_width : constant positive := 2048;
-
-
 -- STATISTICS
 pragma todo( team,
   "statistics not yet implemented.  requires client website first",
@@ -338,33 +308,8 @@ pragma todo( team,
 --end record;
 
 ------------------------------------------------------------------------------
--- KNOWN LOGINS
+-- IP NUMBERS
 ------------------------------------------------------------------------------
-
--- CHECK KNOWN LOGINS
---
--- Read the password file and make a list of known logins.
-------------------------------------------------------------------------------
-pragma todo( team,
-  "doesn't handle active directory type services...only local",
-  work_measure.unknown, 0,
-  work_priority.level, 'l' );
-
-known_logins : dynamic_hash_tables.table( user_string );
-
-procedure check_known_logins is
-  f : file_type;
-  s : string;
-  user : user_string;
-begin
-  open( f, in_file, "/etc/passwd" );
-  while not end_of_file( f ) loop
-     s := get_line( f );
-     user := user_string( strings.field( s, 1, ":" ) );
-     dynamic_hash_tables.set( known_logins, user, user );
-  end loop;
-  close( f );
-end check_known_logins;
 
 -- IP WHITELIST
 

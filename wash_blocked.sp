@@ -13,9 +13,15 @@ procedure wash_blocked is
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
+  with separate "lib/countries.inc.sp";
 
   pragma annotate( todo, "GeoIP should probably be moved to central server so it doesn't have to be install" );
 
+  -- These types are not used here.  As a workaround,
+  -- mark them used.  Until this is sorted out.
+
+  pragma assumption( applied, country_data );
+  pragma assumption( applied, comment_string );
 
      --put_line( `ping -c 1 -W 5 "$sip" | head -2 ;` );
      --source_host := `ping -c 1 -W 5 "$sip" | head -2 | tail -1 | cut -c15- | cut -d' ' -f1 ;`;

@@ -20,6 +20,7 @@ with separate "config/config.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 with separate "lib/key_codes.inc.sp";
+with separate "lib/urls.inc.sp";
 
 -- Command line options
 

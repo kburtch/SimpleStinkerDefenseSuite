@@ -1,6 +1,11 @@
 separate;
 
+------------------------------------------------------------------------------
+-- This file contains global types and settings
+------------------------------------------------------------------------------
+
 pragma suppress( low_priority_todos_for_release );
+-- For this version, allow some work to be incomplete
 
 ------------------------------------------------------------------------------
 -- VERSION
@@ -14,21 +19,21 @@ version : constant string := "0.1";
 
 type shell_import_string is new string;
 
+HOSTNAME : constant shell_import_string := "";
+pragma import( shell, HOSTNAME );
+
 ------------------------------------------------------------------------------
 -- STANDARD DATA TYPES
 --
 -- "raw" indicates unvalidated data.
 ------------------------------------------------------------------------------
 
-type port_string is new string;
+-- type port_string is new string;
 type dns_string is new string;
 type comment_string is new string;
 type date_string is new string;
 type timestamp_string is new string;
 type country_string is new string;
-type http_status_string is new string;
-type url_string is new string;
-type attack_vector_string is new string;
 
 ------------------------------------------------------------------------------
 -- Usernames
