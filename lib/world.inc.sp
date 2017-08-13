@@ -1,5 +1,7 @@
 separate;
 
+pragma suppress( low_priority_todos_for_release );
+
 ------------------------------------------------------------------------------
 -- VERSION
 ------------------------------------------------------------------------------
@@ -15,7 +17,7 @@ type shell_import_string is new string;
 ------------------------------------------------------------------------------
 -- STANDARD DATA TYPES
 --
--- TODO: raw types (vs. validated types)
+-- "raw" indicates unvalidated data.
 ------------------------------------------------------------------------------
 
 type port_string is new string;
@@ -26,6 +28,7 @@ type timestamp_string is new string;
 type country_string is new string;
 type http_status_string is new string;
 type url_string is new string;
+type attack_vector_string is new string;
 
 ------------------------------------------------------------------------------
 -- Usernames

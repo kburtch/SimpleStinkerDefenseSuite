@@ -1,16 +1,16 @@
 #!/bin/bash
 #
-# Run the sshd blocker like a daemon.
+# Run the mail blocker like a daemon.
 #
-# This script writes the sshd log to a named pipe, where it is
-# read by the sshd blocker.
+# This script writes the mail log to a named pipe, where it is
+# read by the mail blocker.
 # ----------------------------------------------------------------------------
 shopt -s -o nounset
 
 declare -r SCRIPT=${0##*/}
 declare -r BLOCKER_ROOT="/root/secure"
-declare -r SSHD_PIPE="$BLOCKER_ROOT""/run/sshd_pipe"
-declare -r SSHD_PID_FILE="$BLOCKER_ROOT""/run/sshd_daemon.pid"
+declare -r MAIL_PIPE="$BLOCKER_ROOT""/run/mail_pipe"
+declare -r MAIL_PID_FILE="$BLOCKER_ROOT""/run/mail_daemon.pid"
 declare -i TAIL_PID=0
 declare -i BLOCKER_PID=0
 declare    OPT_VERBOSE=
@@ -33,11 +33,11 @@ function cleanup {
   fi
 
   # Killing the tail should send EOF to the pipe.  As a precaution,
-  # wait and force sshd blocker to stop if necessary.
+  # wait and force mail blocker to stop if necessary.
   sleep 5
 
   if [ -n "$OPT_VERBOSE" ] ; then
-     echo `date`": $SCRIPT: $LINENO: Stopping sshd_blocker"
+     echo `date`": $SCRIPT: $LINENO: Stopping mail_blocker"
   fi
 
   if [ "$BLOCKER_PID" -ne 0 ] ; then
@@ -53,18 +53,18 @@ function cleanup {
      echo `date`": $SCRIPT: $LINENO: Removing named pipe"
   fi
 
-  rm "$SSHD_PIPE"
+  rm "$MAIL_PIPE"
   if [ -n "$OPT_VERBOSE" ] ; then
      echo `date`": $SCRIPT: $LINENO: Done"
   fi
-  rm "$SSHD_PID_FILE"
+  rm "$MAIL_PID_FILE"
 }
 
 function usage {
   echo "$SCRIPT [-v]"
   echo
-  echo "Runs the sshd blocker in real-time, blocking suspicious ip's"
-  echo "kill the pid in $SSHD_PID_FILE to stop.  Run this as an ongoing"
+  echo "Runs the mail blocker in real-time, blocking suspicious ip's"
+  echo "kill the pid in $MAIL_PID_FILE to stop.  Run this as an ongoing"
   echo "background process."
 }
 
@@ -101,64 +101,64 @@ fi
 if [ ! -w "$BLOCKER_ROOT" ] ; then
    echo "$SCRIPT: $LINENO: BLOCKER_ROOT is not readable" >&2
 fi
-OLD_PID=`cat "$SSHD_PID_FILE" 2>> /dev/null`
+OLD_PID=`cat "$MAIL_PID_FILE" 2>> /dev/null`
 if [ -n "$OLD_PID" ] ; then
    /bin/ps -p "$OLD_PID" > /dev/null
    if [ "$?" -ne 0 ] ; then
-      echo "$SCRIPT: $LINENO: WARNING: overwriting stale SSHD_PID_FILE" >&2
-      echo "$$" > "$SSHD_PID_FILE"
+      echo "$SCRIPT: $LINENO: WARNING: overwriting stale MAIL_PID_FILE" >&2
+      echo "$$" > "$MAIL_PID_FILE"
    else
       echo "$SCRIPT: $LINENO: ERROR: aborting - may already be running as PID $OLD_PID" >&2
       exit 192
    fi
 else
-   echo "$$" > "$SSHD_PID_FILE"
+   echo "$$" > "$MAIL_PID_FILE"
 fi
 
-# Start the sshd blocker
+# Start the mail blocker
 # ----------------------------------------------------------------------------
 
 # Create a named pipe
 
 if [ -n "$OPT_VERBOSE" ] ; then
-   echo `date`": $SCRIPT: $LINENO: Creating named pipe $SSHD_PIPE"
+   echo `date`": $SCRIPT: $LINENO: Creating named pipe $MAIL_PIPE"
 fi
 
-if [ -w "$SSHD_PIPE" ] ; then
-   rm "$SSHD_PIPE"
+if [ -w "$MAIL_PIPE" ] ; then
+   rm "$MAIL_PIPE"
 fi
-mkfifo -m 600 "$SSHD_PIPE"
+mkfifo -m 600 "$MAIL_PIPE"
 
 if [ -n "$OPT_VERBOSE" ] ; then
-   echo `date`": $SCRIPT: $LINENO: Starting sshd blocker"
+   echo `date`": $SCRIPT: $LINENO: Starting mail blocker"
 fi
 
 # Handle interrupts
 
 trap 'cleanup;exit' SIGHUP SIGINT SIGTERM
 
-# Start the SSHD blocker, reading from the pipe
+# Start the MAIL blocker, reading from the pipe
 
-nice spar -m sshd_blocker.sp -D $OPT_VERBOSE -f "$SSHD_PIPE" &
+nice spar -m mail_blocker.sp -D $OPT_VERBOSE -f "$MAIL_PIPE" &
 if [ $? -ne 0 ] ; then
-   echo `date`": $SCRIPT: $LINENO: ERROR: sshd_blocker failed - status $?" >&2
+   echo `date`": $SCRIPT: $LINENO: ERROR: mail_blocker failed - status $?" >&2
    cleanup
    exit
 fi
 BLOCKER_PID=$!
 if [ -n "$OPT_VERBOSE" ] ; then
-   echo `date`": $SCRIPT: $LINENO: sshd_blocker pid: $BLOCKER_PID"
+   echo `date`": $SCRIPT: $LINENO: mail_blocker pid: $BLOCKER_PID"
 fi
 
-# Start a tail command, writing the sshd log to the pipe
+# Start a tail command, writing the mail log to the pipe
 # Continue reading even if the log file is rotated.
 
 if [ -n "$OPT_VERBOSE" ] ; then
    echo `date`": $SCRIPT: $LINENO: Starting tail"
 fi
 
-# TODO: filename should come from configuration file
-nice tail --follow=name --retry "/var/log/secure" > "$SSHD_PIPE" &
+# TODO: filename should come from configration file
+nice tail --follow=name --retry "/var/log/maillog" > "$MAIL_PIPE" &
 if [ $? -ne 0 ] ; then
    echo `date`": $SCRIPT: $LINENO: tail failed - status $?" >&2
    cleanup

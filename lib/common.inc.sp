@@ -140,7 +140,6 @@ program_name : string;
 --
 -- Log an info-level message to the log.
 -----------------------------------------------------------------------------
--- TODO: monitor should output to standard output/error
 
 procedure log_info( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
@@ -181,7 +180,6 @@ end log_info;
 --
 -- Log an warning-level message to the log.
 -----------------------------------------------------------------------------
--- TODO: monitor should output to standard output/error
 
 procedure log_warning( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
@@ -222,7 +220,6 @@ end log_warning;
 --
 -- Log an error-level message to the log.
 -----------------------------------------------------------------------------
--- TODO: monitor should output to standard output/error
 
 procedure log_error( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
@@ -325,17 +322,20 @@ sshd_logins_buffer_width : constant positive := 2048;
 
 
 -- STATISTICS
--- TODO: not done
+pragma todo( team,
+  "statistics not yet implemented.  requires client website first",
+  work_measure.story_points, 19,
+  work_priority.level, 'l' );
 
-type ip_statistics is record
-     daily_count_min : natural;
-     daily_count_max : natural;
-     daily_count_avg : natural;
-     year_daily_on  : calendar.year_number;
-     month_daily_on : calendar.month_number;
-     day_daily_on   : calendar.day_number;
-     seconds_daily_on : calendar.day_duration;
-end record;
+--type ip_statistics is record
+--     daily_count_min : natural;
+--     daily_count_max : natural;
+--     daily_count_avg : natural;
+--     year_daily_on  : calendar.year_number;
+--     month_daily_on : calendar.month_number;
+--     day_daily_on   : calendar.day_number;
+--     seconds_daily_on : calendar.day_duration;
+--end record;
 
 ------------------------------------------------------------------------------
 -- KNOWN LOGINS
@@ -345,11 +345,14 @@ end record;
 --
 -- Read the password file and make a list of known logins.
 ------------------------------------------------------------------------------
+pragma todo( team,
+  "doesn't handle active directory type services...only local",
+  work_measure.unknown, 0,
+  work_priority.level, 'l' );
 
 known_logins : dynamic_hash_tables.table( user_string );
 
 procedure check_known_logins is
--- TODO: doesn't handle active directory type services...only local
   f : file_type;
   s : string;
   user : user_string;
@@ -370,10 +373,17 @@ ip_whitelist : dynamic_hash_tables.table( ip_string );
 
 -- GET IP NUMBER
 --
--- Look up the IP number for a given DNS address.
+-- Look up the IP number for a given DNS address.  Empty string is returned
+-- if there is none.
 ------------------------------------------------------------------------------
-
--- TODO: ping may not always work
+pragma todo( team,
+  "ping may not be best.  there is probably a better way to get an ip number",
+  work_measure.story_points, 2,
+  work_priority.level, 'l' );
+pragma todo( team,
+  "ping result shouldn't need head, cut. just use sparforte code",
+  work_measure.story_points, 1,
+  work_priority.level, 'l' );
 
 -- The odds are that we will be attacked multiple times in a row by one or two
 -- IP numbers.  For our purposes, cache only the most recent 8 IP's.  We could
@@ -395,12 +405,17 @@ begin
          return cache_last_ip_addr_ip( i );
       end if;
   end loop;
+  -- Check for fake addresses
+  if addr = "unknown" then
+     return "";
+  elsif addr = "no-reverse-dns-configured.com" then
+     return "";
+  end if;
   -- Lookup the the ip with ping.  If found, cache it.
   -- This is broken into two lines because SparForte cannot (yet) redirect
   -- and pipe at the same time.
   --s := `ping -c 1 -W 5 "$addr" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
   s := `ping -c 1 -W 5 "$addr" 2> /dev/null;`;
-  -- TODO: head -1 can be done without head... a little more efficient
   s := `echo "$s" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
   if $? = 0 then
     arrays.shift_right( cache_last_ip_addr_addr );
@@ -414,9 +429,107 @@ begin
 end get_ip_number;
 
 ------------------------------------------------------------------------------
+-- Strings
+------------------------------------------------------------------------------
+
+-- INDEX REVERSE
+--
+-- Like strings.index, but start from the end of the string.
+------------------------------------------------------------------------------
+
+function index_reverse( str : string; target : character ) return natural is
+  p : natural;
+begin
+  p := strings.length( str );
+  while p > 0 loop
+     exit when strings.element( str, p ) = target;
+     p := @-1;
+   end loop;
+  return p;
+end index_reverse;
+
+------------------------------------------------------------------------------
+-- UI
+------------------------------------------------------------------------------
+
+-- SHOW PROGRESS LINE
+--
+-- Show the status when processing a file with sshd violations
+------------------------------------------------------------------------------
+pragma todo( team,
+  "possibly move ui subprograms to a separate file",
+  work_measure.story_points, 1,
+  work_priority.level, 'l' );
+
+show_progress_line_size_cache : natural := 0;
+show_progress_line_last_modified : calendar.time;
+
+procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : string ) is
+  now       : timestamp_string;
+  elapsed   : universal_numeric;
+  estimated_cnt : natural;
+  last_modified : calendar.time;
+  minutes_left : universal_typeless := " ??";
+  percent   : universal_typeless := " ??";
+begin
+  -- Move up one line to the start of the progress line
+
+  tput cuu1;
+
+  -- Get the time and number of lines in the file
+  -- (This assumes the file can change size during the run, but we don't want
+  -- to spend a lot of time counting lines so we cache it.  Every 1500 lines
+  -- check to see if the file was modified.  If it was, update the line count.)
+
+  now := get_timestamp;
+  if show_progress_line_size_cache = 0 then
+     show_progress_line_last_modified := files.last_modified( violations_file );
+     show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file";` )
+ );
+  elsif current_cnt mod 1500 = 0 then
+     last_modified := files.last_modified( violations_file );
+     if last_modified /= show_progress_line_last_modified then
+        show_progress_line_last_modified := last_modified;
+        show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file"; ` ) );
+    end if;
+  end if;
+
+  estimated_cnt := show_progress_line_size_cache;
+
+  -- Compute the percentage complete and time remaining
+  -- Delay the status until we've at least done 1000 records, as initial
+  -- stats won't be meaningful.  Use floor to favour 99% over 100%.
+
+  elapsed := numerics.value( string( now ) ) - numerics.value( string( start_time ) );
+  if current_cnt >= 1000 then
+     minutes_left := numerics.unbiased_rounding( elapsed * float( estimated_cnt ) / float( current_cnt ) );
+     minutes_left := numerics.floor( (@ - elapsed )/60 );
+  end if;
+  if estimated_cnt > 0 then
+     percent := 100 * current_cnt / estimated_cnt;
+  end if;
+
+  -- Display the line
+
+  put( current_cnt )
+   @ ( " of" )
+   @ ( estimated_cnt )
+   @ ( " records (" )
+   @ ( percent )
+   @ ( "%, est." )
+   @ ( minutes_left )
+   @ ( " min remaining)" );
+  tput el;
+  new_line;
+exception when others =>
+  put_line( "error calculating the progress line" );
+end show_progress_line;
+
+------------------------------------------------------------------------------
 -- Housekeeping
 ------------------------------------------------------------------------------
 
+configuration_error : exception;
 
 -- SETUP WORLD
 --
@@ -424,28 +537,30 @@ end get_ip_number;
 ------------------------------------------------------------------------------
 
 procedure setupWorld( the_program_name : string; the_log_path : string ) is
+  min_version : constant string := "2.1";
 begin
-   program_name := the_program_name;
-   log_path := the_log_path;
-   log_start;
 
-   -- Setup an ip set to hold all banned ip numbers
-   -- To delete the whole set, use ipset destroy
-   -- (Delete the iptables rules first)
-   -- TODO: use command types
+  program_name := the_program_name;
+  log_path := the_log_path;
+  log_start;
 
-   --if firewall_kind = iptables_firewall then
-   --  if mode /= monitor_mode and mode /= honeypot_mode then
-   --     ipset -q list blocklist >/dev/null 2>/dev/null ;
-   --     if $? /= 0 then
-   --        ipset create blocklist iphash ;
-   --        iptables -A INPUT "--match-set" blocklist src -j DROP ;
-   --        iptables -A INPUT "--match-set" blocklist dst -j REJECT ;
-   --     end if;
-   --  end if;
-   --end if;
+  -- Check configuration
 
-   -- TODO: should read from file
+  if System.System_Version < min_version then
+    raise configuration_error with "SparForte " & min_version &
+       " is required.  This is " & System.System_Version & ".";
+  end if;
+
+  -- operating_system := `uname -s;`;
+
+pragma todo( team,
+  "whitelist should be in a configuration file not hard-coded",
+  work_measure.story_points, 2,
+  work_priority.level, 'l' );
+pragma todo( team,
+  "whitelist should be broken into separate lists for peers and clients",
+  work_measure.story_points, 1,
+  work_priority.level, 'l' );
 
   dynamic_hash_tables.set( ip_whitelist, "127.0.0.1", "localhost" );
   dynamic_hash_tables.set( ip_whitelist, "45.56.68.190", "lntxap01" );
@@ -464,4 +579,3 @@ begin
 end shutdownWorld;
 
 -- vim: ft=spar
-

@@ -171,75 +171,6 @@ begin
    end if;
 end get_raw_username_and_ip_number;
 
-
--- SHOW PROGRESS LINE
---
--- Show the status when processing a file with sshd violations
-------------------------------------------------------------------------------
-
-show_progress_line_size_cache : natural := 0;
-show_progress_line_last_modified : calendar.time;
-
-procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : string ) is
-  now       : timestamp_string;
-  elapsed   : universal_numeric;
-  estimated_cnt : natural;
-  last_modified : calendar.time;
-  minutes_left : universal_typeless := " ??";
-  percent   : universal_typeless := " ??";
-begin
-  -- Move up one line to the start of the progress line
-
-  tput cuu1;
-
-  -- Get the time and number of lines in the file
-  -- (This assumes the file can change size during the run, but we don't want
-  -- to spend a lot of time counting lines so we cache it.  Every 1500 lines
-  -- check to see if the file was modified.  If it was, update the line count.)
-
-  now := get_timestamp;
-  if show_progress_line_size_cache = 0 then
-     show_progress_line_last_modified := files.last_modified( violations_file );
-     show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file";` ) );
-  elsif current_cnt mod 1500 = 0 then
-     last_modified := files.last_modified( violations_file );
-     if last_modified /= show_progress_line_last_modified then
-        show_progress_line_last_modified := last_modified;
-        show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file";` ) );
-    end if;
-  end if;
-
-  estimated_cnt := show_progress_line_size_cache;
-
-  -- Compute the percentage complete and time remaining
-  -- Delay the status until we've at least done 1000 records, as initial
-  -- stats won't be meaningful.  Use floor to favour 99% over 100%.
-
-  elapsed := numerics.value( string( now ) ) - numerics.value( string( start_time ) );
-  if processing_cnt >= 1000 then
-     minutes_left := numerics.unbiased_rounding( elapsed * float( estimated_cnt ) / float( current_cnt ) );
-     minutes_left := numerics.floor( (@ - elapsed )/60 );
-  end if;
-  if estimated_cnt > 0 then
-     percent := 100 * current_cnt / estimated_cnt;
-  end if;
-
-  -- Display the line
-
-  put( current_cnt )
-   @ ( " of" )
-   @ ( estimated_cnt )
-   @ ( " records (" )
-   @ ( percent )
-   @ ( "%, est." )
-   @ ( minutes_left )
-   @ ( " min remaining)" );
-  tput el;
-  new_line;
-exception when others =>
-  put_line( "error calculating the progress line" );
-end show_progress_line;
-
 begin
 
 setupWorld( "SSHD blocker", "log/blocker.log" );
@@ -304,13 +235,17 @@ while not end_of_file( f ) loop
    -- we are parsing the entries in the human-readable sshd log
 
    s_original := get_line( f );
+   pragma debug( `? s_original;` );
    p := strings.index( s_original, " sshd[" );
    if p > 0 then
       s := s_original;
       -- Entry: "Invalid user" (with capital "I") entires appear for key-pair to
       -- a non-existing account
       -- e.g. Invalid user admin from 185.165.29.41
-      -- TODO: clean this up, make functions
+pragma todo( team,
+  "clean up main sshd logic and refactor with more subprograms",
+  work_measure.story_points, 2,
+  work_priority.level, 'l' );
       found := remove_token( s, "Invalid user" );
       if found then
          found := remove_token( s, " from " );
@@ -375,7 +310,6 @@ while not end_of_file( f ) loop
                   source_ip := get_ip_number( source_addr );
                end if;
             end if;
-            -- TODO: remove token could have removed the username if it was "User"
             r.ssh_disallowed := true;
             if source_ip /= "" then
                process;
@@ -390,8 +324,7 @@ while not end_of_file( f ) loop
       if found then
          -- "user port from...port" is a possibility.  Unfortunately, sshd doesn't
          -- clearly deliniate the username.
-         -- TODO: remove_last_token to remove "port" furthest from the end.
-         if strings.index( s, " user port from " ) = 0 then
+         if index_reverse( s, " user port from " ) = 0 then
             found := remove_token( s, " port  " );
          end if;
          -- if waiting on a named pipe, refresh current time.
@@ -449,8 +382,12 @@ while not end_of_file( f ) loop
             if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
                if btree_io.has_element( sshd_logins_file, string( r.username ) ) then
                   btree_io.get( sshd_logins_file, string( r.username ), old_r );
-                  -- TODO: not a guarantee: there could be multiple attacks at the
-                  -- same time.
+pragma todo( team,
+  "skipping old violations could be improved.  there could be multiple attacks " &
+  "at the same time.  subsequent attacks in the same second are currently " &
+  "skipped",
+  work_measure.unknown, 0,
+  work_priority.level, 'l' );
                   if old_r.logged_on > r.logged_on then
                      dup_cnt := @+1;
                   else
@@ -504,7 +441,9 @@ shutdownWorld;
 exception when others =>
   -- Log the exception and close files
   log_error( source_info.source_location ) @ ( exceptions.exception_info );
-  close( f );
+  if is_open( f ) then
+     close( f );
+  end if;
   shutdown_blocking;
   if mode in monitor_mode..honeypot_mode then
      if btree_io.is_open( sshd_logins_file ) then

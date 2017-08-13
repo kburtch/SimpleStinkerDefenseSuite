@@ -285,7 +285,7 @@ begin
         source_ip.source_name := source_host;
         source_ip.source_country := source_country;
         source_ip.location := source_location;
-        log_info( source_info.file ) @ ( "updating dns and location for " & sip );
+        log_info( source_info.file ) @ ( "updating dns and geo location for " & sip );
         needs_updating;
      end if;
 

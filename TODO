@@ -1,7 +1,9 @@
 - records.to_record giving too many identifiers / symbol table overflow error
   - this should not be possible
   - is it a json conversion error?
+- paths mixed up after moving import/export to admin/ folder
 
+- implement grace
 - ping
   - ping greatly slows the responsiveness...we need to defer it to the wash phase
   - ping errors
@@ -12,7 +14,6 @@
 - whitelist should be broken down
   - i.e. customers, trusted machines
 - handling test data (not blocking, washing out (optionally?))
-- releasing btree transactions
 - test with plain text disabled...does it still work?
 - import into tables
 - database tables, statistics gathering and reports
@@ -24,13 +25,16 @@ tail: ‘/var/log/secure’ has been replaced;  following end of new file
 
 - progress bar on sshd blocker sometimes has a phantom newline / erases
   whatever message was there.
+- if spar fails with an error, daemon script doesn't abort
 
 - web blocker
 - mail blocker
+- spar unit tests
 
 - other services
   - virus scan on changed files
   - network listener scan
+  - error log summaries
 - dan notes SNMP interface, etc. must be considered
 
 - numerics.value(...) should probably take universal_string not string
