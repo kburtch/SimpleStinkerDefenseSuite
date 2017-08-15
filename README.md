@@ -24,6 +24,8 @@ Run the check security config script to check your server setup.
 Edit the file config/config.inc.sp and customize the settings
 to your system.
 
-Run the sshd, mail and http daemons from cron.
+Run the sshd, mail and http daemons on boot.
+Run wash blocked from cron every hour or as often as neededneeded.
+
 TODO: there will be a master daemon to manage the smaller daemons.
 

@@ -510,8 +510,6 @@ pragma todo( team,
   dynamic_hash_tables.set( ip_whitelist, "127.0.0.1", "localhost" );
   dynamic_hash_tables.set( ip_whitelist, "45.56.68.190", "lntxap01" );
   dynamic_hash_tables.set( ip_whitelist, "198.58.125.175", "armitage" );
-
-  check_known_logins;
 end setupWorld;
 
 -- SHUTDOWN WORLD

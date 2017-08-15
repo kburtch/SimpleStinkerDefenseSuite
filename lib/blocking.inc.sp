@@ -285,9 +285,7 @@ begin
            ab.updated_on      := ts;
          -- TODO: banned escallation
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.http_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already HTML blocked " & source_ip );
-           elsif ab.smtp_blocked > probation_blocked then
+           if ab.smtp_blocked > probation_blocked then
               log_info( source_info.source_location ) @ ( "already MAIL blocked " & source_ip );
            elsif ab.http_blocked > probation_blocked then
               log_info( source_info.source_location ) @ ( "already HTTP blocked " & source_ip );
@@ -342,7 +340,7 @@ begin
      -- when reading the whole log file.  In daemon mode, we know all entries
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
-        if ab.sshd_blocked <= probation_blocked then
+        if ab.smtp_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            ab.smtp_blocked    := short_blocked;
            ab.smtp_blocked_on := ts;
@@ -353,8 +351,6 @@ begin
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.sshd_blocked > probation_blocked then
               log_info( source_info.source_location ) @ ( "already SSHD blocked " & source_ip );
-           elsif ab.smtp_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already MAIL blocked " & source_ip );
            elsif ab.http_blocked > probation_blocked then
               log_info( source_info.source_location ) @ ( "already HTTP blocked " & source_ip );
            else
@@ -409,7 +405,7 @@ begin
      -- when reading the whole log file.  In daemon mode, we know all entries
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
-        if ab.sshd_blocked <= probation_blocked then
+        if ab.http_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            ab.http_blocked    := short_blocked;
            ab.http_blocked_on := ts;
@@ -422,8 +418,6 @@ begin
               log_info( source_info.source_location ) @ ( "already SSHD blocked " & source_ip );
            elsif ab.smtp_blocked > probation_blocked then
               log_info( source_info.source_location ) @ ( "already MAIL blocked " & source_ip );
-           elsif ab.http_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already HTTP blocked " & source_ip );
            else
               block( source_ip );
            end if;

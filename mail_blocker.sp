@@ -20,6 +20,11 @@ with separate "config/config.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 
+-- This type is used in several places but not here.  As a workaround,
+-- mark it used.  Until this is sorted out.
+
+pragma assumption( applied, comment_string );
+
 -- Command line options
 
 opt_daemon  : boolean := false;   -- true of -D used
@@ -68,8 +73,8 @@ begin
           smtp_violations_file_path := command_line.argument( arg_pos );
        end if;
     elsif arg = "-D" then
-       --opt_daemon;
-       opt_daemon := true;
+       opt_daemon;
+       --opt_daemon := true;
     else
        put_line( standard_error, "unknown option: " & arg );
        quit;
@@ -86,7 +91,6 @@ end handle_command_options;
   log_line : string;
   tmp : string;
   tmp2 : string;
-  http_status : http_status_string;
   logged_on : timestamp_string;
   raw_source_ip : raw_ip_string;
   source_ip : ip_string;
@@ -266,11 +270,9 @@ begin
      @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
      @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
 
-? "A";
+  -- TODO: not seeing end message in log?
   shutdown_blocking;
-? "B";
   shutdownWorld;
-? "C";
 
 exception when others =>
   log_error( source_info.source_location ) @ ( exceptions.exception_info );

@@ -27,50 +27,6 @@ with separate "lib/urls.inc.sp";
 opt_daemon  : boolean := false;   -- true of -D used
 
 -----------------------------------------------------------------------------
--- Attack Vectors
------------------------------------------------------------------------------
-
-  attack_vectors : dynamic_hash_tables.table( string );
-
-
--- SET ATTACK VECTOR
---
--- Setup an web log attack vector substring by adding it to the hash table.
------------------------------------------------------------------------------
-
-  procedure set_attack_vector( candidate : string ) is
-     key_code : key_codes;
-     key_code_string : string;
-  begin
-     key_code := to_key_code( candidate );
-     key_code_string := strings.image( key_code );
-     if dynamic_hash_tables.has_element( attack_vectors, key_code_string ) then
-        dynamic_hash_tables.append( attack_vectors, key_code_string, ASCII.LF & candidate );
-     else
-        dynamic_hash_tables.set( attack_vectors, key_code_string, candidate );
-     end if;
-  end set_attack_vector;
-
-
--- LOAD ATTACK VECTORS
---
--- Read the attack vector file, setting up each attack vector in the hash
--- table.  This should be done once, to load the vectors into memory.
------------------------------------------------------------------------------
-
-  procedure load_attack_vectors is
-     f : file_type;
-     s : string;
-  begin
-    open (f, in_file, "data/attack_vectors.txt" );
-    while not end_of_file( f ) loop
-       s := get_line( f );
-       set_attack_vector( s );
-    end loop;
-    close( f );
-  end load_attack_vectors;
-
------------------------------------------------------------------------------
 -- Web requests
 -----------------------------------------------------------------------------
 
@@ -96,14 +52,15 @@ begin
     log_info( source_info.source_location ) @ ( "there are" &
        strings.image( cnt ) & " request key codes" );
     cnt := 0;
-    dynamic_hash_tables.get_first( attack_vectors, s, eof );
-    while not eof loop
-       cnt := @+1;
-       dynamic_hash_tables.get_next( attack_vectors, s, eof );
-    end loop;
-    log_info( source_info.source_location ) @ ( "there are" &
-       strings.image( cnt ) & " attack vector key codes" );
+    --btree_io.get_first( vectors_file, , s, eof );
+    --while not eof loop
+    --   cnt := @+1;
+    --   dynamic_hash_tables.get_next( attack_vectors, s, eof );
+    --end loop;
+    --log_info( source_info.source_location ) @ ( "there are" &
+    --   strings.image( cnt ) & " attack vector key codes" );
 end count_web_request_codes;
+
 
 -- PREPARE WEB REQUEST
 --
@@ -139,7 +96,7 @@ end count_web_request_codes;
     key_code : key_codes;
     eof : boolean;
     key_code_string : string;
-    vectors : string;
+    vectors : an_attack_vector;
     vector : string;
     v : natural;
     found : boolean := false;
@@ -149,11 +106,11 @@ end count_web_request_codes;
          --if key_code /= 30 then
          if key_code /= 300 then
             key_code_string := strings.image( key_code );
-            if dynamic_hash_tables.has_element( attack_vectors, key_code_string ) then
-               vectors := dynamic_hash_tables.get( attack_vectors, key_code_string );
+            if btree_io.has_element( vectors_file, key_code_string ) then
+               btree_io.get( vectors_file, key_code_string, vectors);
                v := 1;
                loop
-                  vector := strings.field( vectors, v, ASCII.LF );
+                  vector := strings.field( vectors.vector, v, ASCII.LF );
                   exit when vector = "";
                   if strings.index( request, vector ) > 0 then
                      log_info( source_info.source_location ) @ (
@@ -247,12 +204,9 @@ begin
      return;
   end if;
 
-  -- TODO: move this
-  load_attack_vectors;
-
   startup_blocking;
 
-  load_attack_vectors;
+  btree_io.open( vectors_file, vectors_path, vectors_width, vectors_width );
 
   this_run_on := get_timestamp;
   record_cnt := 0;
@@ -317,11 +271,15 @@ begin
      @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
      @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
 
+  btree_io.close( vectors_file );
   shutdown_blocking;
   shutdownWorld;
 
 exception when others =>
   log_error( source_info.source_location ) @ ( exceptions.exception_info );
+  if btree_io.is_open( vectors_file ) then
+     btree_io.close( vectors_file );
+  end if;
   if is_open( f ) then
      close( f );
   end if;

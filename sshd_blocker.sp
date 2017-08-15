@@ -197,6 +197,7 @@ if mode in monitor_mode..honeypot_mode then
    end if;
 end if;
 
+check_known_logins;
 startup_blocking;
 
 if not opt_daemon and not opt_verbose then
