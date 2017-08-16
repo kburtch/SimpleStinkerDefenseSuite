@@ -167,8 +167,7 @@ begin
        put_line( version );
        quit;
     elsif arg = "-D" then
-       opt_daemon := true;
-       --opt_daemon;
+       opt_daemon;
     else
        put_line( standard_error, "unknown option: " & arg );
        quit;
@@ -206,6 +205,11 @@ begin
 
   startup_blocking;
 
+  if not opt_daemon and not opt_verbose then
+     put_line( "File: " & http_violations_file_path );
+     put_line( "Scanning records..." ); -- this will be overwritten
+  end if;
+
   btree_io.open( vectors_file, vectors_path, vectors_width, vectors_width );
 
   this_run_on := get_timestamp;
@@ -217,6 +221,15 @@ begin
      log_line := get_line( f );
      pragma debug( `? log_line;` );
      record_cnt := @+1;
+
+     -- show progress line
+
+     if not opt_daemon and not opt_verbose then
+        if record_cnt mod 250 = 0 then
+           show_progress_line( this_run_on, record_cnt, http_violations_file_path );
+        end if;
+     end if;
+
      tmp := strings.field( log_line, 3, '"' );
      http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
      if strings.index( " 400 401 403 404 405 413 414 500 ", string( http_status ) ) > 0 then
@@ -265,12 +278,19 @@ begin
         end if;
      end if;
   end loop;
-  close( f );
+
+  -- Complete progress line
+  if not opt_daemon and not opt_verbose then
+     tput cuu1;
+     tput el;
+     new_line;
+  end if;
 
   log_info( source_info.source_location )
      @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
      @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
 
+  close( f );
   btree_io.close( vectors_file );
   shutdown_blocking;
   shutdownWorld;
