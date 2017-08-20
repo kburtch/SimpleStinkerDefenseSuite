@@ -20,7 +20,7 @@ type an_attack_vector is record
 end record;
 
 vectors_file  : btree_io.file( an_attack_vector );
-vectors_path  : string := "data/http_vectors.btree";
+vectors_path  : file_path := "data/http_vectors.btree";
 vectors_width : natural := 2048;
 
 -- vim: ft=spar

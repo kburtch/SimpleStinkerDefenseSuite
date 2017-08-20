@@ -96,11 +96,17 @@ end handle_command_options;
   source_ip : ip_string;
   request : string;
   p : natural;
+  is_spam : boolean;
 
   attack_cnt : natural;
   record_cnt : natural;
 
 begin
+  -- Check for file existence
+  if not files.exists( string( smtp_violations_file_path ) ) then
+     raise configuration_error with "smtp violations file does not exist";
+  end if;
+
   setupWorld( "MAIL Blocker", "log/blocker.log" );
 
   -- Process command options
@@ -126,6 +132,7 @@ begin
      log_line := get_line( f );
      pragma debug( `? log_line;` );
      record_cnt := @+1;
+     is_spam := false;
 
    -- show progress line
 
@@ -223,6 +230,7 @@ begin
       logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
 --? "spam " & raw_source_ip & "/" & source_ip;
         attack_cnt := @+1;
+      is_spam;
    end if;
 
 -- Aug  3 21:05:34 pegasoft postfix/smtpd[6517]: connect from unknown[216.16.85.53]
@@ -254,7 +262,11 @@ begin
       if opt_daemon then
          this_run_on := get_timestamp;
       end if;
-      mail_record_and_block( source_ip, logged_on, this_run_on, true );
+      if is_spam then
+         spam_record_and_block( source_ip, logged_on, this_run_on, true );
+      else
+         mail_record_and_block( source_ip, logged_on, this_run_on, true );
+      end if;
    end if;
   end loop;
 

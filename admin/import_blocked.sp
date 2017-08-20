@@ -29,7 +29,7 @@ begin
   json_path := command_line.argument( 1 );
 
   cd .. ;
-  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+  btree_io.open( offender_file, "../" & offender_path, offender_buffer_width, offender_buffer_width );
   open( json_file, in_file, json_path );
   while not end_of_file( json_file ) loop
      j := json_string( get_line( json_file ) );

@@ -12,21 +12,7 @@ with separate "config/contributors.inc.sp";
 with separate "lib/world.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/key_codes.inc.sp";
-
-type attack_vector_kinds is ( unknown_vector, forbidden_vector, suspicious_vector );
-
-type attack_vector_handling is ( block_vector, whitelist_vector );
-
-type an_attack_vector is record
-  vector   : attack_vector_string;
-  kind     : attack_vector_kinds;
-  handling : attack_vector_handling;
-  comment  : comment_string;
-end record;
-
-vectors_file  : btree_io.file( an_attack_vector );
-vectors_path  : string := "data/http_vectors.btree";
-vectors_width : natural := 2048;
+with separate "lib/urls.inc.sp";
 
 -- SET ATTACK VECTOR
 --
@@ -43,7 +29,7 @@ vectors_width : natural := 2048;
      if btree_io.has_element( vectors_file, key_code_string ) then
         btree_io.get( vectors_file, key_code_string, old_v );
         old_v.vector := @ & ASCII.LF & v.vector;
-        btree_io.set( vectors_file, key_code_string, v );
+        btree_io.set( vectors_file, key_code_string, old_v );
      else
         btree_io.set( vectors_file, key_code_string, v );
      end if;

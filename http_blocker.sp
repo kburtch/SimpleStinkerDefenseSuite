@@ -151,6 +151,8 @@ end usage;
 --
 -----------------------------------------------------------------------------
 
+http_violations_file_path : file_path;
+
 function handle_command_options return boolean is
   quit : boolean := false;
   arg_pos : natural := 1;
@@ -161,6 +163,14 @@ begin
     if arg = "-h" or arg = "--help" then
        usage;
        quit;
+    elsif arg = "-f" then
+       arg_pos := @+1;
+       if arg_pos > command_line.argument_count then
+          put_line( standard_error, "missing argument for " & arg );
+          quit;
+       else
+          http_violations_file_path := command_line.argument( arg_pos );
+       end if;
     elsif arg = "-v" or arg = "--verbose" then
        opt_verbose;
     elsif arg = "-V" or arg = "--version" then
@@ -194,6 +204,17 @@ end handle_command_options;
   attack_cnt : natural;
 
 begin
+  -- Default
+  http_violations_file_path := http_violations_file_paths( 1 );
+
+  -- Check for file existence
+  if not files.exists( string( vectors_path ) ) then
+     raise configuration_error with "vectors file does not exist";
+  end if;
+  if not files.exists( string( http_violations_file_path ) ) then
+     raise configuration_error with "http violations file does not exist";
+  end if;
+
   setupWorld( "HTTP Blocker", "log/blocker.log" );
 
   -- Process command options
@@ -210,7 +231,7 @@ begin
      put_line( "Scanning records..." ); -- this will be overwritten
   end if;
 
-  btree_io.open( vectors_file, vectors_path, vectors_width, vectors_width );
+  btree_io.open( vectors_file, string( vectors_path ), vectors_width, vectors_width );
 
   this_run_on := get_timestamp;
   record_cnt := 0;
@@ -273,7 +294,7 @@ begin
            tmp := strings.insert( tmp, 4, tmp2 );
            logged_on := parse_timestamp( date_string( tmp ) );
            source_ip := validate_ip( raw_source_ip );
-           -- http_record_and_block( source_ip, logged_on, this_run_on, true );
+           http_record_and_block( source_ip, logged_on, this_run_on, true );
            attack_cnt := @+1;
         end if;
      end if;

@@ -21,8 +21,7 @@ procedure export_blocked is
   offender : an_offender;
   j : json_string;
 begin
-  cd .. ;
-  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+  btree_io.open( offender_file, "../" & offender_path, offender_buffer_width, offender_buffer_width );
   btree_io.open_cursor( offender_file, offender_cursor );
   btree_io.get_first( offender_file, offender_cursor, offender_key, offender );
   records.to_json( j, offender );

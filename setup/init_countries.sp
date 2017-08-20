@@ -11,6 +11,7 @@ pragma software_model( shell_script );
 with separate "config/contributors.inc.sp";
 with separate "lib/world.inc.sp";
 with separate "lib/common.inc.sp";
+with separate "lib/countries.inc.sp";
 
 countries_file : btree_io.file( country_data );
 

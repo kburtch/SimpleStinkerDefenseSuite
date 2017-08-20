@@ -10,7 +10,7 @@ type country_data is record
    suffix : string;
 end record;
 
-countries_path : constant string := "data/countries.btree";
+countries_path : constant file_path := "data/countries.btree";
 countries_width : constant positive := 128;
 
 -- vim: ft=spar

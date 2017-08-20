@@ -409,7 +409,7 @@ pragma todo( team,
 show_progress_line_size_cache : natural := 0;
 show_progress_line_last_modified : calendar.time;
 
-procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : string ) is
+procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : file_path ) is
   now       : timestamp_string;
   elapsed   : universal_numeric;
   estimated_cnt : natural;
@@ -428,11 +428,11 @@ begin
 
   now := get_timestamp;
   if show_progress_line_size_cache = 0 then
-     show_progress_line_last_modified := files.last_modified( violations_file );
+     show_progress_line_last_modified := files.last_modified( string( violations_file ) );
      show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file";` )
  );
   elsif current_cnt mod 1500 = 0 then
-     last_modified := files.last_modified( violations_file );
+     last_modified := files.last_modified( string( violations_file ) );
      if last_modified /= show_progress_line_last_modified then
         show_progress_line_last_modified := last_modified;
         show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file"; ` ) );

@@ -1,9 +1,9 @@
-- records.to_record giving too many identifiers / symbol table overflow error
-  - this should not be possible
-  - is it a json conversion error?
-- paths mixed up after moving import/export to admin/ folder
 
+- paths mixed up after moving import/export to admin/ folder
 - implement grace
+
+- port changes to http_daemon.sh to other daemons
+
 - ping
   - ping greatly slows the responsiveness...we need to defer it to the wash phase
   - ping errors
@@ -17,6 +17,9 @@
 - test with plain text disabled...does it still work?
 - import into tables
 - database tables, statistics gathering and reports
+  - performance stats
+
+- banning escallation
 
 - security patch metrics
   - which patches, when, how recently, how many over time
@@ -27,8 +30,6 @@ tail: ‘/var/log/secure’ has been replaced;  following end of new file
   whatever message was there.
 - if spar fails with an error, daemon script doesn't abort
 
-- web blocker
-- mail blocker
 - spar unit tests
 
 - other services

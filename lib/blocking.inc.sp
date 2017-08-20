@@ -22,22 +22,26 @@ type an_offender is record
      sshd_blocked    : blocking_status;
      sshd_blocked_on : timestamp_string;
      sshd_offenses   : natural;
-     sshd_grace      : natural;
+     sshd_grace      : grace_count;
      smtp_blocked    : blocking_status;
      smtp_blocked_on : timestamp_string;
      smtp_offenses   : natural;
-     smtp_grace      : natural;
+     smtp_grace      : grace_count;
+     spam_blocked    : blocking_status;
+     spam_blocked_on : timestamp_string;
+     spam_offenses   : natural;
+     spam_grace      : grace_count;
      http_blocked    : blocking_status;
      http_blocked_on : timestamp_string;
      http_offenses   : natural;
-     http_grace      : natural;
+     http_grace      : grace_count;
      created_on      : timestamp_string;
      logged_on       : timestamp_string;
      updated_on      : timestamp_string;
      data_type       : data_types;
 end record;
 
-offender_path : constant string := "data/blocked_ip.btree";
+offender_path : constant file_path := "data/blocked_ip.btree";
 offender_buffer_width : constant positive := 2048;
 
 offender_file : btree_io.file( an_offender );
@@ -245,6 +249,7 @@ end reset_firewall;
 
 procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
+  msg : string;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      ab.source_ip       := source_ip;
@@ -253,22 +258,36 @@ begin
      ab.location        := "";
      ab.sshd_blocked    := short_blocked;
      ab.sshd_blocked_on := ts;
-     ab.sshd_offenses   := 1;
-     ab.sshd_grace      := 0;
+     ab.sshd_offenses   := 0;
+     ab.sshd_grace      := default_grace+1;
      ab.smtp_blocked    := unblocked_blocked;
      ab.smtp_blocked_on := ts;
      ab.smtp_offenses   := 0;
-     ab.smtp_grace      := 0;
+     ab.smtp_grace      := default_grace+1;
+     ab.spam_blocked    := unblocked_blocked;
+     ab.spam_blocked_on := ts;
+     ab.spam_offenses   := 0;
+     ab.spam_grace      := default_grace+1;
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
      ab.http_offenses   := 0;
-     ab.http_grace      := 0;
+     ab.http_grace      := default_grace+1;
      ab.created_on      := ts;
      ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     if ab.sshd_grace > 0 then
+        ab.sshd_grace := @-1;
+        if ab.sshd_grace = 0 then
+           ab.sshd_offenses := @+1;
+        else -- DEBUG
+   log_info( source_info.file ) @ ( "SSHD grace for " & source_ip ); -- DEBUG
+        end if;
+     end if;
+     if ab.sshd_offenses > 0 then
+        block( source_ip );
+     end if;
      btree_io.set( offender_file, string( source_ip ), ab );
-     block( source_ip );
   else
      btree_io.get( offender_file, string( source_ip ), ab );
      -- TODO: logged_on is not a guarantee of uniqueness since there could
@@ -280,17 +299,35 @@ begin
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            ab.sshd_blocked    := short_blocked;
            ab.sshd_blocked_on := ts;
-           ab.sshd_offenses   := @+1;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
-         -- TODO: banned escallation
+           if ab.sshd_grace > 0 then
+              ab.sshd_grace := @-1;
+              if ab.sshd_grace = 0 then
+                 ab.sshd_offenses := @+1;
+              else -- DEBUG
+   log_info( source_info.file ) @ ( "SSHD grace for " & source_ip ); -- DEBUG
+              end if;
+           end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.smtp_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already MAIL blocked " & source_ip );
-           elsif ab.http_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already HTTP blocked " & source_ip );
-           else
-              block( source_ip );
+           if ab.sshd_offenses > 0 then
+         -- TODO: banned escallation
+              msg := "";
+              if ab.smtp_blocked > probation_blocked then
+                 msg := @ & " SMTP";
+              end if;
+              if ab.spam_blocked > probation_blocked then
+                 msg := " SPAM";
+              end if;
+              if ab.http_blocked > probation_blocked then
+                 msg := @ & " HTTP";
+              end if;
+              if msg /= "" then
+                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                   " SPAM offender already blocked for" & msg );
+              else
+                 block( source_ip );
+              end if;
            end if;
         --else -- DEBUG
         --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
@@ -301,6 +338,104 @@ begin
   end if;
 end sshd_record_and_block;
 
+-- SPAM RECORD AND BLOCK
+--
+-- Record the offending IP number and block it with the configured firewall.
+-- If it already has a record, update the existing record.
+-----------------------------------------------------------------------------
+
+procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
+  ab : an_offender;
+  msg : string;
+begin
+  if not btree_io.has_element( offender_file, string( source_ip ) ) then
+     ab.source_ip       := source_ip;
+     ab.source_name     := "";
+     ab.source_country  := "";
+     ab.location        := "";
+     ab.sshd_blocked    := short_blocked;
+     ab.sshd_blocked_on := ts;
+     ab.sshd_offenses   := 0;
+     ab.sshd_grace      := default_grace+1;
+     ab.smtp_blocked    := unblocked_blocked;
+     ab.smtp_blocked_on := ts;
+     ab.smtp_offenses   := 0;
+     ab.smtp_grace      := default_grace+1;
+     ab.spam_blocked    := unblocked_blocked;
+     ab.spam_blocked_on := ts;
+     ab.spam_offenses   := 0;
+     ab.spam_grace      := default_grace+1;
+     ab.http_blocked    := unblocked_blocked;
+     ab.http_blocked_on := ts;
+     ab.http_offenses   := 0;
+     ab.http_grace      := default_grace+1;
+     ab.created_on      := ts;
+     ab.logged_on       := logged_on;
+     ab.updated_on      := ts;
+     ab.data_type       := real_data;
+     if ab.spam_grace > 0 then
+        ab.spam_grace := @-1;
+        if ab.spam_grace = 0 then
+           ab.spam_offenses := @+1;
+        else -- DEBUG
+   log_info( source_info.file ) @ ( "SPAM grace for " & source_ip ); -- DEBUG
+        end if;
+     end if;
+     if ab.spam_offenses > 0 then
+        block( source_ip );
+     end if;
+     btree_io.set( offender_file, string( source_ip ), ab );
+  else
+     btree_io.get( offender_file, string( source_ip ), ab );
+     -- TODO: logged_on is not a guarantee of uniqueness since there could
+     -- be multiple attacks in a single second.  Also, this test only applies
+     -- when reading the whole log file.  In daemon mode, we know all entries
+     -- are new.
+     if is_daemon or ab.logged_on < logged_on then
+        if ab.spam_blocked <= probation_blocked then
+   --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
+           ab.spam_blocked    := short_blocked;
+           ab.spam_blocked_on := ts;
+           ab.logged_on       := logged_on;
+           ab.updated_on      := ts;
+           if ab.spam_grace > 0 then
+              ab.spam_grace := @-1;
+              if ab.spam_grace = 0 then
+                 ab.spam_offenses := @+1;
+              else -- DEBUG
+   log_info( source_info.file ) @ ( "SPAM grace for " & source_ip ); -- DEBUG
+              end if;
+           end if;
+           btree_io.set( offender_file, string( source_ip ), ab );
+           if ab.spam_offenses > 0 then
+         -- TODO: banned escallation
+              msg := "";
+              if ab.sshd_blocked > probation_blocked then
+                 msg := " SSDH";
+              end if;
+              if ab.smtp_blocked > probation_blocked then
+                 msg := @ & " SMTP";
+              end if;
+              if ab.http_blocked > probation_blocked then
+                 msg := @ & " HTTP";
+              end if;
+              if msg /= "" then
+                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                   " SPAM offender already blocked for" & msg );
+              else
+                 block( source_ip );
+              end if;
+           end if;
+        --else -- DEBUG
+        --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
+        end if;
+     --else
+        --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
+     end if;
+  end if;
+end spam_record_and_block;
+
+
 -- MAIL RECORD AND BLOCK
 --
 -- Record the offending IP number and block it with the configured firewall.
@@ -309,30 +444,45 @@ end sshd_record_and_block;
 
 procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
+  msg : string;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      ab.source_ip       := source_ip;
      ab.source_name     := "";
      ab.source_country  := "";
      ab.location        := "";
-     ab.sshd_blocked    := unblocked_blocked;
+     ab.sshd_blocked    := short_blocked;
      ab.sshd_blocked_on := ts;
      ab.sshd_offenses   := 0;
-     ab.sshd_grace      := 0;
+     ab.sshd_grace      := default_grace+1;
      ab.smtp_blocked    := unblocked_blocked;
      ab.smtp_blocked_on := ts;
-     ab.smtp_offenses   := 1;
-     ab.smtp_grace      := 0;
-     ab.http_blocked    := short_blocked;
+     ab.smtp_offenses   := 0;
+     ab.smtp_grace      := default_grace+1;
+     ab.spam_blocked    := unblocked_blocked;
+     ab.spam_blocked_on := ts;
+     ab.spam_offenses   := 0;
+     ab.spam_grace      := default_grace+1;
+     ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
      ab.http_offenses   := 0;
-     ab.http_grace      := 0;
+     ab.http_grace      := default_grace+1;
      ab.created_on      := ts;
      ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     if ab.smtp_grace > 0 then
+        ab.smtp_grace := @ - 1;
+        if ab.smtp_grace = 0 then
+           ab.smtp_offenses := @+1;
+        else -- DEBUG
+   log_info( source_info.file ) @ ( "SMTP grace for " & source_ip ); -- DEBUG
+        end if;
+     end if;
+     if ab.smtp_offenses > 0 then
+        block( source_ip );
+     end if;
      btree_io.set( offender_file, string( source_ip ), ab );
-     block( source_ip );
   else
      btree_io.get( offender_file, string( source_ip ), ab );
      -- TODO: logged_on is not a guarantee of uniqueness since there could
@@ -341,20 +491,38 @@ begin
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
         if ab.smtp_blocked <= probation_blocked then
-   --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
+           -- log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            ab.smtp_blocked    := short_blocked;
            ab.smtp_blocked_on := ts;
-           ab.smtp_offenses   := @+1;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
-         -- TODO: banned escallation
+           if ab.smtp_grace > 0 then
+              ab.smtp_grace := @-1;
+              if ab.smtp_grace = 0 then
+                 ab.smtp_offenses := @+1;
+              else -- DEBUG
+   log_info( source_info.file ) @ ( "SMTP grace for " & source_ip ); -- DEBUG
+              end if;
+           end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.sshd_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already SSHD blocked " & source_ip );
-           elsif ab.http_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already HTTP blocked " & source_ip );
-           else
-              block( source_ip );
+           if ab.spam_offenses > 0 then
+         -- TODO: banned escallation
+              msg := "";
+              if ab.sshd_blocked > probation_blocked then
+                 msg := " SSDH";
+              end if;
+              if ab.spam_blocked > probation_blocked then
+                 msg := @ & " SPAM";
+              end if;
+              if ab.http_blocked > probation_blocked then
+                 msg := @ & " HTTP";
+              end if;
+              if msg /= "" then
+                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                   " SMTP offender already blocked for" & msg );
+              else
+                 block( source_ip );
+              end if;
            end if;
         --else -- DEBUG
         --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
@@ -374,30 +542,45 @@ end mail_record_and_block;
 
 procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
+  msg : string;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      ab.source_ip       := source_ip;
      ab.source_name     := "";
      ab.source_country  := "";
      ab.location        := "";
-     ab.sshd_blocked    := unblocked_blocked;
+     ab.sshd_blocked    := short_blocked;
      ab.sshd_blocked_on := ts;
      ab.sshd_offenses   := 0;
-     ab.sshd_grace      := 0;
+     ab.sshd_grace      := default_grace+1;
      ab.smtp_blocked    := unblocked_blocked;
      ab.smtp_blocked_on := ts;
      ab.smtp_offenses   := 0;
-     ab.smtp_grace      := 0;
-     ab.http_blocked    := short_blocked;
+     ab.smtp_grace      := default_grace+1;
+     ab.spam_blocked    := unblocked_blocked;
+     ab.spam_blocked_on := ts;
+     ab.spam_offenses   := 0;
+     ab.spam_grace      := default_grace+1;
+     ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
-     ab.http_offenses   := 1;
-     ab.http_grace      := 0;
+     ab.http_offenses   := 0;
+     ab.http_grace      := default_grace+1;
      ab.created_on      := ts;
      ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     if ab.http_grace > 0 then
+        ab.http_grace := @-1;
+        if ab.http_grace = 0 then
+           ab.http_offenses := @+1;
+        else -- DEBUG
+   log_info( source_info.file ) @ ( "HTTP grace for " & source_ip ); -- DEBUG
+        end if;
+     end if;
+     if ab.http_offenses > 0 then
+        block( source_ip );
+     end if;
      btree_io.set( offender_file, string( source_ip ), ab );
-     block( source_ip );
   else
      btree_io.get( offender_file, string( source_ip ), ab );
      -- TODO: logged_on is not a guarantee of uniqueness since there could
@@ -409,17 +592,35 @@ begin
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            ab.http_blocked    := short_blocked;
            ab.http_blocked_on := ts;
-           ab.http_offenses   := @+1;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
-         -- TODO: banned escallation
+           if ab.http_grace > 0 then
+              ab.http_grace := @-1;
+              if ab.http_grace = 0 then
+                 ab.http_offenses := @+1;
+              else -- DEBUG
+   log_info( source_info.file ) @ ( "HTTP grace for " & source_ip ); -- DEBUG
+              end if;
+           end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.sshd_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already SSHD blocked " & source_ip );
-           elsif ab.smtp_blocked > probation_blocked then
-              log_info( source_info.source_location ) @ ( "already MAIL blocked " & source_ip );
-           else
-              block( source_ip );
+           if ab.http_offenses > 0 then
+         -- TODO: banned escallation
+              msg := "";
+              if ab.sshd_blocked > probation_blocked then
+                 msg := @ & " HTTP";
+              end if;
+              if ab.smtp_blocked > probation_blocked then
+                 msg := @ & " SMTP";
+              end if;
+              if ab.spam_blocked > probation_blocked then
+                 msg := " SPAM";
+              end if;
+              if msg /= "" then
+                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                   " SMTP offender already blocked for" & msg );
+              else
+                 block( source_ip );
+              end if;
            end if;
         --else -- DEBUG
         --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
@@ -443,10 +644,10 @@ end http_record_and_block;
 
 procedure startup_blocking is
 begin
-   if files.exists( offender_path ) then
-      btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+   if files.exists( string( offender_path ) ) then
+      btree_io.open( offender_file, string( offender_path ), offender_buffer_width, offender_buffer_width );
    else
-      btree_io.create( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+      btree_io.create( offender_file, string( offender_path ), offender_buffer_width, offender_buffer_width );
    end if;
 end startup_blocking;
 

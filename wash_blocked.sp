@@ -323,11 +323,32 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.smtp_blocked_on ) ) ) +
-                    60*60*24 * source_ip.sshd_offenses )
+                    60*60*24 * source_ip.smtp_offenses )
              )
           );
           if this_run_on > blocked_until then
              source_ip.smtp_blocked := probation_blocked;
+             log_info( source_info.file ) @ ( "probation for " & sip );
+             unblock( sip );
+             needs_updating;
+          end if;
+     when probation_blocked => null; -- TODO: record expiry
+     when banned_blocked => null;
+     when others => null;
+     end case;
+
+     case source_ip.spam_blocked is
+     when short_blocked =>
+          blocked_until :=
+            timestamp_string(
+              strings.trim(
+                strings.image(
+                  integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
+                    60*60*24 * source_ip.spam_offenses )
+             )
+          );
+          if this_run_on > blocked_until then
+             source_ip.spam_blocked := probation_blocked;
              log_info( source_info.file ) @ ( "probation for " & sip );
              unblock( sip );
              needs_updating;
@@ -344,7 +365,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    60*60*24 * source_ip.sshd_offenses )
+                    60*60*24 * source_ip.http_offenses )
              )
           );
           if this_run_on > blocked_until then

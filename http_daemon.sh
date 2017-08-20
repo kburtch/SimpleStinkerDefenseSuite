@@ -11,8 +11,10 @@ declare -r SCRIPT=${0##*/}
 declare -r BLOCKER_ROOT="/root/secure"
 declare -r HTTP_PIPE="$BLOCKER_ROOT""/run/http_pipe"
 declare -r HTTP_PID_FILE="$BLOCKER_ROOT""/run/http_daemon.pid"
+declare -r HTTP_TAIL_PID_FILE="$BLOCKER_ROOT""/run/http_tail_pids"
 declare -i TAIL_PID=0
 declare -i BLOCKER_PID=0
+declare -i STATUS=0
 declare    OPT_VERBOSE=
 
 #  CLEANUP
@@ -25,12 +27,19 @@ function cleanup {
      echo `date`": $SCRIPT: $LINENO: Stopping tail"
   fi
 
-  if [ "$TAIL_PID" -ne 0 ] ; then
-     /bin/ps -p "$TAIL_PID" > /dev/null
-     if [ "$?" -eq 0 ] ; then
-        kill "$TAIL_PID"
+  ( while read TAIL_PID ; do
+     if [ $TAIL_PID -ne 0 ] ; then
+        /bin/ps -p "$TAIL_PID" > /dev/null
+        if [ "$?" -eq 0 ] ; then
+           kill "$TAIL_PID"
+           if [ "$?" -eq 0 ] ; then
+              if [ -n "$OPT_VERBOSE" ] ; then
+                 echo "killed tail pid: $TAIL_PID"
+              fi
+           fi
+        fi
      fi
-  fi
+  done ) < "$HTTP_TAIL_PID_FILE"
 
   # Killing the tail should send EOF to the pipe.  As a precaution,
   # wait and force http blocker to stop if necessary.
@@ -52,8 +61,9 @@ function cleanup {
   if [ -n "$OPT_VERBOSE" ] ; then
      echo `date`": $SCRIPT: $LINENO: Removing named pipe"
   fi
-
   rm "$HTTP_PIPE"
+  rm "$HTTP_TAIL_PID_FILE"
+
   if [ -n "$OPT_VERBOSE" ] ; then
      echo `date`": $SCRIPT: $LINENO: Done"
   fi
@@ -154,20 +164,36 @@ fi
 # Continue reading even if the log file is rotated.
 
 if [ -n "$OPT_VERBOSE" ] ; then
-   echo `date`": $SCRIPT: $LINENO: Starting tail"
+   echo `date`": $SCRIPT: $LINENO: Starting tail(s)"
 fi
 
-# TODO: filename should come from configration file
-nice tail --follow=name --retry "/var/log/pegasoft-access_log" > "$HTTP_PIPE" &
-if [ $? -ne 0 ] ; then
-   echo `date`": $SCRIPT: $LINENO: tail failed - status $?" >&2
-   cleanup
-   exit
+FILES=`cd utils; spar export_http_file_paths`
+if [ "$FILES" = "" ] ; then
+   echo `date`": $SCRIPT: $LINENO: no files configured" >&2
+   exit 192
 fi
-TAIL_PID=$!
-if [ -n "$OPT_VERBOSE" ] ; then
-   echo `date`": $SCRIPT: $LINENO: tail pid: $TAIL_PID"
-fi
+
+echo "$FILES" | while read FILE ; do
+   if [ ! -f "$FILE" ] ; then
+      echo `date`": $SCRIPT: $LINENO: $FILE does not exist" >&2
+      exit 192
+   elif [ ! -r "$FILE" ] ; then
+      echo `date`": $SCRIPT: $LINENO: $FILE is not readable" >&2
+      exit 192
+   fi
+   nice tail --follow=name --retry "$FILE" > "$HTTP_PIPE" &
+   STATUS=$?
+   TAIL_PID=$!
+   if [ $STATUS -ne 0 ] ; then
+      echo `date`": $SCRIPT: $LINENO: tail failed - status $STATUS" >&2
+      cleanup
+      exit
+   fi
+   if [ -n "$OPT_VERBOSE" ] ; then
+      echo `date`": $SCRIPT: $LINENO: tail pid: $TAIL_PID"
+   fi
+   echo "$TAIL_PID" >> "$HTTP_TAIL_PID_FILE"
+done
 
 # Wait until finished (if ever)
 

@@ -170,6 +170,10 @@ begin
 end get_raw_username_and_ip_number;
 
 begin
+  -- Check for file existence
+  if not files.exists( string( sshd_violations_file_path ) ) then
+     raise configuration_error with "sshd violations file does not exist";
+  end if;
 
 setupWorld( "SSHD blocker", "log/blocker.log" );
 
@@ -190,10 +194,10 @@ end if;
 -- Logins are only tracked in honeypot mode
 
 if mode in monitor_mode..honeypot_mode then
-   if files.exists( sshd_logins_path ) then
-      btree_io.open( sshd_logins_file, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+   if files.exists( string( sshd_logins_path ) ) then
+      btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
    else
-      btree_io.create( sshd_logins_file, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+      btree_io.create( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
    end if;
 end if;
 

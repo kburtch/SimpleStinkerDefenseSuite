@@ -1,6 +1,6 @@
-# Stinker Defense Suite
+# Simple Stinker Defense Suite
 
-SDS is an adaptive firewall and basic security suite for cloud
+SSDS is an adaptive firewall and basic security suite for cloud
 servers.
 
 ## Licensing
@@ -10,7 +10,7 @@ The SparForte documentation is located in the doc/ directory.
 
 ## Requirements
 
-SDS is written in the SparForte language.
+SSDS is written in the SparForte language.
 It requires SparForte 2.1.
 It requires the Berkeley DB library.
 It also requires a Bourne Compatible shell (e.g. bash).

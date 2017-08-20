@@ -34,6 +34,9 @@ type comment_string is new string;
 type date_string is new string;
 type timestamp_string is new string;
 type country_string is new string;
+type file_path is new string;
+
+type grace_count is new natural;
 
 ------------------------------------------------------------------------------
 -- Usernames

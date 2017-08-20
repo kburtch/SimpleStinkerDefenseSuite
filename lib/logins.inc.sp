@@ -29,7 +29,7 @@ type a_sshd_login is record
      data_type       : data_types;
 end record;
 
-sshd_logins_path : constant string := "data/sshd_logins.btree";
+sshd_logins_path : constant file_path := "data/sshd_logins.btree";
 sshd_logins_buffer_width : constant positive := 2048;
 
 ------------------------------------------------------------------------------

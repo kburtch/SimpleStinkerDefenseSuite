@@ -12,6 +12,7 @@ procedure import_logins is
   with separate "../lib/world.inc.sp";
   with separate "../config/config.inc.sp";
   with separate "../lib/common.inc.sp";
+  with separate "../lib/logins.inc.sp";
 
   pragma restriction( no_external_commands );
 
@@ -31,7 +32,7 @@ begin
 
   cd .. ;
   -- TODO: create if not exist
-  btree_io.open( bt, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+  btree_io.open( bt, "../" & sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
   open( json_file, in_file, json_path );
   while not end_of_file( json_file ) loop
      j := json_string( get_line( json_file ) );

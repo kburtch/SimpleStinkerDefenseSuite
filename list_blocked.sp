@@ -13,6 +13,7 @@ procedure list_blocked is
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
+  with separate "lib/countries.inc.sp";
 
   pragma restriction( no_external_commands );
 
@@ -42,21 +43,77 @@ begin
             @( "  Location:  " & offender.location )
             @( "  SSHD:     " & strings.image( offender.sshd_offenses ) )
             @( "  SMTP:     " & strings.image( offender.smtp_offenses ) )
+            @( "  SPAM:     " & strings.image( offender.spam_offenses ) )
             @( "  HTTP:     " & strings.image( offender.http_offenses ) );
-     case offender.sshd_blocked is
-     when unblocked_blocked =>
-       put_line( "  SSHD Status:       unblocked" );
-     when probation_blocked =>
-       put_line( "  SSHD Status:       probation" );
-     when short_blocked =>
-       put_line( "  SSHD Status:       short blocked" );
-     when banned_blocked =>
-       put_line( "  SSHD Status:       banned" );
-     when blacklisted_blocked =>
-       put_line( "  SSHD Status:       blacklisted" );
-     when others =>
-       put_line( "  SSHD Status:       unknown" );
-     end case;
+     if offender.sshd_blocked = unblocked_blocked and
+        offender.smtp_blocked = unblocked_blocked and
+        offender.spam_blocked = unblocked_blocked and
+        offender.http_blocked = unblocked_blocked then
+        put_line( "  unblocked" );
+     elsif offender.sshd_blocked <= probation_blocked and
+        offender.smtp_blocked <= probation_blocked and
+        offender.spam_blocked <= probation_blocked and
+        offender.http_blocked <= probation_blocked then
+        put_line( "  probation" );
+     else
+        case offender.sshd_blocked is
+        when unblocked_blocked =>
+          put( "  SSHD unblocked" );
+        when probation_blocked =>
+          put( "  SSHD probation" );
+        when short_blocked =>
+          put( "  SSHD short blocked" );
+        when banned_blocked =>
+          put( "  SSHD banned" );
+        when blacklisted_blocked =>
+          put( "  SSHD blacklisted" );
+        when others =>
+          put( "  SSHD unknown" );
+        end case;
+        case offender.smtp_blocked is
+        when unblocked_blocked =>
+          put( "  SMTP unblocked" );
+        when probation_blocked =>
+          put( "  SMTP probation" );
+        when short_blocked =>
+          put( "  SMTP short blocked" );
+        when banned_blocked =>
+          put( "  SMTP banned" );
+        when blacklisted_blocked =>
+          put( "  SMTP blacklisted" );
+        when others =>
+          put( "  SMTP unknown" );
+        end case;
+        case offender.spam_blocked is
+        when unblocked_blocked =>
+          put( "  SPAM unblocked" );
+        when probation_blocked =>
+          put( "  SPAM probation" );
+        when short_blocked =>
+          put( "  SPAM short blocked" );
+        when banned_blocked =>
+          put( "  SPAM banned" );
+        when blacklisted_blocked =>
+          put( "  SPAM blacklisted" );
+        when others =>
+          put( "  SPAM unknown" );
+        end case;
+        case offender.http_blocked is
+        when unblocked_blocked =>
+          put( "  HTTP unblocked" );
+        when probation_blocked =>
+          put( "  HTTP probation" );
+        when short_blocked =>
+          put( "  HTTP short blocked" );
+        when banned_blocked =>
+          put( "  HTTP banned" );
+        when blacklisted_blocked =>
+          put( "  HTTP blacklisted" );
+        when others =>
+          put( "  HTTP unknown" );
+        end case;
+        new_line;
+     end if;
 
      btree_io.get_next( offender_file, offender_cursor, offender_key, offender );
   end loop;
