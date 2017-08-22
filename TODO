@@ -1,6 +1,5 @@
 
 - paths mixed up after moving import/export to admin/ folder
-- implement grace
 
 - port changes to http_daemon.sh to other daemons
 
@@ -19,7 +18,7 @@
 - database tables, statistics gathering and reports
   - performance stats
 
-- banning escallation
+- expiring after 3 months
 
 - security patch metrics
   - which patches, when, how recently, how many over time

@@ -254,6 +254,7 @@ end is_south_american_ip;
   end search_geoip;
 
   this_run_on : timestamp_string;
+  proposed_blocked_until : timestamp_string;
   blocked_until : timestamp_string;
   needs_updating : boolean := false;
   processing_cnt : natural := 0;
@@ -295,91 +296,165 @@ begin
         needs_updating;
      end if;
 
+     blocked_until := 0;
      case source_ip.sshd_blocked is
-     when short_blocked =>
-          blocked_until :=
+     when banned_blocked =>
+          proposed_blocked_until :=
             timestamp_string(
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                    60*60*24 * source_ip.sshd_offenses )
+                    60*60*24*7 * source_ip.sshd_offenses )
              )
           );
-          if this_run_on > blocked_until then
+          if this_run_on > proposed_blocked_until then
              source_ip.sshd_blocked := probation_blocked;
-             log_info( source_info.file ) @ ( "probation for " & sip );
-             unblock( sip );
              needs_updating;
           end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
+     when short_blocked =>
+          proposed_blocked_until :=
+            timestamp_string(
+              strings.trim(
+                strings.image(
+                  integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
+                    60*60*source_ip.sshd_offenses )
+             )
+          );
+          if this_run_on > proposed_blocked_until then
+             source_ip.sshd_blocked := probation_blocked;
+             needs_updating;
+          end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
      when probation_blocked => null;
-     when banned_blocked =>  null;
      when others => null;
      end case;
 
      case source_ip.smtp_blocked is
-     when short_blocked =>
-          blocked_until :=
+     when banned_blocked =>
+          proposed_blocked_until :=
             timestamp_string(
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.smtp_blocked_on ) ) ) +
-                    60*60*24 * source_ip.smtp_offenses )
+                    60*60*24*7 * source_ip.smtp_offenses )
              )
           );
-          if this_run_on > blocked_until then
+          if this_run_on > proposed_blocked_until then
              source_ip.smtp_blocked := probation_blocked;
-             log_info( source_info.file ) @ ( "probation for " & sip );
-             unblock( sip );
              needs_updating;
           end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
+     when short_blocked =>
+          proposed_blocked_until :=
+            timestamp_string(
+              strings.trim(
+                strings.image(
+                  integer( numerics.value( string( source_ip.smtp_blocked_on ) ) ) +
+                    60*60 * source_ip.smtp_offenses )
+             )
+          );
+          if this_run_on > proposed_blocked_until then
+             source_ip.smtp_blocked := probation_blocked;
+             needs_updating;
+          end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
      when probation_blocked => null; -- TODO: record expiry
-     when banned_blocked => null;
      when others => null;
      end case;
 
      case source_ip.spam_blocked is
-     when short_blocked =>
-          blocked_until :=
+     when banned_blocked =>
+          proposed_blocked_until :=
             timestamp_string(
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
-                    60*60*24 * source_ip.spam_offenses )
+                    60*60*24*7 * source_ip.spam_offenses )
              )
           );
-          if this_run_on > blocked_until then
+          if this_run_on > proposed_blocked_until then
              source_ip.spam_blocked := probation_blocked;
-             log_info( source_info.file ) @ ( "probation for " & sip );
-             unblock( sip );
              needs_updating;
           end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
+     when short_blocked =>
+          proposed_blocked_until :=
+            timestamp_string(
+              strings.trim(
+                strings.image(
+                  integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
+                    60*60 * source_ip.spam_offenses )
+             )
+          );
+          if this_run_on > proposed_blocked_until then
+             source_ip.spam_blocked := probation_blocked;
+             needs_updating;
+          end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
      when probation_blocked => null; -- TODO: record expiry
-     when banned_blocked => null;
      when others => null;
      end case;
 
      case source_ip.http_blocked is
-     when short_blocked =>
-          blocked_until :=
+     when banned_blocked =>
+          proposed_blocked_until :=
             timestamp_string(
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    60*60*24 * source_ip.http_offenses )
+                    60*60*24*7 * source_ip.http_offenses )
              )
           );
-          if this_run_on > blocked_until then
+          if this_run_on > proposed_blocked_until then
              source_ip.http_blocked := probation_blocked;
-             log_info( source_info.file ) @ ( "probation for " & sip );
-             unblock( sip );
              needs_updating;
           end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
+     when short_blocked =>
+          proposed_blocked_until :=
+            timestamp_string(
+              strings.trim(
+                strings.image(
+                  integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
+                    60*60 * source_ip.http_offenses )
+             )
+          );
+          if this_run_on > proposed_blocked_until then
+             source_ip.http_blocked := probation_blocked;
+             needs_updating;
+          end if;
+          if proposed_blocked_until > blocked_until then
+             blocked_until := proposed_blocked_until;
+          end if;
      when probation_blocked => null;
-     when banned_blocked => null;
      when others => null;
      end case;
 
      if needs_updating then
+        -- If some aspect has gone probationary and if the worst block
+        -- has expired, then mark the IP number as probationary.
+        if blocked_until > 0 then
+           if this_run_on > blocked_until then
+              log_info( source_info.file ) @ ( "probation for " & sip );
+              unblock( sip );
+           end if;
+        end if;
+
         updating_cnt := @+1;
         needs_updating := false;
         source_ip.updated_on := this_run_on;

@@ -8,10 +8,10 @@ pragma annotate( summary, "init_countries" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-with separate "config/contributors.inc.sp";
-with separate "lib/world.inc.sp";
-with separate "lib/common.inc.sp";
-with separate "lib/countries.inc.sp";
+with separate "../config/contributors.inc.sp";
+with separate "../lib/world.inc.sp";
+with separate "../lib/common.inc.sp";
+with separate "../lib/countries.inc.sp";
 
 countries_file : btree_io.file( country_data );
 
@@ -19,7 +19,7 @@ r : country_data;
 
 begin
 
-btree_io.create( countries_file, countries_path, countries_width, countries_width );
+btree_io.create( countries_file, "../" & string( countries_path ), countries_width, countries_width );
 r.iso3166 := "AD";
 r.common_name    := "Andorra";
 r.suffix  := ".ad";

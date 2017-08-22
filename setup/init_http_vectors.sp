@@ -8,11 +8,11 @@ pragma annotate( summary, "init_countries" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-with separate "config/contributors.inc.sp";
-with separate "lib/world.inc.sp";
-with separate "lib/common.inc.sp";
-with separate "lib/key_codes.inc.sp";
-with separate "lib/urls.inc.sp";
+with separate "../config/contributors.inc.sp";
+with separate "../lib/world.inc.sp";
+with separate "../lib/common.inc.sp";
+with separate "../lib/key_codes.inc.sp";
+with separate "../lib/urls.inc.sp";
 
 -- SET ATTACK VECTOR
 --
@@ -41,8 +41,8 @@ s : attack_vector_string;
 
 begin
 
-  btree_io.create( vectors_file, vectors_path, vectors_width, vectors_width );
-  open( f, in_file, "attack_vectors.txt" );
+  btree_io.create( vectors_file, "../" & string( vectors_path ), vectors_width, vectors_width );
+  open( f, in_file, "../data/attack_vectors.txt" );
   while not end_of_file( f ) loop
      s := get_line( f );
      v.vector := s;
