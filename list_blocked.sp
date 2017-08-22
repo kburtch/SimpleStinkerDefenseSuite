@@ -26,8 +26,8 @@ procedure list_blocked is
   country : country_data;
   country_name : string;
 begin
-  btree_io.open( countries_file, countries_path, countries_width, countries_width );
-  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+  btree_io.open( countries_file, string( countries_path ), countries_width, countries_width );
+  btree_io.open( offender_file, string( offender_path ), offender_buffer_width, offender_buffer_width );
   btree_io.open_cursor( offender_file, offender_cursor );
   btree_io.get_first( offender_file, offender_cursor, offender_key, offender );
   loop

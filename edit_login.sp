@@ -11,6 +11,7 @@ procedure edit_login is
   with separate "lib/world.inc.sp";
   with separate "config/config.inc.sp";
   with separate "lib/common.inc.sp";
+  with separate "lib/logins.inc.sp";
 
   pragma restriction( no_external_commands );
 
@@ -26,7 +27,7 @@ begin
      return;
   end if;
 
-  btree_io.open( sshd_logins_file, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+  btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
   btree_io.get( sshd_logins_file, key, login );
 
   put( "Username: " ) @ ( login.username ); new_line;

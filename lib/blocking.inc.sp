@@ -57,7 +57,7 @@ offender_file : btree_io.file( an_offender );
 procedure block( offender : ip_string ) is
 begin
   if mode = monitor_mode then
-     log_info( source_info.source_location ) @ ( "would have blocked " & offender );
+     log_info( source_info.source_location ) @ ( offender & " would have been blocked" );
   else
      case firewall_kind is
      when iptables_firewall =>
@@ -77,7 +77,7 @@ begin
      end case;
 
      if os.status = 0 then
-        log_info( source_info.source_location ) @ ( "blocked " & offender );
+        log_info( source_info.source_location ) @ ( offender & " was blocked" );
      else
         put_line( standard_error, "error " & strings.image( os.status ) & " on blocking " & offender );
      end if;
@@ -92,7 +92,7 @@ end block;
 procedure unblock( offender : ip_string ) is
 begin
   if mode = monitor_mode then
-     log_info( source_info.source_location ) @ ( "would have unblocked " & offender );
+     log_info( source_info.source_location ) @ ( offender & " would have been unblocked" );
   else
      case firewall_kind is
      when iptables_firewall =>
@@ -100,7 +100,7 @@ begin
        if $? = 0 then
           IPSET_CMD( "del", "blocklist", offender );
           if os.status = 0 then
-             log_info( source_info.source_location ) @ ( "unblocked " & offender );
+             log_info( source_info.source_location ) @ ( offender & " was unblocked" );
           else
              log_error( source_info.source_location ) @ ( "error" & strings.image( os.status ) & " on unblocking " & offender );
      end if;
@@ -275,12 +275,12 @@ begin
      ab.data_type       := real_data;
      if ab.grace > 0 then
         ab.grace := @-1;
-        if ab.grace = 0 then
-           ab.sshd_blocked    := short_blocked;
-           ab.sshd_offenses := @+1;
-        else -- DEBUG
-           log_info( source_info.file ) @ ( source_ip & " has SSHD grace" ); -- DEBUG
-        end if;
+     end if;
+     if ab.grace = 0 then
+        ab.sshd_blocked    := short_blocked;
+        ab.sshd_offenses := @+1;
+     else -- DEBUG
+        log_info( source_info.file ) @ ( source_ip & " has SSHD grace" ); -- DEBUG
      end if;
      if ab.sshd_offenses > 0 then
         block( source_ip );
@@ -299,17 +299,17 @@ begin
            ab.updated_on      := ts;
            if ab.grace > 0 then
               ab.grace := @-1;
-              if ab.grace = 0 then
-                 ab.sshd_blocked_on := ts;
-                 ab.sshd_offenses := @+1;
-                 if ab.sshd_offenses > banned_threshhold then
-                   ab.sshd_blocked := banned_blocked;
-                 else
-                   ab.sshd_blocked := short_blocked;
-                 end if;
-              else -- DEBUG
-                 log_info( source_info.file ) @ ( source_ip & " has SSHD grace" ); -- DEBUG
+           end if;
+           if ab.grace = 0 then
+              ab.sshd_blocked_on := ts;
+              ab.sshd_offenses := @+1;
+              if ab.sshd_offenses > banned_threshhold then
+                ab.sshd_blocked := banned_blocked;
+              else
+                ab.sshd_blocked := short_blocked;
               end if;
+           else
+              log_info( source_info.source_location ) @ ( source_ip & " has SSHD grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.sshd_offenses > 0 then
@@ -374,12 +374,12 @@ begin
      ab.data_type       := real_data;
      if ab.grace > 0 then
         ab.grace := @-1;
-        if ab.grace = 0 then
-           ab.smtp_blocked    := short_blocked;
-           ab.smtp_offenses := @+1;
-        else -- DEBUG
-           log_info( source_info.file ) @ ( source_ip & " has SMTP grace" ); -- DEBUG
-        end if;
+     end if;
+     if ab.grace = 0 then
+        ab.smtp_blocked    := short_blocked;
+        ab.smtp_offenses := @+1;
+     else
+        log_info( source_info.source_location ) @ ( source_ip & " has SMTP grace" );
      end if;
      if ab.smtp_offenses > 0 then
         block( source_ip );
@@ -398,17 +398,17 @@ begin
            ab.updated_on      := ts;
            if ab.grace > 0 then
               ab.grace := @-1;
-              if ab.grace = 0 then
-                 ab.smtp_blocked_on := ts;
-                 ab.smtp_offenses := @+1;
-                 if ab.smtp_offenses > banned_threshhold then
-                   ab.smtp_blocked := banned_blocked;
-                 else
-                   ab.smtp_blocked := short_blocked;
-                 end if;
-              else -- DEBUG
-                 log_info( source_info.file ) @ ( source_ip & " has SMTP grace" ); -- DEBUG
+           end if;
+           if ab.grace = 0 then
+              ab.smtp_blocked_on := ts;
+              ab.smtp_offenses := @+1;
+              if ab.smtp_offenses > banned_threshhold then
+                ab.smtp_blocked := banned_blocked;
+              else
+                ab.smtp_blocked := short_blocked;
               end if;
+           else
+              log_info( source_info.source_location ) @ ( source_ip & " has SMTP grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.spam_offenses > 0 then
@@ -473,12 +473,12 @@ begin
      ab.data_type       := real_data;
      if ab.grace > 0 then
         ab.grace := @-1;
-        if ab.grace = 0 then
-           ab.spam_blocked  := short_blocked;
-           ab.spam_offenses := @+1;
-        else -- DEBUG
-           log_info( source_info.file ) @ ( source_ip & " has SPAM grace" ); -- DEBUG
-        end if;
+     end if;
+     if ab.grace = 0 then
+        ab.spam_blocked  := short_blocked;
+        ab.spam_offenses := @+1;
+     else
+        log_info( source_info.source_location ) @ ( source_ip & " has SPAM grace" );
      end if;
      if ab.spam_offenses > 0 then
         block( source_ip );
@@ -497,17 +497,17 @@ begin
            ab.updated_on      := ts;
            if ab.grace > 0 then
               ab.grace := @-1;
-              if ab.grace = 0 then
-                 ab.spam_blocked_on := ts;
-                 ab.spam_offenses := @+1;
-                 if ab.spam_offenses > banned_threshhold then
-                   ab.spam_blocked := banned_blocked;
-                 else
-                   ab.spam_blocked := short_blocked;
-                 end if;
-              else -- DEBUG
-                log_info( source_info.file ) @ ( source_ip & " has SPAM grace" ); -- DEBUG
+           end if;
+           if ab.grace = 0 then
+              ab.spam_blocked_on := ts;
+              ab.spam_offenses := @+1;
+              if ab.spam_offenses > banned_threshhold then
+                ab.spam_blocked := banned_blocked;
+              else
+                ab.spam_blocked := short_blocked;
               end if;
+           else
+             log_info( source_info.source_location ) @ ( source_ip & " has SPAM grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.spam_offenses > 0 then
@@ -572,12 +572,12 @@ begin
      ab.data_type       := real_data;
      if ab.grace > 0 then
         ab.grace := @-1;
-        if ab.grace = 0 then
-           ab.http_blocked    := short_blocked;
-           ab.http_offenses := @+1;
-        else -- DEBUG
-           log_info( source_info.file ) @ ( source_ip & " has HTTP grace" ); -- DEBUG
-        end if;
+     end if;
+     if ab.grace = 0 then
+        ab.http_blocked    := short_blocked;
+        ab.http_offenses := @+1;
+     else
+        log_info( source_info.source_location ) @ ( source_ip & " has HTTP grace" );
      end if;
      if ab.http_offenses > 0 then
         block( source_ip );
@@ -596,17 +596,17 @@ begin
            ab.updated_on      := ts;
            if ab.grace > 0 then
               ab.grace := @-1;
-              if ab.grace = 0 then
-                 ab.http_blocked_on := ts;
-                 ab.http_offenses := @+1;
-                 if ab.http_offenses > banned_threshhold then
-                   ab.http_blocked := banned_blocked;
-                 else
-                   ab.http_blocked := short_blocked;
-                 end if;
-              else -- DEBUG
-                 log_info( source_info.file ) @ ( source_ip & " has HTTP grace" ); -- DEBUG
+           end if;
+           if ab.grace = 0 then
+              ab.http_blocked_on := ts;
+              ab.http_offenses := @+1;
+              if ab.http_offenses > banned_threshhold then
+                ab.http_blocked := banned_blocked;
+              else
+                ab.http_blocked := short_blocked;
               end if;
+           else
+              log_info( source_info.source_location ) @ ( source_ip & " has HTTP grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.http_offenses > 0 then

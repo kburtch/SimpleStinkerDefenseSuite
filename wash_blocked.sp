@@ -23,6 +23,10 @@ procedure wash_blocked is
   pragma assumption( applied, country_data );
   pragma assumption( applied, comment_string );
 
+  months_3 : constant natural := 60*60*24*30*3;
+  weeks_1  : constant natural := 60*60*24*7;
+  hours_1  : constant natural := 60*60;
+
      --put_line( `ping -c 1 -W 5 "$sip" | head -2 ;` );
      --source_host := `ping -c 1 -W 5 "$sip" | head -2 | tail -1 | cut -c15- | cut -d' ' -f1 ;`;
      --if source_host = dns_string( sip ) & ":" then
@@ -292,11 +296,11 @@ begin
         source_ip.source_name := source_host;
         source_ip.source_country := source_country;
         source_ip.location := source_location;
-        log_info( source_info.file ) @ ( "updating dns and geo location for " & sip );
+        log_info( source_info.source_location ) @ ( sip & " updated for dns and geo location" );
         needs_updating;
      end if;
 
-     blocked_until := 0;
+     blocked_until := "";
      case source_ip.sshd_blocked is
      when banned_blocked =>
           proposed_blocked_until :=
@@ -304,7 +308,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                    60*60*24*7 * source_ip.sshd_offenses )
+                    weeks_1 * source_ip.sshd_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -320,7 +324,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                    60*60*source_ip.sshd_offenses )
+                    hours_1 * source_ip.sshd_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -341,7 +345,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.smtp_blocked_on ) ) ) +
-                    60*60*24*7 * source_ip.smtp_offenses )
+                    weeks_1 * source_ip.smtp_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -357,7 +361,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.smtp_blocked_on ) ) ) +
-                    60*60 * source_ip.smtp_offenses )
+                    hours_1 * source_ip.smtp_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -367,7 +371,7 @@ begin
           if proposed_blocked_until > blocked_until then
              blocked_until := proposed_blocked_until;
           end if;
-     when probation_blocked => null; -- TODO: record expiry
+     when probation_blocked => null;
      when others => null;
      end case;
 
@@ -378,7 +382,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
-                    60*60*24*7 * source_ip.spam_offenses )
+                    weeks_1 * source_ip.spam_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -394,7 +398,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
-                    60*60 * source_ip.spam_offenses )
+                    hours_1 * source_ip.spam_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -404,7 +408,7 @@ begin
           if proposed_blocked_until > blocked_until then
              blocked_until := proposed_blocked_until;
           end if;
-     when probation_blocked => null; -- TODO: record expiry
+     when probation_blocked => null;
      when others => null;
      end case;
 
@@ -415,7 +419,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    60*60*24*7 * source_ip.http_offenses )
+                    weeks_1 * source_ip.http_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -431,7 +435,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    60*60 * source_ip.http_offenses )
+                    hours_1 * source_ip.http_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -445,12 +449,28 @@ begin
      when others => null;
      end case;
 
-     if needs_updating then
+     -- Check and remove old records
+
+     if not needs_updating then
+          proposed_blocked_until :=
+            timestamp_string(
+              strings.trim(
+                strings.image(
+                  integer( numerics.value( string( source_ip.updated_on ) ) ) +
+                    months_3 )
+             )
+          );
+          -- TODO: might be better if this was pre-calculated
+          if this_run_on > proposed_blocked_until then
+             btree_io.remove( offender_file, key );
+             log_info( source_info.source_location ) @ ( sip & " removed" );
+          end if;
+     else -- needs updating
         -- If some aspect has gone probationary and if the worst block
         -- has expired, then mark the IP number as probationary.
-        if blocked_until > 0 then
+        if blocked_until /= "" then
            if this_run_on > blocked_until then
-              log_info( source_info.file ) @ ( "probation for " & sip );
+              log_info( source_info.source_location ) @ ( sip & " on probation" );
               unblock( sip );
            end if;
         end if;
@@ -464,6 +484,7 @@ begin
            log_error( source_info.source_location )
                    @( exceptions.exception_info );
         end;
+        -- TODO: do I need this next line?
         btree_io.get( offender_file, key, source_ip );
      end if;
      btree_io.raise_exceptions( offender_file, false );

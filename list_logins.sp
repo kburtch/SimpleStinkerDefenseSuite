@@ -22,7 +22,7 @@ procedure list_logins is
   login : a_sshd_login;
   cnt : natural := 0;
 begin
-  btree_io.open( sshd_logins_file, sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+  btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
   btree_io.open_cursor( sshd_logins_file, sshd_cursor );
   btree_io.get_first( sshd_logins_file, sshd_cursor, login_key, login );
   put( login.username ) @ ( " " );

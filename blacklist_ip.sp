@@ -31,7 +31,7 @@ begin
 
   this_run_on := get_timestamp;
 
-  btree_io.open( offender_file, offender_path, offender_buffer_width, offender_buffer_width );
+  btree_io.open( offender_file, string( offender_path ), offender_buffer_width, offender_buffer_width );
 
   if btree_io.has_element( offender_file, string( source_ip ) ) then
      btree_io.get( offender_file, string( source_ip ), offender );
