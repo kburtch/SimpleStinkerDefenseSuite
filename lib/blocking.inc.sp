@@ -280,7 +280,7 @@ begin
         ab.sshd_blocked    := short_blocked;
         ab.sshd_offenses := @+1;
      else -- DEBUG
-        log_info( source_info.file ) @ ( source_ip & " has SSHD grace" ); -- DEBUG
+        log_info( source_info.source_location ) @ ( source_ip & " has SSHD grace" ); -- DEBUG
      end if;
      if ab.sshd_offenses > 0 then
         block( source_ip );
@@ -312,7 +312,7 @@ begin
               log_info( source_info.source_location ) @ ( source_ip & " has SSHD grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.sshd_offenses > 0 then
+           if ab.sshd_blocked > probation_blocked then
               msg := "";
               if ab.smtp_blocked > probation_blocked then
                  msg := @ & " SMTP";
@@ -411,10 +411,10 @@ begin
               log_info( source_info.source_location ) @ ( source_ip & " has SMTP grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.spam_offenses > 0 then
+           if ab.smtp_blocked > probation_blocked then
               msg := "";
               if ab.sshd_blocked > probation_blocked then
-                 msg := " SSDH";
+                 msg := " SSHD";
               end if;
               if ab.spam_blocked > probation_blocked then
                  msg := @ & " SPAM";
@@ -510,7 +510,7 @@ begin
              log_info( source_info.source_location ) @ ( source_ip & " has SPAM grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.spam_offenses > 0 then
+           if ab.spam_blocked > probation_blocked then
               msg := "";
               if ab.sshd_blocked > probation_blocked then
                  msg := " SSDH";
@@ -609,10 +609,10 @@ begin
               log_info( source_info.source_location ) @ ( source_ip & " has HTTP grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.http_offenses > 0 then
+           if ab.http_blocked > probation_blocked then
               msg := "";
               if ab.sshd_blocked > probation_blocked then
-                 msg := @ & " HTTP";
+                 msg := @ & " SSHD";
               end if;
               if ab.smtp_blocked > probation_blocked then
                  msg := @ & " SMTP";
@@ -622,7 +622,7 @@ begin
               end if;
               if msg /= "" then
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
-                   " SMTP offender already blocked for" & msg );
+                   " HTTP offender already blocked for" & msg );
               else
                  block( source_ip );
               end if;

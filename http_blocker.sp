@@ -92,7 +92,7 @@ end count_web_request_codes;
 -- the web request for the presence of attack vector substrings.
 -----------------------------------------------------------------------------
 
-  function suspicious_web_request( request : string ) return boolean is
+  function suspicious_web_request( request : string; source_ip : ip_string ) return boolean is
     key_code : key_codes;
     eof : boolean;
     key_code_string : string;
@@ -114,7 +114,8 @@ end count_web_request_codes;
                   exit when vector = "";
                   if strings.index( request, vector ) > 0 then
                      log_info( source_info.source_location ) @ (
-                       "found suspicious web request '" &
+                       string( source_ip ) &
+                       " made a suspicious web request '" &
                         strings.to_escaped( request ) &
                         "' with '" &
                         strings.to_escaped( vector ) & "'" );
@@ -255,10 +256,11 @@ begin
      http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
      if strings.index( " 400 401 403 404 405 413 414 500 ", string( http_status ) ) > 0 then
         request := strings.field( log_line, 2, '"' ) & strings.field( log_line, 6, '"' );
+        raw_source_ip := raw_ip_string( strings.field( log_line, 1, ' ' ) );
+        source_ip := validate_ip( raw_source_ip );
         prepare_web_request( request );
-        if suspicious_web_request( request ) then
+        if suspicious_web_request( request, source_ip ) then
            -- remove colon in middle of date/time
-           raw_source_ip := raw_ip_string( strings.field( log_line, 1, ' ' ) );
            -- convert month to number
            tmp := strings.field( log_line, 2, '[' );
            tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
@@ -293,8 +295,11 @@ begin
            tmp := strings.delete( tmp, 1, 3 );
            tmp := strings.insert( tmp, 4, tmp2 );
            logged_on := parse_timestamp( date_string( tmp ) );
-           source_ip := validate_ip( raw_source_ip );
-           http_record_and_block( source_ip, logged_on, this_run_on, true );
+           if source_ip /= "" then
+              http_record_and_block( source_ip, logged_on, this_run_on, true );
+           else
+              log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
+           end if;
            attack_cnt := @+1;
         end if;
      end if;
