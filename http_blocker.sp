@@ -132,6 +132,66 @@ end count_web_request_codes;
   end suspicious_web_request;
 
 
+--  IS SEARCH ENGINE
+--
+-- True if name seems to be a major search engine.  The name comes from
+-- nslookup and includes trailing period.
+-----------------------------------------------------------------------------
+
+function is_search_engine( dns_host: dns_string; source_ip : ip_string ) return boolean is
+  found : boolean := false;
+  host  : string;
+begin
+  host := string( dns_host ) & "~";
+  -- Archive.org
+  found := strings.index( host, ".archive.org.~" ) > 0;
+  if not found then
+     -- China
+     found := strings.index( host, "crawl.baidu.com.~" ) > 0;
+  end if;
+  if not found then
+     -- France
+     found := strings.index( host, "exabot.com.~" ) > 0;
+  end if;
+  if not found then
+     -- Google
+     found := strings.index( host, "googlebot.com.~" ) > 0;
+  end if;
+  if not found then
+     -- Japan / Korea
+     found := strings.index( host, "naver.jp.~" ) > 0;
+  end if;
+  if not found then
+     -- Microsoft
+     found := strings.index( host, "search.msn.com.~" ) > 0;
+  end if;
+  if not found then
+     -- Czek Republic search engine
+     found := strings.index( host, ".seznam.cz.~" ) > 0;
+  end if;
+  if not found then
+     found := strings.index( host, "softlayer.com.~" ) > 0;
+  end if;
+  if not found then
+     -- Slurp URL's hard to distinguish from basic yahoo.com
+     found := strings.index( host, ".yahoo.com.~" ) > 0;
+  end if;
+  if not found then
+     -- Slurp URL's hard to distinguish from basic yahoo.com
+     found := strings.index( host, ".yahoo.net.~" ) > 0;
+  end if;
+  if not found then
+      -- Russia
+     found := strings.index( host, "yandex.com.~" ) > 0;
+  end if;
+  if found then
+     log_warning( source_info.source_location ) @ ( source_ip ) @
+                ( " is whitelisted as a seach engine" );
+  end if;
+  return found;
+end is_search_engine;
+
+
 -----------------------------------------------------------------------------
 -- Housekeeping
 -----------------------------------------------------------------------------
@@ -199,6 +259,7 @@ end handle_command_options;
   logged_on : timestamp_string;
   raw_source_ip : raw_ip_string;
   source_ip : ip_string;
+  host : dns_string;
   request : string;
 
   record_cnt : natural;
@@ -260,47 +321,50 @@ begin
         source_ip := validate_ip( raw_source_ip );
         prepare_web_request( request );
         if suspicious_web_request( request, source_ip ) then
-           -- remove colon in middle of date/time
-           -- convert month to number
-           tmp := strings.field( log_line, 2, '[' );
-           tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
-           tmp := strings.replace_slice( tmp, 12, 12, ' ' );
-           if strings.index( tmp, "Jan" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "01" );
-           elsif strings.index( tmp, "Feb" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "02" );
-           elsif strings.index( tmp, "Mar" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "03" );
-           elsif strings.index( tmp, "Apr" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "04" );
-           elsif strings.index( tmp, "May" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "05" );
-           elsif strings.index( tmp, "Jun" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "06" );
-           elsif strings.index( tmp, "Jul" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "07" );
-           elsif strings.index( tmp, "Aug" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "08" );
-           elsif strings.index( tmp, "Sep" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "09" );
-           elsif strings.index( tmp, "Oct" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "10" );
-           elsif strings.index( tmp, "Nov" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "11" );
-           elsif strings.index( tmp, "Dec" ) > 0 then
-             tmp := strings.replace_slice( tmp, 4, 6, "12" );
+           host := get_ip_host_name( source_ip );
+           if not is_search_engine( host, source_ip ) then
+              -- remove colon in middle of date/time
+              -- convert month to number
+              tmp := strings.field( log_line, 2, '[' );
+              tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
+              tmp := strings.replace_slice( tmp, 12, 12, ' ' );
+              if strings.index( tmp, "Jan" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "01" );
+              elsif strings.index( tmp, "Feb" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "02" );
+              elsif strings.index( tmp, "Mar" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "03" );
+              elsif strings.index( tmp, "Apr" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "04" );
+              elsif strings.index( tmp, "May" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "05" );
+              elsif strings.index( tmp, "Jun" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "06" );
+              elsif strings.index( tmp, "Jul" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "07" );
+              elsif strings.index( tmp, "Aug" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "08" );
+              elsif strings.index( tmp, "Sep" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "09" );
+              elsif strings.index( tmp, "Oct" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "10" );
+              elsif strings.index( tmp, "Nov" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "11" );
+              elsif strings.index( tmp, "Dec" ) > 0 then
+                tmp := strings.replace_slice( tmp, 4, 6, "12" );
+              end if;
+              -- swap day and month
+              tmp2 := strings.head( tmp, 3 );
+              tmp := strings.delete( tmp, 1, 3 );
+              tmp := strings.insert( tmp, 4, tmp2 );
+              logged_on := parse_timestamp( date_string( tmp ) );
+              if source_ip /= "" then
+                 http_record_and_block( source_ip, logged_on, this_run_on, true );
+              else
+                 log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
+              end if;
+              attack_cnt := @+1;
            end if;
-           -- swap day and month
-           tmp2 := strings.head( tmp, 3 );
-           tmp := strings.delete( tmp, 1, 3 );
-           tmp := strings.insert( tmp, 4, tmp2 );
-           logged_on := parse_timestamp( date_string( tmp ) );
-           if source_ip /= "" then
-              http_record_and_block( source_ip, logged_on, this_run_on, true );
-           else
-              log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
-           end if;
-           attack_cnt := @+1;
         end if;
      end if;
   end loop;

@@ -367,7 +367,7 @@ begin
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
      ab.http_offenses   := 0;
-     ab.grace           := default_grace+1;
+     ab.grace           := mail_grace+1;
      ab.created_on      := ts;
      ab.logged_on       := logged_on;
      ab.updated_on      := ts;
@@ -466,7 +466,7 @@ begin
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
      ab.http_offenses   := 0;
-     ab.grace           := default_grace+1;
+     ab.grace           := mail_grace+1;
      ab.created_on      := ts;
      ab.logged_on       := logged_on;
      ab.updated_on      := ts;

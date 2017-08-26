@@ -1,16 +1,32 @@
 # Simple Stinker Defense Suite
 
-SSDS is an adaptive firewall and basic security suite for cloud
-servers.
+SSDS is an adaptive firewall and basic security suite for
+Linux cloud servers.
 
 ## Licensing
 
 COPYING contains information about the GPL licence.
 The SparForte documentation is located in the doc/ directory.
 
+## Summary
+
+SSDS is a drop-in system providing baseline security services for
+Linux cloud computers, giving adequate protection for most
+businesses without requiring a lot of effort.
+
+The SSDS firewall monitors a cloud server for incoming suspicious
+activity and immediately disrupts the offending computer.  If there
+is targetted activity against the computer, the offending computer
+is banned for days or weeks.  This disrupts searches for
+vulnerabilities on your server, stop DOS attacks and frees server
+resources from dealing with these offenders.
+
+Friendly or authorized computers can be whitelisted.  Unfriendly or
+unauthorized servers can be blacklisted.
+
 ## Requirements
 
-SSDS is written in the SparForte language.
+SSDS is written in the SparForte, a high-integrity language.
 It requires SparForte 2.1.
 It requires the Berkeley DB library.
 It also requires a Bourne Compatible shell (e.g. bash).
@@ -24,8 +40,12 @@ Run the check security config script to check your server setup.
 Edit the file config/config.inc.sp and customize the settings
 to your system.
 
+Select monitor\_mode if you want to test the software first.
+
 Run the sshd, mail and http daemons on boot.
-Run wash blocked from cron every hour or as often as neededneeded.
+Run wash blocked from cron every hour or as often as needed.
+
+Configure your log rotation software to rotate the log file.
 
 TODO: there will be a master daemon to manage the smaller daemons.
 

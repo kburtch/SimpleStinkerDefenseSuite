@@ -373,6 +373,46 @@ begin
   return cache_last_ip_addr_ip( 1 );
 end get_ip_number;
 
+
+--  GET IP HOST NAME
+--
+-- Return the (first) hostname for an IP number.  An empty string is returned
+-- if none was found.
+-----------------------------------------------------------------------------
+pragma todo( team,
+  "reverse dns lookup to confirm ip address",
+  work_measure.story_points, 5,
+  work_priority.level, 'l' );
+
+function get_ip_host_name( source_ip : ip_string ) return dns_string is
+   tmp : string;
+begin
+  -- Check to see if we already looked it up recently
+  for i in arrays.first( cache_last_ip_addr_ip )..arrays.last( cache_last_ip_addr_ip ) loop
+      if cache_last_ip_addr_ip( i ) = source_ip then
+         return cache_last_ip_addr_addr( i );
+      end if;
+  end loop;
+
+  -- Look up the host name for the ip number
+  tmp := `nslookup "$source_ip" | fgrep "name =" | head -1 | cut -d= -f2 ;`;
+  if tmp /= "" then
+     tmp := strings.delete( @, 1, 1 );
+  end if;
+
+  -- If we found one, cache it
+  if $? = 0 and tmp /= "" then
+      arrays.shift_right( cache_last_ip_addr_addr );
+      cache_last_ip_addr_addr( 1 ) := dns_string( tmp );
+      arrays.shift_right( cache_last_ip_addr_ip );
+      cache_last_ip_addr_ip( 1 ) := source_ip;
+  else
+      log_warning( source_info.file ) @ ( "nslookup unable to identify ip number " & source_ip );
+  end if;
+
+  return dns_string( tmp );
+end get_ip_host_name;
+
 ------------------------------------------------------------------------------
 -- Strings
 ------------------------------------------------------------------------------
