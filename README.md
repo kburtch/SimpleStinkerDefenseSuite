@@ -6,7 +6,7 @@ Linux cloud servers.
 ## Licensing
 
 COPYING contains information about the GPL licence.
-The SparForte documentation is located in the doc/ directory.
+The SSDS documentation is located in the doc/ directory.
 
 ## Summary
 
