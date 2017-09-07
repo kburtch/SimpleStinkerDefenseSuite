@@ -19,8 +19,9 @@ version : constant string := "0.1";
 
 type shell_import_string is new string;
 
-HOSTNAME : constant shell_import_string := "";
-pragma import( shell, HOSTNAME );
+HOSTNAME : shell_import_string := "";
+pragma unchecked_import( shell, HOSTNAME );
+-- this is unchecked as hostname may not be defined if run from cron
 
 ------------------------------------------------------------------------------
 -- STANDARD DATA TYPES

@@ -4,6 +4,8 @@ separate;
 
 opt_verbose : boolean := false;   -- true of -v used
 
+--PING_CMD    : constant command := "/bin/ping";
+
 ------------------------------------------------------------------------------
 -- Data categories
 ------------------------------------------------------------------------------
@@ -339,7 +341,7 @@ type a_dns_cache is array(1..9) of dns_string;
 type a_ip_cache is array(1..9) of ip_string;
 
 cache_last_ip_addr_addr : a_dns_cache := ("-","-","-","-","-","-","-","-","-");
-cache_last_ip_addr_ip   : a_ip_cache; -- ip_string;
+cache_last_ip_addr_ip   : a_ip_cache  := ("-","-","-","-","-","-","-","-","-");
 
 function get_ip_number( addr : dns_string ) return ip_string is
   s : string;
@@ -356,12 +358,12 @@ begin
   elsif addr = "no-reverse-dns-configured.com" then
      return "";
   end if;
+  s := `/bin/dig +noall +answer A localhost | cut -f 6;`;
   -- Lookup the the ip with ping.  If found, cache it.
   -- This is broken into two lines because SparForte cannot (yet) redirect
   -- and pipe at the same time.
-  --s := `ping -c 1 -W 5 "$addr" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
-  s := `ping -c 1 -W 5 "$addr" 2> /dev/null;`;
-  s := `echo "$s" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
+  --s := `ping -c 1 -W 5 "$addr" 2> /dev/null;`;
+  --s := `echo "$s" | head -1 |  cut -d\( -f 2 | cut -d\) -f 1;`;
   if $? = 0 then
     arrays.shift_right( cache_last_ip_addr_addr );
     cache_last_ip_addr_addr( 1 ) := addr;
@@ -400,18 +402,25 @@ begin
      tmp := strings.delete( @, 1, 1 );
   end if;
 
-  -- If we found one, cache it
-  if $? = 0 and tmp /= "" then
-      arrays.shift_right( cache_last_ip_addr_addr );
-      cache_last_ip_addr_addr( 1 ) := dns_string( tmp );
-      arrays.shift_right( cache_last_ip_addr_ip );
-      cache_last_ip_addr_ip( 1 ) := source_ip;
-  else
-      log_warning( source_info.file ) @ ( "nslookup unable to identify ip number " & source_ip );
+  -- Always record the result, even if it failed, so we don't retry.
+  arrays.shift_right( cache_last_ip_addr_addr );
+  cache_last_ip_addr_addr( 1 ) := dns_string( tmp );
+  arrays.shift_right( cache_last_ip_addr_ip );
+  cache_last_ip_addr_ip( 1 ) := source_ip;
+
+  -- If we found one, cache it.  If we found one.
+  if $? = 1 then
+     log_info( source_info.file ) @ ( source_ip & " has no host name" );
+  elsif $? > 1 then
+      log_info( source_info.file ) @ ( source_ip & " error trying to lookup hostname" );
   end if;
 
   return dns_string( tmp );
 end get_ip_host_name;
+
+-- Reverse DNS example
+-- /bin/dig +noall +answer -x 127.0.0.1 # localhost | cut -f 6
+-- 1.0.0.127.in-addr.arpa.	10800	IN	PTR	localhost.
 
 ------------------------------------------------------------------------------
 -- Strings
@@ -528,6 +537,11 @@ begin
   program_name := the_program_name;
   log_path := the_log_path;
   log_start;
+
+  -- probably should be improved...
+  if HOSTNAME = "" then
+     HOSTNAME := `hostname;`;
+  end if;
 
   -- Check configuration
 

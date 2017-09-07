@@ -1,7 +1,18 @@
 
+[root@pegasoft secure]# iptables -L
+Chain INPUT (policy DROP)
+target     prot opt source               destination         
+ACCEPT     all  --  anywhere             anywhere            
+ACCEPT     all  --  anywhere             anywhere             state RELATED,ESTABLISHED
+ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:ssh
+DROP       all  --  anywhere             anywhere             match-set blocklist src
+REJECT     all  --  anywhere             anywhere             match-set blocklist dst reject-with icmp-port-unreachable
+
 - paths mixed up after moving import/export to admin/ folder
 
 - port changes to http_daemon.sh to other daemons
+- daily status reports in log
+- hostnames names may be multiple not single.
 
 - ping
   - ping greatly slows the responsiveness...we need to defer it to the wash phase

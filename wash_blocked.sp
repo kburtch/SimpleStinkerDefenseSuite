@@ -257,6 +257,14 @@ end is_south_american_ip;
      end if;
   end search_geoip;
 
+  function number_blocked return natural is
+    total : natural;
+  begin
+    total := numerics.value( `ipset -L blocklist | wc -l;` );
+    total := @-7;
+    return total;
+  end number_blocked;
+
   this_run_on : timestamp_string;
   proposed_blocked_until : timestamp_string;
   blocked_until : timestamp_string;
@@ -496,7 +504,8 @@ begin
   shutdown_blocking;
   log_info( source_info.source_location ) @
      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
-     ( "; Updated" ) @ ( strings.image( updating_cnt ) );
+     ( "; Updated" ) @ ( strings.image( updating_cnt ) ) @
+     ( "; Still blocked" ) @ ( strings.image( number_blocked ) );
   shutdownWorld;
 exception when others =>
   if btree_io.is_open( offender_file ) then

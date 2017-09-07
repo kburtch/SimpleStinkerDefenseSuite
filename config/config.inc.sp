@@ -2,6 +2,10 @@ separate;
 
 -- TODO: disabling individual blockers
 
+-- The location of the project root directory.
+
+project_file_path : constant file_path := "/root/secure";
+
 -- The location of the sshd log file (default)
 -- This is the log containing remote login violations.
 
@@ -27,7 +31,7 @@ http_violations_file_paths : array( 1..3 ) of file_path := (
 -- blocker monitoring/testing or actively blocking.
 -- The enumerated values are defined in lib/world.inc.sp
 
-mode : constant operating_modes := monitor_mode;
+mode : constant operating_modes := local_blocking_mode;
 
 -- The kind of firewall on this server.
 -- The enumerated values are defined in lib/world.inc.sp
