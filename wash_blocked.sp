@@ -271,6 +271,7 @@ end is_south_american_ip;
   needs_updating : boolean := false;
   processing_cnt : natural := 0;
   updating_cnt   : natural := 0;
+  pos : natural;
 
 begin
   --setupWorld( "Wash Task", "log/wash.log" );
@@ -286,6 +287,12 @@ begin
      sip := source_ip.source_ip;
      if source_ip.source_name = "" then
         source_host := `host -W 5 "$sip";`;
+        -- This potentally returns muliple entries.  Just use the last one.
+        pos := index_reverse( string( source_host ), ASCII.LF );
+        if pos > 0 then
+           source_host := dns_string( strings.tail( string( source_host ),
+              strings.length( source_host ) - pos ) );
+        end if;
         if strings.index( source_host, "not found" ) > 0 then
            source_host := "";
         elsif strings.index( source_host, "timed out" ) > 0 then
