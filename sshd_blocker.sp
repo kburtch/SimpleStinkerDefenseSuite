@@ -193,13 +193,13 @@ end if;
 
 -- Logins are only tracked in honeypot mode
 
-if mode in monitor_mode..honeypot_mode then
+--if mode in monitor_mode..honeypot_mode then
    if files.exists( string( sshd_logins_path ) ) then
       btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
    else
       btree_io.create( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
    end if;
-end if;
+--end if;
 
 check_known_logins;
 startup_blocking;
@@ -381,7 +381,7 @@ pragma todo( team,
             r.username := " BLANK_NAME";
          end if;
          records.to_json( j, r );
-         if mode in monitor_mode..honeypot_mode then
+         --if mode in monitor_mode..honeypot_mode then
             if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
                if btree_io.has_element( sshd_logins_file, string( r.username ) ) then
                   btree_io.get( sshd_logins_file, string( r.username ), old_r );
@@ -406,8 +406,8 @@ pragma todo( team,
                   btree_io.set( sshd_logins_file, string( r.username ), r );
                end if;
             end if;
-         end if;
-         sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon);
+            sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon);
+         --end if;
       end if;
    end if;
 end loop;
@@ -422,21 +422,21 @@ end if;
 -- Close files
 close( f );
 shutdown_blocking;
-if mode in monitor_mode..honeypot_mode then
+--if mode in monitor_mode..honeypot_mode then
    btree_io.close( sshd_logins_file );
-end if;
+--end if;
 
 -- Record summary
-if mode in monitor_mode..honeypot_mode then
+--if mode in monitor_mode..honeypot_mode then
    log_info( source_info.source_location ) @
       ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records: " ) @
       ( "New usernames: " ) @ ( strings.image( new_cnt ) ) @
       ( "; Old records: " ) @ ( strings.image( dup_cnt ) ) @
       ( "; Old usernames: " ) @ ( strings.image( updated_cnt ) );
-else
-   log_info( source_info.source_location ) @
-      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records" );
-end if;
+--else
+--   log_info( source_info.source_location ) @
+--      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records" );
+--end if;
 
 --lock_files.unlock_file( lock_file_path );
 shutdownWorld;
@@ -448,11 +448,11 @@ exception when others =>
      close( f );
   end if;
   shutdown_blocking;
-  if mode in monitor_mode..honeypot_mode then
+--  if mode in monitor_mode..honeypot_mode then
      if btree_io.is_open( sshd_logins_file ) then
         btree_io.close( sshd_logins_file );
      end if;
-  end if;
+--  end if;
   --lock_files.unlock_file( lock_file_path );
   shutdownWorld;
   raise;

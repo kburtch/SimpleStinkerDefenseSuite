@@ -262,10 +262,12 @@ begin
       if opt_daemon then
          this_run_on := get_timestamp;
       end if;
-      if is_spam then
-         spam_record_and_block( source_ip, logged_on, this_run_on, true );
-      else
-         mail_record_and_block( source_ip, logged_on, this_run_on, true );
+      if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
+         if is_spam then
+            spam_record_and_block( source_ip, logged_on, this_run_on, true );
+         else
+            mail_record_and_block( source_ip, logged_on, this_run_on, true );
+         end if;
       end if;
    end if;
   end loop;
