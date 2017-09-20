@@ -1,8 +1,9 @@
 separate;
 
-IPSET_CMD    : constant command := "/sbin/ipset";
-IPTABLES_CMD : constant command := "/sbin/iptables";
-FIREWALL_CMD : constant command := "/bin/firewall-cmd";
+IPSET_CMD     : constant command := "/sbin/ipset";
+IPTABLES_CMD  : constant command := "/sbin/iptables";
+IP6TABLES_CMD : constant command := "/sbin/ip6tables";
+FIREWALL_CMD  : constant command := "/bin/firewall-cmd";
 
 banned_threshhold : constant natural := 3;
 
@@ -123,9 +124,9 @@ end unblock;
 --
 -----------------------------------------------------------------------------
 
-procedure clear_firewall is
+function clear_firewall return boolean is
 
-  procedure clear_iptables is
+  procedure reset_iptables is
     -- TODO: should this default to closed for all port and how to implement?
   begin
     -- This is a permissive firewall
@@ -139,22 +140,51 @@ procedure clear_firewall is
     --IPTABLES_CMD( "-P", "FORWARD", "ACCEPT" );
     --IPTABLES_CMD( "-P", "OUTPUT", "ACCEPT" );
 
-    -- This is a restrictive firewall.
+    -- This is a restrictive firewall.  SSH only.
     -- https://wiki.centos.org/HowTos/Network/IPTables
+    -- iptables -L -v to view
     -- TODO: This could likely be made fancier...
+    -- logging should be enabled, for example.
+       --  iptables -A INPUT -j LOG
+
+    -- Temporarily set the input policy to accept to avoid getting locked out
     IPTABLES_CMD( "-P", "INPUT", "ACCEPT" );
+
+    -- Flush (clear) all rules
     IPTABLES_CMD( "-F" );
+
+    -- Accept connections on localhost
     IPTABLES_CMD( "-A", "INPUT", "-i", "lo", "-j", "ACCEPT" );
+
+    -- Accept established, related connections
     IPTABLES_CMD( "-A", "INPUT", "-m", "state", "--state",
       "ESTABLISHED,RELATED", "-j", "ACCEPT" );
+
+    -- Accept ICMP (Ping)
+    IPTABLES_CMD( "-A", "INPUT", "-p", "icmp", "-j", "ACCEPT" );
+
+    -- Accept SSH connections
     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--dport", "22", "-j",
       "ACCEPT" );
+
+    -- Default policies
     IPTABLES_CMD( "-P", "INPUT", "DROP" );
     IPTABLES_CMD( "-P", "FORWARD", "DROP" );
     IPTABLES_CMD( "-P", "OUTPUT", "ACCEPT" );
 
-    log_info( source_info.source_location ) @ ( "iptables cleared " );
-  end clear_iptables;
+    -- IPv6 Is needed for Postfix Red Hat 7
+    -- Allow loopback and ICMP
+    -- https://www.linode.com/docs/security/firewalls/control-network-traffic-with-iptables
+    IP6TABLES_CMD( "-A", "INPUT", "-i", "lo", "-j", "ACCEPT" );
+    IP6TABLES_CMD( "-A", "INPUT", "!", "-i", "lo", "-s", "::1/128", "-j", "REJECT" );
+    IP6TABLES_CMD( "-A", "INPUT", "-p", "icmpv6", "-j", "ACCEPT" );
+    IP6TABLES_CMD( "-A", "INPUT", "-j", "DROP" );
+    IP6TABLES_CMD( "-A", "FORWARD", "-j", "DROP" );
+
+    log_info( source_info.source_location ) @ ( "iptables reset " );
+  end reset_iptables;
+
+  total_clear : boolean := false;
 
 begin
   if mode /= monitor_mode and mode /= honeypot_mode then
@@ -170,15 +200,19 @@ begin
      -- (Delete the iptables rules first)
 
         -- TODO: redirect output
+        -- TODO: we should distinguish between soft and hard clears instead of
+        -- using total clears.
+
         IPSET_CMD( "-q", "list", "blocklist" ) ;
         --ipset -q list blocklist >/dev/null 2>/dev/null ;
         if $? /= 0 then
-           clear_iptables;
+           reset_iptables;
            IPSET_CMD( "create", "blocklist", "iphash" );
            IPTABLES_CMD( "-A", "INPUT", "-m", "set", "--match-set", "blocklist", "src",
              "-j", "DROP" ) ;
            IPTABLES_CMD( "-A", "INPUT", "-m", "set", "--match-set", "blocklist",  "dst",
              "-j", "REJECT" ) ;
+           total_clear := true;
         else
            IPSET_CMD( "flush", "-q", "list", "blocklist" );
         end if;
@@ -196,6 +230,8 @@ begin
      end case;
   end if;
   --TODO: process_blacklist;
+  log_info( source_info.source_location ) @ ( "firewall cleared" );
+  return total_clear;
 end clear_firewall;
 
 
@@ -205,33 +241,35 @@ end clear_firewall;
 -----------------------------------------------------------------------------
 
 procedure reset_firewall is
+  needs_rules : boolean;
 begin
-  clear_firewall;
+  needs_rules := clear_firewall;
 
   -- Block services
-  case firewall_kind is
-  when iptables_firewall | iptables_old_firewall =>
-     -- TODO: These are hard-coded for testing.  No logging active.
-     -- Memcached must be protected.
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "22", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "25", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "80", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "110", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "143", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "443", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "465", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "587", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "993", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "995", "-j", "ACCEPT" );
-     IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "8080", "-j", "ACCEPT" );
-     -- the first rule after clearing is to accept any.  So we remove that one.
-     IPTABLES_CMD( "-D", "INPUT", "1" );
-     --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "11212", "-j", "REJECT" );
-     --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "11211", "-j", "REJECT" );
-     --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "11212", "-j", "REJECT" );
-  when others =>
-     put_line( standard_error, "not implemented yet" );
-  end case;
+  if needs_rules then
+     case firewall_kind is
+     when iptables_firewall | iptables_old_firewall =>
+        -- TODO: These are hard-coded for testing.  No logging active.
+        -- Memcached must be protected.
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "22", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "25", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "80", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "110", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "143", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "443", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "465", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "587", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "993", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "995", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "8080", "-j", "ACCEPT" );
+
+        --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "11212", "-j", "REJECT" );
+        --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "11211", "-j", "REJECT" );
+        --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "11212", "-j", "REJECT" );
+     when others =>
+        put_line( standard_error, "not implemented yet" );
+     end case;
+  end if;
 
   -- TODO: restore the current state of blocked offenders
 

@@ -158,7 +158,7 @@ if [ -n "$OPT_VERBOSE" ] ; then
 fi
 
 # TODO: filename should come from configration file
-nice tail --follow=name --retry "/var/log/maillog" > "$MAIL_PIPE" &
+nice tail --follow=name --retry --lines=0 "/var/log/maillog" > "$MAIL_PIPE" &
 if [ $? -ne 0 ] ; then
    echo `date`": $SCRIPT: $LINENO: tail failed - status $?" >&2
    cleanup

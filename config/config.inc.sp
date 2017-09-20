@@ -44,7 +44,7 @@ firewall_kind : constant firewall_kinds := iptables_firewall;
 -- violations.
 
 default_grace : constant grace_count := 1;
-mail_grace    : constant grace_count := default_grace;
+mail_grace    : constant grace_count := 4; --default_grace;
 
 -- vim: ft=spar
 

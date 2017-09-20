@@ -181,7 +181,7 @@ echo "$FILES" | while read FILE ; do
       echo `date`": $SCRIPT: $LINENO: $FILE is not readable" >&2
       exit 192
    fi
-   nice tail --follow=name --retry "$FILE" > "$HTTP_PIPE" &
+   nice tail --follow=name --retry --lines=0 "$FILE" > "$HTTP_PIPE" &
    STATUS=$?
    TAIL_PID=$!
    if [ $STATUS -ne 0 ] ; then
