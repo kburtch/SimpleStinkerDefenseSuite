@@ -257,13 +257,44 @@ end is_south_american_ip;
      end if;
   end search_geoip;
 
+  -- NUMBER BLOCKED
+  --
+  -- The number of IP addresses currently blocked, or 999999 on an error.
+
   function number_blocked return natural is
-    total : natural;
+    total_str : string;
+    total : natural := 999999;
   begin
-    total := numerics.value( `ipset -L blocklist | wc -l;` );
-    total := @-7;
+    total_str := `/sbin/ipset -L blocklist | wc -l;`;
+    if $? /= 0 then
+       log_error( source_info.source_location ) @ ( "ipset did not run" );
+    end if;
+    if total_str /= "" then
+       total := numerics.value( total_str );
+       total := @-7;
+    end if;
     return total;
   end number_blocked;
+
+
+  -- Health Check
+  --
+  -- Verify the blockers are running.  Doesn't check the tail's.
+
+  procedure health_check is
+    tmp : string;
+  begin
+    tmp := `ps -ef;`;
+    if strings.index( tmp, "http_blocker" ) = 0 then
+        log_error( source_info.source_location ) @ ( "http blocker is not running" );
+    end if;
+    if strings.index( tmp, "mail_blocker" ) = 0 then
+        log_error( source_info.source_location ) @ ( "mail blocker is not running" );
+    end if;
+    if strings.index( tmp, "sshd_blocker" ) = 0 then
+        log_error( source_info.source_location ) @ ( "sshd blocker is not running" );
+    end if;
+  end health_check;
 
   this_run_on : timestamp_string;
   proposed_blocked_until : timestamp_string;
@@ -278,6 +309,8 @@ begin
   setupWorld( "Wash Task", "log/blocker.log" );
 
   this_run_on := get_timestamp;
+
+  health_check;
 
   startup_blocking;
   btree_io.open_cursor( offender_file, abtc );
