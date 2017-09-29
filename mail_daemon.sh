@@ -8,7 +8,7 @@
 shopt -s -o nounset
 
 declare -r SCRIPT=${0##*/}
-declare -r BLOCKER_ROOT="/root/secure"
+declare -r BLOCKER_ROOT="/root/ssds" # GET FROM CONFIG
 declare -r MAIL_PIPE="$BLOCKER_ROOT""/run/mail_pipe"
 declare -r MAIL_PID_FILE="$BLOCKER_ROOT""/run/mail_daemon.pid"
 declare -r MAIL_TAIL_PID_FILE="$BLOCKER_ROOT""/run/mail_tail_pids"

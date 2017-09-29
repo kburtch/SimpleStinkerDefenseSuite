@@ -1,53 +1,88 @@
+- daemons
+  - general utility for reading configuration into Bash shell
+  - "tail: ‘/var/log/secure’ has been replaced;  following end of new file"
+  - suspend flag to update configuration
 
-[root@pegasoft secure]# iptables -L
-Chain INPUT (policy DROP)
-target     prot opt source               destination         
-ACCEPT     all  --  anywhere             anywhere            
-ACCEPT     all  --  anywhere             anywhere             state RELATED,ESTABLISHED
-ACCEPT     tcp  --  anywhere             anywhere             tcp dpt:ssh
-DROP       all  --  anywhere             anywhere             match-set blocklist src
-REJECT     all  --  anywhere             anywhere             match-set blocklist dst reject-with icmp-port-unreachable
+- ssh
+  - hostname stub not working (need to specify hostname in config?)
+  - hostnames names may be multiple not single.
+  - progress bar on sshd blocker sometimes has a phantom newline / erases
+    whatever message was there.
+- Sept 27: the following
+  Sep 27 14:19:04 pegasoft sshd[9781]: Invalid user YYYYYYYYY from 101.230.200.173 port 7799
+  Sep 27 14:19:04 pegasoft sshd[9781]: input_userauth_request: invalid user YYYYYYYYY [preauth]
+  Sep 27 14:19:04 pegasoft sshd[9781]: pam_unix(sshd:auth): check pass; user unknown
+  Sep 27 14:19:04 pegasoft sshd[9781]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=101.230.200.173
+  Sep 27 14:19:07 pegasoft sshd[9781]: Failed password for invalid user YYYYYYYYY from 101.230.200.173 port 7799 ssh2
+  resulted in
+  Wed Sep 27 14:19:04 EDT 2017:WARNING:sshd_blocker.sp: 264:saw invalid username 'YYYYYYYYY 101.230.200.173 port'
 
-- paths mixed up after moving import/export to admin/ folder
+  Sep 27 14:19:24 pegasoft sshd[9817]: Invalid user bwadmin from 101.230.200.173 port 13993
+  Sep 27 14:19:24 pegasoft sshd[9817]: input_userauth_request: invalid user bwadmin [preauth]
+  Sep 27 14:19:24 pegasoft sshd[9817]: pam_unix(sshd:auth): check pass; user unknown Sep 27 14:19:24 pegasoft sshd[9817]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=101.230.200.173
+  Sep 27 14:19:27 pegasoft sshd[9817]: Failed password for invalid user bwadmin from 101.230.200. 173 port 13993 ssh2
+  Wed Sep 27 14:19:24 EDT 2017:WARNING:sshd_blocker.sp: 264:saw invalid username 'bwadmin 101.230.200.173 port'
 
-- port changes to http_daemon.sh to other daemons
-- daily status reports in log
-- hostnames names may be multiple not single.
+- mail
+  - should mail blocker record login names?
+  - expiring after 3 months -- did I finish this?
+  - myself is blocking for email access on:
+    Sep 19 15:44:13 pegasoft postfix/submission/smtpd[6130]: warning: hostname ppp101.static.dsl.ontario.net does not resolve to address 209.159.182.101: Name or service not known
 
-- ping
-  - ping greatly slows the responsiveness...we need to defer it to the wash phase
-  - ping errors
-  - we need "placeholder ip's" as ping is not guaranteed to find the domain
-    name.  Placeholder ip's can be checked later, but also cannot be blocked
-    since they are not real ip numbers.  Probably already blocked anyway.
-  - AllowedUsers line
-- whitelist should be broken down
-  - i.e. customers, trusted machines
-- handling test data (not blocking, washing out (optionally?))
-- test with plain text disabled...does it still work?
-- import into tables
-- database tables, statistics gathering and reports
+- wash
+  - still blocked message in wash is null when runfrom cron
+  - progress bar
+
+- blocking
+  - refactor reset firewall
+  - create whitelist system and levels - i.e. customers, trusted machines
+  - create list of services/ports to block in firewall
+  - handling test data (not blocking, washing out (optionally?))
+
+- admin
+  - paths mixed up after moving import/export to admin/ folder
+  - clearing out test data
+
+- reporting
+  - daily status reports in log
+  - database tables, statistics gathering and reports
   - performance stats
+  - security patch metrics
+    - which patches, when, how recently, how many over time
 
-- expiring after 3 months
+- performance
+  - ping
+    - ping greatly slows the responsiveness...we need to defer it to the wash phase
+    - ping errors
+    - we need "placeholder ip's" as ping is not guaranteed to find the domain
+      name.  Placeholder ip's can be checked later, but also cannot be blocked
+      since they are not real ip numbers.  Probably already blocked anyway.
+    - AllowedUsers line
 
-- security patch metrics
-  - which patches, when, how recently, how many over time
+- testing
+  - unit tests
+  - additional testing with plain text logins disabled...does it still work?
 
-tail: ‘/var/log/secure’ has been replaced;  following end of new file
+- other
+  - if spar fails with an error, daemon script doesn't abort
 
-- progress bar on sshd blocker sometimes has a phantom newline / erases
-  whatever message was there.
-- if spar fails with an error, daemon script doesn't abort
-
-- spar unit tests
-
-- other services
+- additional services
   - virus scan on changed files
   - network listener scan
   - error log summaries
-- dan notes SNMP interface, etc. must be considered
+  - scan for file changes / new directories
+  - dan notes SNMP interface, etc. must be considered
 
-- numerics.value(...) should probably take universal_string not string
-- unable to find record field ken_burtch.member.description
+Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_sender_restricti
+ons
+Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_client_restricti
+ons
+Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_helo_restriction
+s
+Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_sender_restricti
+ons
+Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_client_restricti
+ons
+Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_helo_restriction
+s
 

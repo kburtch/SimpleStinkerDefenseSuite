@@ -8,7 +8,7 @@
 shopt -s -o nounset
 
 declare -r SCRIPT=${0##*/}
-declare -r BLOCKER_ROOT="/root/secure"
+declare -r BLOCKER_ROOT="/root/ssds" # GET FROM CONFIG
 declare -r HTTP_PIPE="$BLOCKER_ROOT""/run/http_pipe"
 declare -r HTTP_PID_FILE="$BLOCKER_ROOT""/run/http_daemon.pid"
 declare -r HTTP_TAIL_PID_FILE="$BLOCKER_ROOT""/run/http_tail_pids"

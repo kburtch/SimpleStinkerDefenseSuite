@@ -8,7 +8,7 @@
 shopt -s -o nounset
 
 declare -r SCRIPT=${0##*/}
-declare -r BLOCKER_ROOT="/root/secure"
+declare -r BLOCKER_ROOT="/root/ssds" # GET FROM CONFIG
 declare -r SSHD_PIPE="$BLOCKER_ROOT""/run/sshd_pipe"
 declare -r SSHD_PID_FILE="$BLOCKER_ROOT""/run/sshd_daemon.pid"
 declare -r SSHD_TAIL_PID_FILE="$BLOCKER_ROOT""/run/sshd_tail_pids"
