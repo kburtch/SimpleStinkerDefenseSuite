@@ -45,7 +45,7 @@ Select monitor\_mode if you want to test the software first.
 Turn off your firewall, if you have one.
 Run reset\_firewall to initialize the firewall.
 Run the sshd, mail and http daemons on boot.
-Run wash blocked from cron every hour or as often as needed.
+Run wash blocked -D from cron every hour or as often as needed.
 
 Configure your log rotation software to rotate the log file.
 

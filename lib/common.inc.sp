@@ -194,7 +194,7 @@ begin
      log_string := @ & message &  ":";
   when chains.context_middle =>
      if log_level > 1 then
-        log_string := @ & (3 * ' ')
+        log_string := @ & (3 * ' ');
      end if;
      log_string := @ & message;
   when chains.context_last =>
@@ -237,7 +237,7 @@ begin
      log_string := @ & message &  ":";
   when chains.context_middle =>
      if log_level > 1 then
-        log_string := @ & (3 * ' ')
+        log_string := @ & (3 * ' ');
      end if;
      log_string := @ & message;
   when chains.context_last =>
@@ -280,7 +280,7 @@ begin
      log_string := @ & message &  ":";
   when chains.context_middle =>
      if log_level > 1 then
-        log_string := @ & (3 * ' ')
+        log_string := @ & (3 * ' ');
      end if;
      log_string := @ & message;
   when chains.context_last =>
@@ -556,6 +556,50 @@ begin
 exception when others =>
   put_line( "error calculating the progress line" );
 end show_progress_line;
+
+-- Same but no file to monitor
+
+procedure show_progress_line_no_file( start_time : timestamp_string; current_cnt : natural; estimated_cnt : natural ) is
+  now       : timestamp_string;
+  elapsed   : universal_numeric;
+  last_modified : calendar.time;
+  minutes_left : universal_typeless := " ??";
+  percent   : universal_typeless := " ??";
+begin
+  -- Move up one line to the start of the progress line
+
+  tput cuu1;
+
+  now := get_timestamp;
+
+  -- Compute the percentage complete and time remaining
+  -- Delay the status until we've at least done 1000 records, as initial
+  -- stats won't be meaningful.  Use floor to favour 99% over 100%.
+
+  elapsed := numerics.value( string( now ) ) - numerics.value( string( start_time ) );
+  if current_cnt >= 1000 then
+     minutes_left := numerics.unbiased_rounding( elapsed * float( estimated_cnt ) / float( current_cnt ) );
+     minutes_left := numerics.floor( (@ - elapsed )/60 );
+  end if;
+  if estimated_cnt > 0 then
+     percent := 100 * current_cnt / estimated_cnt;
+  end if;
+
+  -- Display the line
+
+  put( current_cnt )
+   @ ( " of" )
+   @ ( estimated_cnt )
+   @ ( " records (" )
+   @ ( percent )
+   @ ( "%, est." )
+   @ ( minutes_left )
+   @ ( " min remaining)" );
+  tput el;
+  new_line;
+exception when others =>
+  put_line( "error calculating the progress line" );
+end show_progress_line_no_file;
 
 ------------------------------------------------------------------------------
 -- Housekeeping

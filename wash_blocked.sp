@@ -31,6 +31,18 @@ procedure wash_blocked is
 
 opt_daemon  : boolean := false;   -- true of -D used
 
+
+-- USAGE
+--
+-- Show the help
+-----------------------------------------------------------------------------
+
+procedure usage is
+begin
+  help( source_info.enclosing_entity );
+end usage;
+
+
 -- HANDLE COMMAND OPTIONS
 --
 -- Process options, if any, and return true to exit without running.
@@ -69,6 +81,7 @@ begin
   end loop;
   return quit;
 end handle_command_options;
+
 
      --put_line( `ping -c 1 -W 5 "$sip" | head -2 ;` );
      --source_host := `ping -c 1 -W 5 "$sip" | head -2 | tail -1 | cut -c15- | cut -d' ' -f1 ;`;
@@ -300,26 +313,6 @@ end is_south_american_ip;
      end if;
   end search_geoip;
 
-  -- NUMBER BLOCKED
-  --
-  -- The number of IP addresses currently blocked, or 999999 on an error.
-  -- TODO: move this to blocking include file.
-
-  function number_blocked return natural is
-    total_str : string;
-    total : natural := 999999;
-  begin
-    total_str := `/sbin/ipset -L blocklist | wc -l;`;
-    if $? /= 0 then
-       log_error( source_info.source_location ) @ ( "ipset did not run" );
-    end if;
-    if total_str /= "" then
-       total := numerics.value( total_str );
-       total := @-7;
-    end if;
-    return total;
-  end number_blocked;
-
 
   -- Health Check
   --
@@ -366,31 +359,30 @@ begin
   startup_blocking;
 
   if not opt_daemon and not opt_verbose then
-     new_line;
      put_line( "Preparing to run..." ); -- this will be overwritten
-  end if;
 
-  -- Count entries
-  declare
-    temp_cursor : btree_io.cursor( an_offender );
-  begin
-    btree_io.open_cursor( offender_file, temp_cursor );
-    btree_io.raise_exceptions( offender_file, false );
-    btree_io.get_first( offender_file, temp_cursor, key, source_ip );
-    btree_io.raise_exceptions( offender_file, true );
-    -- TODO: not quite right
-    while btree_io.last_error( offender_file ) /= bdb.DB_NOTFOUND loop
-      record_cnt_estimate := @ + 1;
-      btree_io.raise_exceptions( offender_file, false );
-      btree_io.get_next( offender_file, temp_cursor, key, source_ip );
-      btree_io.raise_exceptions( offender_file, true );
-    end loop;
-    btree_io.close_cursor( offender_file, temp_cursor );
-  exception when others =>
-    if btree_io.is_open( offender_file ) then
-      btree_io.close_cursor( offender_file, temp_cursor );
-    end if;
-  end;
+     -- Count entries.  the estimate is only used for the progress bar
+     declare
+       temp_cursor : btree_io.cursor( an_offender );
+     begin
+       btree_io.open_cursor( offender_file, temp_cursor );
+       btree_io.raise_exceptions( offender_file, false );
+       btree_io.get_first( offender_file, temp_cursor, key, source_ip );
+       btree_io.raise_exceptions( offender_file, true );
+       -- TODO: not quite right
+       while btree_io.last_error( offender_file ) /= bdb.DB_NOTFOUND loop
+         record_cnt_estimate := @ + 1;
+         btree_io.raise_exceptions( offender_file, false );
+         btree_io.get_next( offender_file, temp_cursor, key, source_ip );
+         btree_io.raise_exceptions( offender_file, true );
+       end loop;
+       btree_io.close_cursor( offender_file, temp_cursor );
+     exception when others =>
+       if btree_io.is_open( offender_file ) then
+         btree_io.close_cursor( offender_file, temp_cursor );
+       end if;
+     end;
+  end if;
 
   btree_io.open_cursor( offender_file, abtc );
   btree_io.get_first( offender_file, abtc, key, source_ip );

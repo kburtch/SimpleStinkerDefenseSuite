@@ -289,6 +289,7 @@ end reset_firewall;
 procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
   msg : string;
+  old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      -- TODO: refactor out initialization
@@ -377,6 +378,7 @@ begin
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
+  log_level_end( old_log_level );
 end sshd_record_and_block;
 
 
@@ -389,6 +391,7 @@ end sshd_record_and_block;
 procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
   msg : string;
+  old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      ab.source_ip       := source_ip;
@@ -476,6 +479,7 @@ begin
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
+  log_level_end( old_log_level );
 end mail_record_and_block;
 
 
@@ -488,6 +492,7 @@ end mail_record_and_block;
 procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
   msg : string;
+  old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      ab.source_ip       := source_ip;
@@ -575,6 +580,7 @@ begin
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
+  log_level_end( old_log_level );
 end spam_record_and_block;
 
 
@@ -587,6 +593,7 @@ end spam_record_and_block;
 procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
   ab : an_offender;
   msg : string;
+  old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      ab.source_ip       := source_ip;
@@ -674,7 +681,29 @@ begin
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
+  log_level_end( old_log_level );
 end http_record_and_block;
+
+
+-- NUMBER BLOCKED
+--
+-- The number of IP addresses currently blocked, or 999999 on an error.
+-----------------------------------------------------------------------------
+
+function number_blocked return natural is
+  total_str : string;
+  total : natural := 999999;
+begin
+  total_str := `/sbin/ipset -L blocklist | wc -l;`;
+  if $? /= 0 then
+     log_error( source_info.source_location ) @ ( "ipset did not run" );
+  end if;
+  if total_str /= "" then
+     total := numerics.value( total_str );
+     total := @-7;
+  end if;
+  return total;
+end number_blocked;
 
 
 ------------------------------------------------------------------------------
