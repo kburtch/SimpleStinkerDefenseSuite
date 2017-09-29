@@ -254,7 +254,8 @@ pragma todo( team,
          found := remove_token( s, " from " );
          r.logged_on := parse_timestamp( date_string( strings.slice( s, 1, 15 ) ) );
          fix( s );
-         get_raw_username_and_ip_number( 2 );
+         --log_info( source_info.source_location ) @ ("raw string is '" & strings.to_escaped( s )& "'" ); -- DEBUG
+         get_raw_username_and_ip_number( 4 ); -- was 2
          r.username := validate_user( raw_username );
          if validate_ip( raw_ip_string( raw_username ) ) /= "" then
             log_warning( source_info.source_location ) @ ("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );

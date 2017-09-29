@@ -27,6 +27,49 @@ procedure wash_blocked is
   weeks_1  : constant natural := 60*60*24*7;
   hours_1  : constant natural := 60*60;
 
+-- Command line options
+
+opt_daemon  : boolean := false;   -- true of -D used
+
+-- HANDLE COMMAND OPTIONS
+--
+-- Process options, if any, and return true to exit without running.
+-----------------------------------------------------------------------------
+
+function handle_command_options return boolean is
+  quit : boolean := false;
+  arg_pos : natural := 1;
+  arg : string;
+begin
+  while arg_pos <= command_line.argument_count loop
+    arg := command_line.argument( arg_pos );
+    if arg = "-f" then
+       arg_pos := @+1;
+       if arg_pos > command_line.argument_count then
+          put_line( standard_error, "missing argument for " & arg );
+          quit;
+       else
+          sshd_violations_file_path := command_line.argument( arg_pos );
+       end if;
+    elsif arg = "-h" or arg = "--help" then
+       usage;
+       quit;
+    elsif arg = "-v" or arg = "--verbose" then
+       opt_verbose;
+    elsif arg = "-V" or arg = "--version" then
+       put_line( version );
+       quit;
+    elsif arg = "-D" then
+       opt_daemon;
+    else
+       put_line( standard_error, "unknown option: " & arg );
+       quit;
+    end if;
+    arg_pos := @+1;
+  end loop;
+  return quit;
+end handle_command_options;
+
      --put_line( `ping -c 1 -W 5 "$sip" | head -2 ;` );
      --source_host := `ping -c 1 -W 5 "$sip" | head -2 | tail -1 | cut -c15- | cut -d' ' -f1 ;`;
      --if source_host = dns_string( sip ) & ":" then
@@ -260,6 +303,7 @@ end is_south_american_ip;
   -- NUMBER BLOCKED
   --
   -- The number of IP addresses currently blocked, or 999999 on an error.
+  -- TODO: move this to blocking include file.
 
   function number_blocked return natural is
     total_str : string;
@@ -303,20 +347,64 @@ end is_south_american_ip;
   processing_cnt : natural := 0;
   updating_cnt   : natural := 0;
   pos : natural;
-
+  record_cnt_estimate : natural := 0;
 begin
   --setupWorld( "Wash Task", "log/wash.log" );
   setupWorld( "Wash Task", "log/blocker.log" );
+
+  -- Process command options
+
+  if handle_command_options then
+     command_line.set_exit_status( 1 );
+     return;
+  end if;
 
   this_run_on := get_timestamp;
 
   health_check;
 
   startup_blocking;
+
+  if not opt_daemon and not opt_verbose then
+     new_line;
+     put_line( "Preparing to run..." ); -- this will be overwritten
+  end if;
+
+  -- Count entries
+  declare
+    temp_cursor : btree_io.cursor( an_offender );
+  begin
+    btree_io.open_cursor( offender_file, temp_cursor );
+    btree_io.raise_exceptions( offender_file, false );
+    btree_io.get_first( offender_file, temp_cursor, key, source_ip );
+    btree_io.raise_exceptions( offender_file, true );
+    -- TODO: not quite right
+    while btree_io.last_error( offender_file ) /= bdb.DB_NOTFOUND loop
+      record_cnt_estimate := @ + 1;
+      btree_io.raise_exceptions( offender_file, false );
+      btree_io.get_next( offender_file, temp_cursor, key, source_ip );
+      btree_io.raise_exceptions( offender_file, true );
+    end loop;
+    btree_io.close_cursor( offender_file, temp_cursor );
+  exception when others =>
+    if btree_io.is_open( offender_file ) then
+      btree_io.close_cursor( offender_file, temp_cursor );
+    end if;
+  end;
+
   btree_io.open_cursor( offender_file, abtc );
   btree_io.get_first( offender_file, abtc, key, source_ip );
   loop
+
+     -- show progress line
+
      processing_cnt := @+1;
+     if not opt_daemon and not opt_verbose then
+        if processing_cnt mod 250 = 0 then
+           show_progress_line_no_file( this_run_on, processing_cnt, record_cnt_estimate );
+        end if;
+     end if;
+
      sip := source_ip.source_ip;
      if source_ip.source_name = "" then
         source_host := `host -W 5 "$sip";`;
@@ -540,7 +628,16 @@ begin
      exit when btree_io.last_error( offender_file ) = bdb.DB_NOTFOUND;
      btree_io.raise_exceptions( offender_file, true );
   end loop;
+
+  -- Complete progress line
+  if not opt_daemon and not opt_verbose then
+     tput cuu1;
+     tput el;
+     new_line;
+  end if;
+
   btree_io.close_cursor( offender_file, abtc );
+
   shutdown_blocking;
   log_info( source_info.source_location ) @
      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @

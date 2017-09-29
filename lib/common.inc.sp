@@ -146,10 +146,37 @@ end parse_timestamp;
 
 -- LOGGING
 
+type a_log_level is new natural;
+
 log_file : file_type;
 log_path : string;
 log_string : string;
 program_name : string;
+log_level : a_log_level;
+
+
+-- LOG LEVEL START
+--
+-- Started a nested log level.
+-----------------------------------------------------------------------------
+
+function log_level_start return a_log_level is
+  old_level : a_log_level := log_level;
+begin
+  log_level := @+1;
+  return old_level;
+end log_level_start;
+
+
+-- LOG LEVEL END
+--
+-- Complete a nested log level.
+-----------------------------------------------------------------------------
+
+procedure log_level_end( old_level : a_log_level ) is
+begin
+  log_level := old_level;
+end log_level_end;
 
 
 -- LOG INFO
@@ -166,6 +193,9 @@ begin
      log_string := @ & "INFO:";
      log_string := @ & message &  ":";
   when chains.context_middle =>
+     if log_level > 1 then
+        log_string := @ & (3 * ' ')
+     end if;
      log_string := @ & message;
   when chains.context_last =>
      log_string := @ & message;
@@ -206,6 +236,9 @@ begin
      log_string := @ & "WARNING:";
      log_string := @ & message &  ":";
   when chains.context_middle =>
+     if log_level > 1 then
+        log_string := @ & (3 * ' ')
+     end if;
      log_string := @ & message;
   when chains.context_last =>
      log_string := @ & message;
@@ -246,6 +279,9 @@ begin
      log_string := @ & "ERROR:";
      log_string := @ & message &  ":";
   when chains.context_middle =>
+     if log_level > 1 then
+        log_string := @ & (3 * ' ')
+     end if;
      log_string := @ & message;
   when chains.context_last =>
      log_string := @ & message;
@@ -279,6 +315,7 @@ end log_error;
 
 procedure log_start is
 begin
+  log_level := 0;
   log_info( "Start " & program_name & " run" );
 end log_start;
 
@@ -290,6 +327,7 @@ end log_start;
 
 procedure log_end is
 begin
+  log_level := 0;
   log_info( "End " & program_name & " run" );
 end log_end;
 
