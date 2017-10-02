@@ -17,6 +17,7 @@ pragma software_model( shell_script );
 with separate "config/contributors.inc.sp";
 with separate "lib/world.inc.sp";
 with separate "config/config.inc.sp";
+with separate "lib/logging.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 
@@ -61,6 +62,7 @@ begin
        quit;
     elsif arg = "-v" or arg = "--verbose" then
        opt_verbose;
+       echo_logging;
     elsif arg = "-V" or arg = "--version" then
        put_line( version );
        quit;

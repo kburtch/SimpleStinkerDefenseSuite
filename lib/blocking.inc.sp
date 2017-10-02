@@ -56,6 +56,7 @@ offender_file : btree_io.file( an_offender );
 -----------------------------------------------------------------------------
 
 procedure block( offender : ip_string ) is
+  old_log_level : a_log_level := log_level_start;
 begin
   if mode = monitor_mode then
      log_info( source_info.source_location ) @ ( offender & " would have been blocked" );
@@ -83,14 +84,17 @@ begin
         put_line( standard_error, "error " & strings.image( os.status ) & " on blocking " & offender );
      end if;
   end if;
+  log_level_end( old_log_level );
   -- Record the blocked ip
 end block;
 
 -- UNBLOCK
 --
+-- Permit a blocked offender access to the server.
 -----------------------------------------------------------------------------
 
 procedure unblock( offender : ip_string ) is
+  old_log_level : a_log_level := log_level_start;
 begin
   if mode = monitor_mode then
      log_info( source_info.source_location ) @ ( offender & " would have been unblocked" );
@@ -117,8 +121,9 @@ begin
      end case;
 
   end if;
-  -- Record the blocked ip
+  log_level_end( old_log_level );
 end unblock;
+
 
 -- CLEAR FIREWALL
 --
@@ -127,6 +132,7 @@ end unblock;
 function clear_firewall return boolean is
 
   procedure reset_iptables is
+    -- Return the firewall to its default state
     -- TODO: should this default to closed for all port and how to implement?
   begin
     -- This is a permissive firewall
@@ -368,6 +374,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " SSHD offender already blocked for" & msg );
               else
+                 log_info( source_info.source_location ) @ ( source_ip & " has an SSHD violation" );
                  block( source_ip );
               end if;
            end if;
@@ -469,6 +476,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " SMTP offender already blocked for" & msg );
               else
+                 log_info( source_info.source_location ) @ ( source_ip & " has a SMTP violation" );
                  block( source_ip );
               end if;
            end if;
@@ -570,6 +578,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " SPAM offender already blocked for" & msg );
               else
+                 log_info( source_info.source_location ) @ ( source_ip & " has a SPAM violation" );
                  block( source_ip );
               end if;
            end if;
@@ -671,6 +680,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " HTTP offender already blocked for" & msg );
               else
+                 log_info( source_info.source_location ) @ ( source_ip & " has an HTTP violation" );
                  block( source_ip );
               end if;
            end if;

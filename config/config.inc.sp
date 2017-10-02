@@ -4,7 +4,7 @@ separate;
 
 -- The location of the project root directory.
 
-project_file_path : constant file_path := "/root/ssds";
+project_path : constant file_path := "/root/ssds";
 
 -- The location of the sshd log file (default)
 -- This is the log containing remote login violations.

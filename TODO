@@ -1,5 +1,6 @@
 - daemons
   - general utility for reading configuration into Bash shell
+    - need SSHD_HOME (like JAVA_HOME variable) to locate the project_path
   - "tail: ‘/var/log/secure’ has been replaced;  following end of new file"
   - suspend flag to update configuration
 
