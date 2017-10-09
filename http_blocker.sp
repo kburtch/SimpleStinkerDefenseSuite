@@ -392,7 +392,8 @@ begin
               logged_on := parse_timestamp( date_string( tmp ) );
               if source_ip /= "" then
                  if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
-                    http_record_and_block( source_ip, logged_on, this_run_on, true );
+                    -- TODO: no message yet
+                    http_record_and_block( source_ip, logged_on, this_run_on, true, "" );
                  end if;
               else
                  log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );

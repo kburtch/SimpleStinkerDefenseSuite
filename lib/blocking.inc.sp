@@ -292,7 +292,7 @@ end reset_firewall;
 -- If it already has a record, update the existing record.
 -----------------------------------------------------------------------------
 
-procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
+procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
@@ -342,6 +342,9 @@ begin
      if is_daemon or ab.logged_on < logged_on then
         if ab.sshd_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
+           if reason /= "" then
+              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+           end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
            if ab.grace > 0 then
@@ -395,7 +398,7 @@ end sshd_record_and_block;
 -- If it already has a record, update the existing record.
 -----------------------------------------------------------------------------
 
-procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
+procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
@@ -444,6 +447,9 @@ begin
      if is_daemon or ab.logged_on < logged_on then
         if ab.smtp_blocked <= probation_blocked then
            -- log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
+           if reason /= "" then
+              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+           end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
            if ab.grace > 0 then
@@ -497,7 +503,7 @@ end mail_record_and_block;
 -- If it already has a record, update the existing record.
 -----------------------------------------------------------------------------
 
-procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
+procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
@@ -546,6 +552,9 @@ begin
      if is_daemon or ab.logged_on < logged_on then
         if ab.spam_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
+           if reason /= "" then
+              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+           end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
            if ab.grace > 0 then
@@ -599,7 +608,7 @@ end spam_record_and_block;
 -- If it already has a record, update the existing record.
 -----------------------------------------------------------------------------
 
-procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean ) is
+procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
@@ -648,6 +657,9 @@ begin
      if is_daemon or ab.logged_on < logged_on then
         if ab.http_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
+           if reason /= "" then
+              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+           end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
            if ab.grace > 0 then

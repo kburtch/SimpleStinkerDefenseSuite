@@ -419,7 +419,6 @@ pragma todo( team,
          records.to_json( j, r );
          --if mode in monitor_mode..honeypot_mode then
             if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
-               log_info( source_info.source_location ) @ (source_ip ) @ ( message );
                if btree_io.has_element( sshd_logins_file, string( r.username ) ) then
                   btree_io.get( sshd_logins_file, string( r.username ), old_r );
 pragma todo( team,
@@ -442,7 +441,7 @@ pragma todo( team,
                   r.updated_on := this_run_on;
                   btree_io.set( sshd_logins_file, string( r.username ), r );
                end if;
-               sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon);
+               sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon, message);
             end if; -- whitelisted
          --end if;
       end if;

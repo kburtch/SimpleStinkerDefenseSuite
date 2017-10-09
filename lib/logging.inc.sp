@@ -56,7 +56,7 @@ begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "OK:";
      log_string := @ & message &  ":";
      log_indent_required := log_level * 2;
@@ -80,7 +80,7 @@ begin
      close( log_file );
   when chains.not_in_chain =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "OK:";
      log_string := @ & source_info.file &  ":";
      log_indent_required := log_level * 2;
@@ -113,7 +113,7 @@ begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "INFO:";
      log_string := @ & message &  ":";
      log_indent_required := log_level * 2;
@@ -137,7 +137,7 @@ begin
      close( log_file );
   when chains.not_in_chain =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "INFO:";
      log_string := @ & source_info.file &  ":";
      log_indent_required := log_level * 2;
@@ -169,7 +169,7 @@ begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "WARNING:";
      log_string := @ & message &  ":";
      log_indent_required := log_level * 2;
@@ -193,7 +193,7 @@ begin
      close( log_file );
   when chains.not_in_chain =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "WARNING:";
      log_string := @ & source_info.file &  ":";
      log_indent_required := log_level * 2;
@@ -225,7 +225,7 @@ begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "ERROR:";
      log_string := @ & message &  ":";
      log_indent_required := log_level * 2;
@@ -249,7 +249,7 @@ begin
      close( log_file );
   when chains.not_in_chain =>
      log_string := `date;` & ":";
-     log_string := @ & strings.image($$) & ":";
+     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "ERROR:";
      log_string := @ & source_info.file &  ":";
      log_indent_required := log_level * 2;

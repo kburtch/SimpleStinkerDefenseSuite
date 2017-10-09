@@ -225,7 +225,6 @@ begin
         raw_source_ip := raw_ip_string( strings.field( log_line, 3, '[' ) );
         raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
         source_ip := validate_ip( raw_source_ip );
-? "sasl " & raw_source_ip & "/" & source_ip;
         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
         attack_cnt := @+1;
         message := " has a SMTP-PLAIN login failure";
@@ -306,11 +305,10 @@ begin
          this_run_on := get_timestamp;
       end if;
       if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
-         log_info( source_info.source_location ) @ ( source_ip ) @ ( message );
          if is_spam then
-            spam_record_and_block( source_ip, logged_on, this_run_on, true );
+            spam_record_and_block( source_ip, logged_on, this_run_on, true, message );
          else
-            mail_record_and_block( source_ip, logged_on, this_run_on, true );
+            mail_record_and_block( source_ip, logged_on, this_run_on, true, message );
          end if;
       end if;
    end if;
