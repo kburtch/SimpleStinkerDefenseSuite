@@ -73,6 +73,7 @@
 
 - other
   - if spar fails with an error, daemon script doesn't abort
+  -https://github.com/mushorg/glastopf honeypot
 
 - additional services
   - virus scan on changed files
