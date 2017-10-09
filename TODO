@@ -27,12 +27,16 @@
 - mail
   - should mail blocker record login names?
   - expiring after 3 months -- did I finish this?
+  - SpamHaus support? https://www.spamhaus.org/sbl/
   - myself is blocking for email access on:
     Sep 19 15:44:13 pegasoft postfix/submission/smtpd[6130]: warning: hostname ppp101.static.dsl.ontario.net does not resolve to address 209.159.182.101: Name or service not known
 
+- http
+  - statistic blocking on large accesses
+  - time-of-day matrix (i.e. list of hours) and application
+
 - wash
-  - still blocked message in wash is null when runfrom cron
-  - progress bar
+  - using IPSET_CMD command type instead of command name
 
 - blocking
   - refactor reset firewall
@@ -45,11 +49,14 @@
   - clearing out test data
 
 - reporting
+  - email of event notifications
   - daily status reports in log
-  - database tables, statistics gathering and reports
-  - performance stats
-  - security patch metrics
-    - which patches, when, how recently, how many over time
+  - database tables, statistics gathering and daily status reports
+  - current status table
+    - attacks seen
+    - performance stats
+    - security patch metrics
+      - which patches, when, how recently, how many over time
 
 - performance
   - ping

@@ -374,7 +374,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " SSHD offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has an SSHD violation" );
+                 log_info( source_info.source_location ) @ ( source_ip & " has no SSHD grace" );
                  block( source_ip );
               end if;
            end if;
@@ -476,7 +476,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " SMTP offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has a SMTP violation" );
+                 log_info( source_info.source_location ) @ ( source_ip & " has no SMTP grace" );
                  block( source_ip );
               end if;
            end if;
@@ -578,7 +578,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " SPAM offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has a SPAM violation" );
+                 log_info( source_info.source_location ) @ ( source_ip & " has no SPAM spam" );
                  block( source_ip );
               end if;
            end if;
@@ -680,7 +680,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " HTTP offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has an HTTP violation" );
+                 log_info( source_info.source_location ) @ ( source_ip & " has no HTTP grace" );
                  block( source_ip );
               end if;
            end if;

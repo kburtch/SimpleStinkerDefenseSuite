@@ -2,7 +2,7 @@ separate;
 
 -- LOGGING
 
--- Settings
+-- Global Settings
 --
 -- Set echo logging to true to show log also to standard output
 -----------------------------------------------------------------------------
@@ -45,9 +45,66 @@ procedure log_level_end( old_level : a_log_level ) is begin
 end log_level_end;
 
 
+-- LOG OK
+--
+-- Log a success-type message to the log.  This procedure works in a chain.
+-----------------------------------------------------------------------------
+
+procedure log_ok( message : universal_string ) is
+  context : constant chains.context := chains.chain_context;
+begin
+  case context is
+  when chains.context_first =>
+     log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
+     log_string := @ & "OK:";
+     log_string := @ & message &  ":";
+     log_indent_required := log_level * 2;
+  when chains.context_middle =>
+     if log_indent_required > 0 then
+        log_string := @ & (log_indent_required * ' ');
+        log_indent_required := 0;
+     end if;
+     log_string := @ & message;
+  when chains.context_last =>
+     if log_indent_required > 0 then
+        log_string := @ & (log_indent_required * ' ');
+        log_indent_required := 0;
+     end if;
+     log_string := @ & message;
+     create( log_file, append_file, log_path );
+     put_line( log_file, log_string );
+     if echo_logging then
+        put_line( log_string );
+     end if;
+     close( log_file );
+  when chains.not_in_chain =>
+     log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
+     log_string := @ & "OK:";
+     log_string := @ & source_info.file &  ":";
+     log_indent_required := log_level * 2;
+     if log_indent_required > 0 then
+        log_string := @ & ( log_indent_required * ' ');
+        log_indent_required := 0;
+     end if;
+     log_string := @ & message;
+     create( log_file, append_file, log_path );
+     put_line( log_file, log_string );
+     if echo_logging then
+        put_line( log_string );
+     end if;
+     close( log_file );
+  when others =>
+     put_line( standard_error, "unexpect chain context" );
+  end case;
+end log_ok;
+
+
 -- LOG INFO
 --
--- Log an info-level message to the log.
+-- Log an informational-type message to the log.  This procedure works in a
+-- chain.
 -----------------------------------------------------------------------------
 
 procedure log_info( message : universal_string ) is
@@ -56,6 +113,7 @@ begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
      log_string := @ & "INFO:";
      log_string := @ & message &  ":";
      log_indent_required := log_level * 2;
@@ -79,6 +137,7 @@ begin
      close( log_file );
   when chains.not_in_chain =>
      log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
      log_string := @ & "INFO:";
      log_string := @ & source_info.file &  ":";
      log_indent_required := log_level * 2;
@@ -101,7 +160,7 @@ end log_info;
 
 -- LOG WARNING
 --
--- Log an warning-level message to the log.
+-- Log a warning-type message to the log.  This procedure works in a chain.
 -----------------------------------------------------------------------------
 
 procedure log_warning( message : universal_string ) is
@@ -110,6 +169,7 @@ begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
      log_string := @ & "WARNING:";
      log_string := @ & message &  ":";
      log_indent_required := log_level * 2;
@@ -133,6 +193,7 @@ begin
      close( log_file );
   when chains.not_in_chain =>
      log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
      log_string := @ & "WARNING:";
      log_string := @ & source_info.file &  ":";
      log_indent_required := log_level * 2;
@@ -155,7 +216,7 @@ end log_warning;
 
 -- LOG ERROR
 --
--- Log an error-level message to the log.
+-- Log an error-type message to the log.  This procedure works in a chain.
 -----------------------------------------------------------------------------
 
 procedure log_error( message : universal_string ) is
@@ -164,6 +225,7 @@ begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
      log_string := @ & "ERROR:";
      log_string := @ & message &  ":";
      log_indent_required := log_level * 2;
@@ -187,6 +249,7 @@ begin
      close( log_file );
   when chains.not_in_chain =>
      log_string := `date;` & ":";
+     log_string := @ & strings.image($$) & ":";
      log_string := @ & "ERROR:";
      log_string := @ & source_info.file &  ":";
      log_indent_required := log_level * 2;

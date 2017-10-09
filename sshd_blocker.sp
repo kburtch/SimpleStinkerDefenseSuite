@@ -80,6 +80,9 @@ processing_cnt : natural;        -- number of sshd record processed
 new_cnt        : natural;        -- new login names seen
 dup_cnt        : natural;        -- number of records already seen
 updated_cnt    : natural;        -- number of old login names seen
+message        : string;         -- log message
+last_day       : calendar.day_number;
+this_day       : calendar.day_number;
 
 hostname_base : string;          -- x-y of x-y.cloud.com
 hostname_stub : string;          -- x   of x-y.cloud.com
@@ -171,6 +174,33 @@ begin
    end if;
 end get_raw_username_and_ip_number;
 
+-- SHOW SUMMARY
+--
+-- Show a summary of activity.
+-----------------------------------------------------------------------------
+
+procedure show_summary is
+begin
+   log_ok( source_info.source_location ) @
+      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records: " ) @
+      ( "New usernames: " ) @ ( strings.image( new_cnt ) ) @
+      ( "; Old records: " ) @ ( strings.image( dup_cnt ) ) @
+      ( "; Old usernames: " ) @ ( strings.image( updated_cnt ) );
+end show_summary;
+
+-- RESET SUMMARY
+--
+-- Clear counters for the summary.
+-----------------------------------------------------------------------------
+
+procedure reset_summary is
+begin
+  processing_cnt := 0;
+  new_cnt := 0;
+  dup_cnt := 0;
+  updated_cnt := 0;
+end reset_summary;
+
 begin
   -- Check for file existence
   if not files.exists( string( sshd_violations_file_path ) ) then
@@ -217,17 +247,17 @@ open( f, in_file, sshd_violations_file_path );
 
 -- setup variables
 
-processing_cnt := 0;
-new_cnt := 0;
-dup_cnt := 0;
-updated_cnt := 0;
+reset_summary;
 this_run_on := get_timestamp;
+last_day := calendar.day( calendar.clock );
 r.created_on := this_run_on;
 create_login_hostname_variants( hostname_base, hostname_stub );
 
 process := false;
 while not end_of_file( f ) loop
    processing_cnt := @+1;
+   source_ip := "";
+   message := "";
 
    -- show progress line
 
@@ -269,6 +299,7 @@ pragma todo( team,
          r.ssh_disallowed := true;
          source_ip := validate_ip( raw_source_ip );
          if source_ip /= "" then
+            message := " no such user account";
             process;
          else
             log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
@@ -318,6 +349,7 @@ pragma todo( team,
             end if;
             r.ssh_disallowed := true;
             if source_ip /= "" then
+               message := " remote login disallowed";
                process;
             else
                log_warning( source_info.source_location ) @ ( "ip not found for address '" & source_addr & "'" );
@@ -354,6 +386,7 @@ pragma todo( team,
          end if;
          source_ip := validate_ip( raw_source_ip );
          if source_ip /= "" then
+            message := " login failed";
             process;
          else
             log_warning( source_info.source_location ) @ ("skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
@@ -386,6 +419,7 @@ pragma todo( team,
          records.to_json( j, r );
          --if mode in monitor_mode..honeypot_mode then
             if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
+               log_info( source_info.source_location ) @ (source_ip ) @ ( message );
                if btree_io.has_element( sshd_logins_file, string( r.username ) ) then
                   btree_io.get( sshd_logins_file, string( r.username ), old_r );
 pragma todo( team,
@@ -408,9 +442,21 @@ pragma todo( team,
                   r.updated_on := this_run_on;
                   btree_io.set( sshd_logins_file, string( r.username ), r );
                end if;
-            end if;
-            sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon);
+               sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon);
+            end if; -- whitelisted
          --end if;
+      end if;
+   end if;
+
+   -- periodically check for a new day and display the summary of activity
+   -- on a new day
+
+   if opt_daemon then
+      this_day := calendar.day( calendar.clock );
+      if this_day /= last_day then
+         last_day := this_day;
+         show_summary;
+         reset_summary;
       end if;
    end if;
 end loop;
@@ -431,11 +477,7 @@ shutdown_blocking;
 
 -- Record summary
 --if mode in monitor_mode..honeypot_mode then
-   log_info( source_info.source_location ) @
-      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records: " ) @
-      ( "New usernames: " ) @ ( strings.image( new_cnt ) ) @
-      ( "; Old records: " ) @ ( strings.image( dup_cnt ) ) @
-      ( "; Old usernames: " ) @ ( strings.image( updated_cnt ) );
+   show_summary;
 --else
 --   log_info( source_info.source_location ) @
 --      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records" );

@@ -633,7 +633,7 @@ begin
   btree_io.close_cursor( offender_file, abtc );
 
   shutdown_blocking;
-  log_info( source_info.source_location ) @
+  log_ok( source_info.source_location ) @
      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
      ( "; Updated" ) @ ( strings.image( updating_cnt ) ) @
      ( "; Still blocked" ) @ ( strings.image( number_blocked ) );

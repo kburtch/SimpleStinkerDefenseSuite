@@ -249,6 +249,38 @@ begin
   end loop;
   return quit;
 end handle_command_options;
+-----------------------------------------------------------------------------
+
+record_cnt : natural;
+attack_cnt : natural;
+last_day   : calendar.day_number;
+this_day   : calendar.day_number;
+
+
+-- SHOW SUMMARY
+--
+-- Show a summary of activity.
+-----------------------------------------------------------------------------
+
+procedure show_summary is
+begin
+  log_ok( source_info.source_location )
+     @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
+     @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
+end show_summary;
+
+
+-- RESET SUMMARY
+--
+-- Clear counters for the summary.
+-----------------------------------------------------------------------------
+
+procedure reset_summary is
+begin
+  record_cnt := 0;
+  attack_cnt := 0;
+end reset_summary;
+
 
 -----------------------------------------------------------------------------
 
@@ -263,9 +295,6 @@ end handle_command_options;
   source_ip : ip_string;
   host : dns_string;
   request : string;
-
-  record_cnt : natural;
-  attack_cnt : natural;
 
 begin
   -- Default
@@ -298,14 +327,15 @@ begin
   btree_io.open( vectors_file, string( vectors_path ), vectors_width, vectors_width );
 
   this_run_on := get_timestamp;
-  record_cnt := 0;
-  attack_cnt := 0;
+  last_day := calendar.day( calendar.clock );
+  reset_summary;
 
   open( f, in_file, http_violations_file_path );
   while not end_of_file( f ) loop
      log_line := get_line( f );
      pragma debug( `? log_line;` );
      record_cnt := @+1;
+     source_ip := "";
 
      -- show progress line
 
@@ -371,6 +401,18 @@ begin
            end if;
         end if;
      end if;
+
+   -- periodically check for a new day and display the summary of activity
+   -- on a new day
+
+   if opt_daemon then
+      this_day := calendar.day( calendar.clock );
+      if this_day /= last_day then
+         last_day := this_day;
+         show_summary;
+         reset_summary;
+      end if;
+   end if;
   end loop;
 
   -- Complete progress line
@@ -380,9 +422,7 @@ begin
      new_line;
   end if;
 
-  log_info( source_info.source_location )
-     @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
-     @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
+  show_summary;
 
   close( f );
   btree_io.close( vectors_file );

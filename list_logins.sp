@@ -11,6 +11,7 @@ procedure list_logins is
   with separate "config/contributors.inc.sp";
   with separate "lib/world.inc.sp";
   with separate "config/config.inc.sp";
+  with separate "lib/logging.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/logins.inc.sp";
 
