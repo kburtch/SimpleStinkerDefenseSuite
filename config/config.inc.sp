@@ -46,5 +46,10 @@ firewall_kind : constant firewall_kinds := iptables_firewall;
 default_grace : constant grace_count := 1;
 mail_grace    : constant grace_count := 4; --default_grace;
 
+-- The email address to receive alerts.
+
+alert_email   : constant email_string := "ken@pegasoft.ca";
+report_email  : constant email_string := "ken@pegasoft.ca";
+
 -- vim: ft=spar
 
