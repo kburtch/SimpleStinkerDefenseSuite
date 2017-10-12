@@ -343,7 +343,7 @@ begin
         if ab.sshd_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -448,7 +448,7 @@ begin
         if ab.smtp_blocked <= probation_blocked then
            -- log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -553,7 +553,7 @@ begin
         if ab.spam_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -658,7 +658,7 @@ begin
         if ab.http_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.file ) @ ( source_ip ) @ ( reason );
+              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
