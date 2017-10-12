@@ -1,11 +1,11 @@
-procedure reset_firewall is
-
 with separate "config/contributors.inc.sp";
 with separate "lib/world.inc.sp";
 with separate "config/config.inc.sp";
+
+procedure reset_firewall is
+
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
-
 
   -- TODO: to do a full reset, ipset blockset must be deleted first.
 

@@ -1,5 +1,7 @@
 separate;
 
+configuration world is
+
 ------------------------------------------------------------------------------
 -- This file contains global types and settings
 ------------------------------------------------------------------------------
@@ -80,6 +82,8 @@ type operating_modes is (
 );
 
 -- mode is defined in config.inc.sp
+
+end world;
 
 -- vim: ft=spar
 

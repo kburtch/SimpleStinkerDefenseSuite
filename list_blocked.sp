@@ -1,5 +1,9 @@
 #!/usr/local/bin/spar
 
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+
 procedure list_blocked is
   pragma annotate( summary, "list_blocked" )
                 @( description, "Write a report blocked IP's to " )
@@ -8,9 +12,7 @@ procedure list_blocked is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "config/contributors.inc.sp";
-  with separate "lib/world.inc.sp";
-  with separate "config/config.inc.sp";
+  with separate "lib/logging.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
   with separate "lib/countries.inc.sp";

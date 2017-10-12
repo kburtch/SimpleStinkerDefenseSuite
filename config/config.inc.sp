@@ -1,5 +1,7 @@
 separate;
 
+configuration config is
+
 -- TODO: disabling individual blockers
 
 -- The location of the project root directory.
@@ -31,7 +33,7 @@ http_violations_file_paths : array( 1..3 ) of file_path := (
 -- blocker monitoring/testing or actively blocking.
 -- The enumerated values are defined in lib/world.inc.sp
 
-mode : constant operating_modes := local_blocking_mode;
+operating_mode : constant operating_modes := local_blocking_mode;
 
 -- The kind of firewall on this server.
 -- The enumerated values are defined in lib/world.inc.sp
@@ -50,6 +52,8 @@ mail_grace    : constant grace_count := 4; --default_grace;
 
 alert_email   : constant email_string := "ken@pegasoft.ca";
 report_email  : constant email_string := "ken@pegasoft.ca";
+
+end config;
 
 -- vim: ft=spar
 

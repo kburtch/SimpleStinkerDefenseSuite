@@ -1,5 +1,9 @@
 #!/usr/local/bin/spar
 
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+
 procedure sshd_blocker is
 
 pragma annotate( summary, "sshd_blocker [--version][-D][-f violations_file]" )
@@ -14,9 +18,6 @@ pragma annotate( summary, "sshd_blocker [--version][-D][-f violations_file]" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-with separate "config/contributors.inc.sp";
-with separate "lib/world.inc.sp";
-with separate "config/config.inc.sp";
 with separate "lib/logging.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";

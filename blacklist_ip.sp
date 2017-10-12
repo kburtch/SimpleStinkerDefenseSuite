@@ -1,5 +1,9 @@
 #!/usr/local/bin/spar
 
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+
 procedure blacklist_ip is
   pragma annotate( summary, "blacklist_ip" )
                 @( description, "Blacklist an IP number" )
@@ -7,9 +11,7 @@ procedure blacklist_ip is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "config/contributors.inc.sp";
-  with separate "lib/world.inc.sp";
-  with separate "config/config.inc.sp";
+  with separate "lib/logging.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
 

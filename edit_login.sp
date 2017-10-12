@@ -1,5 +1,9 @@
 #!/usr/local/bin/spar
 
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+
 procedure edit_login is
   pragma annotate( summary, "edit_login" )
                 @( description, "Edit a login's details" )
@@ -7,9 +11,7 @@ procedure edit_login is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "config/contributors.inc.sp";
-  with separate "lib/world.inc.sp";
-  with separate "config/config.inc.sp";
+  with separate "lib/logging.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/logins.inc.sp";
 

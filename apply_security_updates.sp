@@ -1,5 +1,9 @@
 #!/usr/local/bin/spar
 
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+
 procedure apply_security_updates is
 
 pragma annotate( summary, "apply_security_updates" )
@@ -11,9 +15,7 @@ pragma annotate( summary, "apply_security_updates" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-with separate "config/contributors.inc.sp";
-with separate "lib/world.inc.sp";
-with separate "config/config.inc.sp";
+  with separate "lib/logging.inc.sp";
 
   result : string;
   summary_line : string;

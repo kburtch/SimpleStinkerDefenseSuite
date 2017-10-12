@@ -4,9 +4,9 @@ with separate "../config/contributors.inc.sp";
 with separate "../lib/world.inc.sp";
 with separate "../config/config.inc.sp";
 
-procedure export_http_file_paths is
-  pragma annotate( summary, "export_http_file_paths" )
-                @( description, "Print the http violation files to " )
+procedure export_project_path is
+  pragma annotate( summary, "export_project_path" )
+                @( description, "Print the ssds project path to " )
                 @( description, "standard output." )
                 @( author, "Ken O. Burtch" );
   pragma license( gplv3 );
@@ -14,10 +14,8 @@ procedure export_http_file_paths is
 
   pragma restriction( no_external_commands );
 begin
-  for i in arrays.first( http_violations_file_paths )..arrays.last( http_violations_file_paths ) loop
-      put_line( http_violations_file_paths( i ) );
-  end loop;
-end export_http_file_paths;
+  put_line( project_path );
+end export_project_path;
 
 -- vim: ft=spar
 

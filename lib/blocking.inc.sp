@@ -58,7 +58,7 @@ offender_file : btree_io.file( an_offender );
 procedure block( offender : ip_string ) is
   old_log_level : a_log_level := log_level_start;
 begin
-  if mode = monitor_mode then
+  if operating_mode = monitor_mode then
      log_info( source_info.source_location ) @ ( offender & " would have been blocked" );
   else
      case firewall_kind is
@@ -96,7 +96,7 @@ end block;
 procedure unblock( offender : ip_string ) is
   old_log_level : a_log_level := log_level_start;
 begin
-  if mode = monitor_mode then
+  if operating_mode = monitor_mode then
      log_info( source_info.source_location ) @ ( offender & " would have been unblocked" );
   else
      case firewall_kind is
@@ -193,7 +193,7 @@ function clear_firewall return boolean is
   total_clear : boolean := false;
 
 begin
-  if mode /= monitor_mode and mode /= honeypot_mode then
+  if operating_mode /= monitor_mode and operating_mode /= honeypot_mode then
      case firewall_kind is
      when iptables_firewall =>
 

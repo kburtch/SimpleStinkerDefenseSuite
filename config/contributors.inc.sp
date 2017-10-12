@@ -1,5 +1,7 @@
 separate;
 
+configuration contributors is
+
 -- Contributors
 
 team : teams.member := (
@@ -43,6 +45,8 @@ ken_burtch : teams.member := (
   true,
   false
 );
+
+end contributors;
 
 -- vim: ft=spar
 
