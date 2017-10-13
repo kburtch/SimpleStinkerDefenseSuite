@@ -45,6 +45,26 @@ procedure log_level_end( old_level : a_log_level ) is begin
 end log_level_end;
 
 
+-- LOG CLEAN MESSAGE
+--
+-----------------------------------------------------------------------------
+
+procedure log_clean_message( message : in out universal_string ) is
+  p : natural;
+begin
+  -- Escape colons
+  loop
+     p := strings.index( message, ':' );
+  exit when p = 0;
+     message := strings.delete( @, p, p );
+     message := strings.insert( @, p, "[# 58]" );
+  end loop;
+  -- Escape control characters
+  message := strings.to_escaped( @ );
+  return message;
+end log_clean_message;
+
+
 -- LOG OK
 --
 -- Log a success-type message to the log.  This procedure works in a chain.
@@ -52,26 +72,29 @@ end log_level_end;
 
 procedure log_ok( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
+  m : universal_string := message;
 begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
      log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "OK:";
-     log_string := @ & message &  ":";
+     log_string := @ & m &  ":";
      log_indent_required := log_level * 2;
   when chains.context_middle =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
   when chains.context_last =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
@@ -88,7 +111,8 @@ begin
         log_string := @ & ( log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
@@ -109,26 +133,29 @@ end log_ok;
 
 procedure log_info( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
+  m : universal_string := message;
 begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
      log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "INFO:";
-     log_string := @ & message &  ":";
+     log_string := @ & m &  ":";
      log_indent_required := log_level * 2;
   when chains.context_middle =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
   when chains.context_last =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
@@ -145,7 +172,8 @@ begin
         log_string := @ & ( log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
@@ -165,26 +193,29 @@ end log_info;
 
 procedure log_warning( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
+  m : universal_string := message;
 begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
      log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "WARNING:";
-     log_string := @ & message &  ":";
+     log_string := @ & m &  ":";
      log_indent_required := log_level * 2;
   when chains.context_middle =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
   when chains.context_last =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
@@ -201,7 +232,8 @@ begin
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
@@ -221,26 +253,29 @@ end log_warning;
 
 procedure log_error( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
+  m : universal_string := message;
 begin
   case context is
   when chains.context_first =>
      log_string := `date;` & ":";
      log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
      log_string := @ & "ERROR:";
-     log_string := @ & message &  ":";
+     log_string := @ & m &  ":";
      log_indent_required := log_level * 2;
   when chains.context_middle =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
   when chains.context_last =>
      if log_indent_required > 0 then
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
@@ -257,7 +292,8 @@ begin
         log_string := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @ & message;
+     log_clean_message( m );
+     log_string := @ & m;
      create( log_file, append_file, log_path );
      put_line( log_file, log_string );
      if echo_logging then
