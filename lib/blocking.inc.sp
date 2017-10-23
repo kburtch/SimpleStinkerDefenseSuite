@@ -79,7 +79,7 @@ begin
      end case;
 
      if os.status = 0 then
-        log_info( source_info.source_location ) @ ( offender & " was blocked" );
+        log_ok( source_info.source_location ) @ ( offender & " was blocked" );
      else
         put_line( standard_error, "error " & strings.image( os.status ) & " on blocking " & offender );
      end if;
@@ -105,7 +105,7 @@ begin
        if $? = 0 then
           IPSET_CMD( "del", "blocklist", offender );
           if os.status = 0 then
-             log_info( source_info.source_location ) @ ( offender & " was unblocked" );
+             log_ok( source_info.source_location ) @ ( offender & " was unblocked" );
           else
              log_error( source_info.source_location ) @ ( "error" & strings.image( os.status ) & " on unblocking " & offender );
      end if;
