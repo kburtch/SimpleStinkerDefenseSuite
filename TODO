@@ -34,6 +34,8 @@
 - http
   - statistic blocking on large accesses
   - time-of-day matrix (i.e. list of hours) and application
+  - unexpected exception on
+    - if strings.index( " 400 401 403 404 405 413 414 500 ", string( http_status ) ) > 0 then
 
 - wash
   - using IPSET_CMD command type instead of command name
@@ -74,6 +76,7 @@
 - other
   - if spar fails with an error, daemon script doesn't abort
   -https://github.com/mushorg/glastopf honeypot
+  - use an event number instead of a ip number
 
 - additional services
   - virus scan on changed files

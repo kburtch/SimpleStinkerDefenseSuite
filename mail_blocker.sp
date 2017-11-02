@@ -101,8 +101,8 @@ record_cnt : natural;
 procedure show_summary is
 begin
   log_ok( source_info.source_location )
-     @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
-     @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
+     @ ( "Processed " ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
+     @ ( "; Attacks = " ) @ ( strings.image( attack_cnt ) );
 end show_summary;
 
 

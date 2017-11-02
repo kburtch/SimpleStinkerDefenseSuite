@@ -20,6 +20,8 @@ log_string : string;
 log_program_name : string;
 log_level : a_log_level;
 log_indent_required : natural;
+log_started_message : boolean := true;
+log_width : constant integer := 75;
 
 
 -- LOG LEVEL START
@@ -45,8 +47,11 @@ procedure log_level_end( old_level : a_log_level ) is begin
 end log_level_end;
 
 
+-----------------------------------------------------------------------------
+
 -- LOG CLEAN MESSAGE
 --
+-- Escape special characters (including colon, used to denote log fields).
 -----------------------------------------------------------------------------
 
 procedure log_clean_message( message : in out universal_string ) is
@@ -65,6 +70,76 @@ begin
 end log_clean_message;
 
 
+-- LOG FIRST PART
+--
+-- Build the first part of the log message: date, program and location.
+-----------------------------------------------------------------------------
+
+procedure log_first_part( m : universal_string; level_tag : string ) is
+begin
+  log_string := `date;` & ":";
+  log_string := @ & strings.trim( strings.image( os.pid ) ) & ":"; --strings.image($$) & ":";
+  log_string := @ & source_info.enclosing_entity & ":";
+  log_string := @ & level_tag & ":";
+  log_string := @ & m &  ":";
+  log_indent_required := log_level * 2;
+  log_started_message := false;
+end log_first_part;
+
+
+-- LOG MIDDLE PART
+--
+-- Build the middle part of the log message.  Indent and show the first
+-- or next part of the user's message.
+-----------------------------------------------------------------------------
+
+procedure log_middle_part( m : universal_string ) is
+begin
+  if not log_started_message then
+     while strings.length( log_string ) < log_width loop
+        log_string := @ & ' ';
+     end loop;
+     if log_indent_required > 0 then
+        log_string := @ & (log_indent_required * ' ');
+        log_indent_required := 0;
+     end if;
+     log_string := @  &  ":";
+     log_started_message;
+  end if;
+  log_string := @ & m;
+end log_middle_part;
+
+
+-- LOG LAST PART
+--
+-- Build the last part of the log message.  Indent (if needed) and show the
+-- last of the user's message.
+-----------------------------------------------------------------------------
+
+procedure log_last_part( m : universal_string ) is
+begin
+  if not log_started_message then
+     while strings.length( log_string ) < log_width loop
+        log_string := @ & ' ';
+     end loop;
+     if log_indent_required > 0 then
+        log_string := @ & (log_indent_required * ' ');
+        log_indent_required := 0;
+     end if;
+     log_string := @  &  ":";
+     log_started_message;
+  end if;
+  log_string := @ & m;
+  create( log_file, append_file, log_path );
+  put_line( log_file, log_string );
+  if echo_logging then
+     put_line( log_string );
+  end if;
+  close( log_file );
+end log_last_part;
+
+-----------------------------------------------------------------------------
+
 -- LOG OK
 --
 -- Log a success-type message to the log.  This procedure works in a chain.
@@ -74,51 +149,17 @@ procedure log_ok( message : universal_string ) is
   context : constant chains.context := chains.chain_context;
   m : universal_string := message;
 begin
+  log_clean_message( m );
   case context is
   when chains.context_first =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "OK:";
-     log_string := @ & m &  ":";
-     log_indent_required := log_level * 2;
+     log_first_part( message, "OK" );
   when chains.context_middle =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
+     log_middle_part( m );
   when chains.context_last =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_last_part( m );
   when chains.not_in_chain =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "OK:";
-     log_string := @ & source_info.file &  ":";
-     log_indent_required := log_level * 2;
-     if log_indent_required > 0 then
-        log_string := @ & ( log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_first_part( source_info.file, "OK" );
+     log_last_part( m );
   when others =>
      put_line( standard_error, "unexpect chain context" );
   end case;
@@ -137,49 +178,14 @@ procedure log_info( message : universal_string ) is
 begin
   case context is
   when chains.context_first =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "INFO:";
-     log_string := @ & m &  ":";
-     log_indent_required := log_level * 2;
+     log_first_part( message, "INFO" );
   when chains.context_middle =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
+     log_middle_part( m );
   when chains.context_last =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_last_part( m );
   when chains.not_in_chain =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "INFO:";
-     log_string := @ & source_info.file &  ":";
-     log_indent_required := log_level * 2;
-     if log_indent_required > 0 then
-        log_string := @ & ( log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_first_part( source_info.file, "INFO" );
+     log_last_part( m );
   when others =>
      put_line( standard_error, "unexpect chain context" );
   end case;
@@ -197,49 +203,14 @@ procedure log_warning( message : universal_string ) is
 begin
   case context is
   when chains.context_first =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "WARNING:";
-     log_string := @ & m &  ":";
-     log_indent_required := log_level * 2;
+     log_first_part( message, "WARNING" );
   when chains.context_middle =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
+     log_middle_part( m );
   when chains.context_last =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_last_part( m );
   when chains.not_in_chain =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "WARNING:";
-     log_string := @ & source_info.file &  ":";
-     log_indent_required := log_level * 2;
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_first_part( source_info.file, "WARNING" );
+     log_end_part( m );
   when others =>
      put_line( standard_error, "unexpect chain context" );
   end case;
@@ -257,49 +228,14 @@ procedure log_error( message : universal_string ) is
 begin
   case context is
   when chains.context_first =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "ERROR:";
-     log_string := @ & m &  ":";
-     log_indent_required := log_level * 2;
+     log_first_part( message, "ERROR" );
   when chains.context_middle =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
+     log_middle_part( m );
   when chains.context_last =>
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_last_part( m );
   when chains.not_in_chain =>
-     log_string := `date;` & ":";
-     log_string := @ & source_info.enclosing_entity & strings.image($$) & ":";
-     log_string := @ & "ERROR:";
-     log_string := @ & source_info.file &  ":";
-     log_indent_required := log_level * 2;
-     if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
-        log_indent_required := 0;
-     end if;
-     log_clean_message( m );
-     log_string := @ & m;
-     create( log_file, append_file, log_path );
-     put_line( log_file, log_string );
-     if echo_logging then
-        put_line( log_string );
-     end if;
-     close( log_file );
+     log_first_part( source_info.file, "ERROR" );
+     log_end_part( m );
   when others =>
      put_line( standard_error, "unexpect chain context" );
   end case;

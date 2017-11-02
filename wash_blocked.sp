@@ -636,8 +636,8 @@ begin
   shutdown_blocking;
   log_ok( source_info.source_location ) @
      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
-     ( "; Updated" ) @ ( strings.image( updating_cnt ) ) @
-     ( "; Still blocked" ) @ ( strings.image( number_blocked ) );
+     ( "; Updated =" ) @ ( strings.image( updating_cnt ) ) @
+     ( "; Still blocked =" ) @ ( strings.image( number_blocked ) );
   shutdownWorld;
 exception when others =>
   if btree_io.is_open( offender_file ) then

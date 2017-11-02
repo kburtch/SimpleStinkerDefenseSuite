@@ -183,10 +183,10 @@ end get_raw_username_and_ip_number;
 procedure show_summary is
 begin
    log_ok( source_info.source_location ) @
-      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records: " ) @
-      ( "New usernames: " ) @ ( strings.image( new_cnt ) ) @
-      ( "; Old records: " ) @ ( strings.image( dup_cnt ) ) @
-      ( "; Old usernames: " ) @ ( strings.image( updated_cnt ) );
+      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records" ) @
+      ( "; New usernames = " ) @ ( strings.image( new_cnt ) ) @
+      ( "; Old records = " ) @ ( strings.image( dup_cnt ) ) @
+      ( "; Old usernames = " ) @ ( strings.image( updated_cnt ) );
 end show_summary;
 
 -- RESET SUMMARY

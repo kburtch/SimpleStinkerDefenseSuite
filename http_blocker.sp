@@ -347,8 +347,23 @@ begin
      end if;
 
      tmp := strings.field( log_line, 3, '"' );
+
+     -- Get the status code
+     -- If invalid, use code 999
+
      http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
-     if strings.index( " 400 401 403 404 405 413 414 500 ", string( http_status ) ) > 0 then
+     if http_status = "" then
+        http_status := "999";
+        log_error( source_info.source_location ) @ ( "http_status is blank on log line" ) @ (log_line);
+     elsif strings.length( http_status ) /= 3 then
+        http_status := "999";
+        log_error( source_info.source_location ) @ ( "http_status is not length 3 on log line" ) @ (log_line);
+     elsif not strings.is_digit( http_status ) then
+        http_status := "999";
+        log_error( source_info.source_location ) @ ( "http_status is not numeric on log line" ) @ (log_line);
+     end if;
+
+     if strings.index( " 400 401 403 404 405 413 414 500 999 ", string( http_status ) ) > 0 then
         request := strings.field( log_line, 2, '"' ) & strings.field( log_line, 6, '"' );
         raw_source_ip := raw_ip_string( strings.field( log_line, 1, ' ' ) );
         source_ip := validate_ip( raw_source_ip );
@@ -358,39 +373,49 @@ begin
            if not is_search_engine( host, source_ip ) then
               -- remove colon in middle of date/time
               -- convert month to number
-              tmp := strings.field( log_line, 2, '[' );
-              tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
-              tmp := strings.replace_slice( tmp, 12, 12, ' ' );
-              if strings.index( tmp, "Jan" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "01" );
-              elsif strings.index( tmp, "Feb" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "02" );
-              elsif strings.index( tmp, "Mar" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "03" );
-              elsif strings.index( tmp, "Apr" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "04" );
-              elsif strings.index( tmp, "May" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "05" );
-              elsif strings.index( tmp, "Jun" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "06" );
-              elsif strings.index( tmp, "Jul" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "07" );
-              elsif strings.index( tmp, "Aug" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "08" );
-              elsif strings.index( tmp, "Sep" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "09" );
-              elsif strings.index( tmp, "Oct" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "10" );
-              elsif strings.index( tmp, "Nov" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "11" );
-              elsif strings.index( tmp, "Dec" ) > 0 then
-                tmp := strings.replace_slice( tmp, 4, 6, "12" );
-              end if;
-              -- swap day and month
-              tmp2 := strings.head( tmp, 3 );
-              tmp := strings.delete( tmp, 1, 3 );
-              tmp := strings.insert( tmp, 4, tmp2 );
-              logged_on := parse_timestamp( date_string( tmp ) );
+              begin
+                 tmp := strings.field( log_line, 2, '[' );
+                 tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
+                 tmp := strings.replace_slice( tmp, 12, 12, ' ' );
+                 if strings.index( tmp, "Jan" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "01" );
+                 elsif strings.index( tmp, "Feb" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "02" );
+                 elsif strings.index( tmp, "Mar" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "03" );
+                 elsif strings.index( tmp, "Apr" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "04" );
+                 elsif strings.index( tmp, "May" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "05" );
+                 elsif strings.index( tmp, "Jun" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "06" );
+                 elsif strings.index( tmp, "Jul" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "07" );
+                 elsif strings.index( tmp, "Aug" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "08" );
+                 elsif strings.index( tmp, "Sep" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "09" );
+                 elsif strings.index( tmp, "Oct" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "10" );
+                 elsif strings.index( tmp, "Nov" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "11" );
+                 elsif strings.index( tmp, "Dec" ) > 0 then
+                   tmp := strings.replace_slice( tmp, 4, 6, "12" );
+                 end if;
+                 -- swap day and month
+                 tmp2 := strings.head( tmp, 3 );
+                 tmp := strings.delete( tmp, 1, 3 );
+                 tmp := strings.insert( tmp, 4, tmp2 );
+                 logged_on := parse_timestamp( date_string( tmp ) );
+              exception when others =>
+                  log_error( source_info.source_location )
+                         @ ( exceptions.exception_info )
+                         @ ( " - unable to convert date " )
+                         @ ( tmp )
+                         @ ( "on log line" )
+                         @ ( log_line );
+                  logged_on := this_run_on;
+              end;
               if source_ip /= "" then
                  if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
                     -- TODO: no message yet
