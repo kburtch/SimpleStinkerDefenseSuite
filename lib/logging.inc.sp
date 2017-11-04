@@ -16,13 +16,15 @@ type a_log_level is new natural;
 
 log_file : file_type;
 log_path : string;
-log_string : string;
+log_string_header : string;
+log_string_message : string;
 log_program_name : string;
 log_level : a_log_level;
 log_indent_required : natural;
 log_started_message : boolean := true;
 log_width : constant integer := 75;
-
+log_last_message : string := "";
+log_dup_count : natural := 0;
 
 -- LOG LEVEL START
 --
@@ -77,11 +79,11 @@ end log_clean_message;
 
 procedure log_first_part( m : universal_string; level_tag : string ) is
 begin
-  log_string := `date;` & ":";
-  log_string := @ & strings.trim( strings.image( os.pid ) ) & ":"; --strings.image($$) & ":";
-  log_string := @ & source_info.enclosing_entity & ":";
-  log_string := @ & level_tag & ":";
-  log_string := @ & m &  ":";
+  log_string_header := `date;` & ":";
+  log_string_header := @ & strings.trim( strings.image( os.pid ) ) & ":"; --strings.image($$) & ":";
+  log_string_header := @ & source_info.enclosing_entity & ":";
+  log_string_header := @ & level_tag & ":";
+  log_string_message := m & ":";
   log_indent_required := log_level * 2;
   log_started_message := false;
 end log_first_part;
@@ -96,17 +98,17 @@ end log_first_part;
 procedure log_middle_part( m : universal_string ) is
 begin
   if not log_started_message then
-     while strings.length( log_string ) < log_width loop
-        log_string := @ & ' ';
+     while strings.length( log_string_header & log_string_message ) < log_width loop
+        log_string_message := @ & ' ';
      end loop;
      if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
+        log_string_message := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @  &  ":";
+     log_string_message := @  &  ":";
      log_started_message;
   end if;
-  log_string := @ & m;
+  log_string_message := @ & m;
 end log_middle_part;
 
 
@@ -119,23 +121,47 @@ end log_middle_part;
 procedure log_last_part( m : universal_string ) is
 begin
   if not log_started_message then
-     while strings.length( log_string ) < log_width loop
-        log_string := @ & ' ';
+     while strings.length( log_string_header & log_string_message ) < log_width loop
+        log_string_message := @ & ' ';
      end loop;
      if log_indent_required > 0 then
-        log_string := @ & (log_indent_required * ' ');
+        log_string_message := @ & (log_indent_required * ' ');
         log_indent_required := 0;
      end if;
-     log_string := @  &  ":";
+     log_string_message := @  &  ":";
      log_started_message;
   end if;
-  log_string := @ & m;
-  create( log_file, append_file, log_path );
-  put_line( log_file, log_string );
-  if echo_logging then
-     put_line( log_string );
+  log_string_message := @ & m;
+  if log_string_message = log_last_message then
+     log_dup_count := @ + 1;
+  else
+     create( log_file, append_file, log_path );
+     -- if there were dups, show the count
+     if log_dup_count = 1 then
+        put_line( log_file, log_string_header & log_last_message );
+        if echo_logging then
+           put_line( log_string_header & log_last_message );
+        end if;
+     elsif log_dup_count > 0 then
+        -- TODO: missing location.  Location must be in duplicate string, but
+        -- TODO: missing here
+        -- TODO: missing indent
+        -- TODO: probably only date should be in header
+        put_line( log_file, log_string_header & "X:X: :... repeated" & strings.image( log_dup_count ) & " times" );
+        if echo_logging then
+           put_line( log_string_header & "X:X: :... repeated" & strings.image( log_dup_count ) & " times" );
+        end if;
+        log_dup_count := 0;
+        -- now can print the new line
+     end if;
+     put_line( log_file, log_string_header & log_string_message );
+     if echo_logging then
+        put_line( log_string_header & log_string_message );
+     end if;
+     close( log_file );
+     log_last_message := log_string_message;
   end if;
-  close( log_file );
+  log_string_message := "";
 end log_last_part;
 
 -----------------------------------------------------------------------------
