@@ -346,7 +346,7 @@ end is_south_american_ip;
   record_cnt_estimate : natural := 0;
 begin
   --setupWorld( "Wash Task", "log/wash.log" );
-  setupWorld( "Wash Task", "log/blocker.log" );
+  setupWorld( "Wash Task", "log/blocker.log", file_log );
 
   -- Process command options
 

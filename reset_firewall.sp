@@ -12,7 +12,7 @@ with separate "lib/blocking.inc.sp";
 
   reply : string;
 begin
-  setupWorld( "reset_firewall", "log/blocker.log" );
+  setupWorld( "reset_firewall", "log/blocker.log", echo_log );
   put_line( "Reset firewall? (Y/N)" );
   reply := get_line;
   if reply = "y" then

@@ -267,7 +267,7 @@ procedure show_summary is
 begin
   log_ok( source_info.source_location )
      @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
-     @ ( "; Attacks:" ) @ ( strings.image( attack_cnt ) );
+     @ ( "; Attacks = " ) @ ( strings.image( attack_cnt ) );
 end show_summary;
 
 
@@ -309,7 +309,7 @@ begin
      raise configuration_error with "http violations file does not exist";
   end if;
 
-  setupWorld( "HTTP Blocker", "log/blocker.log" );
+  setupWorld( "HTTP Blocker", "log/blocker.log", file_log );
 
   -- Process command options
 

@@ -208,7 +208,7 @@ begin
      raise configuration_error with "sshd violations file does not exist";
   end if;
 
-setupWorld( "SSHD blocker", "log/blocker.log" );
+setupWorld( "SSHD blocker", "log/blocker.log", file_log );
 
 -- Process command options
 

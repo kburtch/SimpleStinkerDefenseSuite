@@ -141,7 +141,7 @@ begin
      raise configuration_error with "smtp violations file does not exist";
   end if;
 
-  setupWorld( "MAIL Blocker", "log/blocker.log" );
+  setupWorld( "MAIL Blocker", "log/blocker.log", file_log );
 
   -- Process command options
 

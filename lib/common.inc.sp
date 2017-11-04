@@ -426,10 +426,11 @@ configuration_error : exception;
 -- Startup the common features such as the log file.
 ------------------------------------------------------------------------------
 
-procedure setupWorld( the_program_name : string; the_log_path : string ) is
+procedure setupWorld( the_program_name : string; the_log_path : string;
+  the_log_mode : log_modes ) is
   min_version : constant string := "2.1";
 begin
-  log_start( the_program_name, the_log_path );
+  log_start( the_program_name, the_log_path, the_log_mode );
 
   -- probably should be improved...
   if HOSTNAME = "" then
