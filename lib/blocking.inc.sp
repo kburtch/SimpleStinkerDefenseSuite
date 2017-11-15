@@ -298,6 +298,9 @@ procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
+     if reason /= "" then
+        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+     end if;
      -- TODO: refactor out initialization
      ab.source_ip       := source_ip;
      ab.source_name     := "";
@@ -381,8 +384,8 @@ begin
                  block( source_ip );
               end if;
            end if;
-        --else -- DEBUG
-        --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
+        else
+           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
@@ -404,6 +407,9 @@ procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
+     if reason /= "" then
+        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+     end if;
      ab.source_ip       := source_ip;
      ab.source_name     := "";
      ab.source_country  := "";
@@ -486,8 +492,8 @@ begin
                  block( source_ip );
               end if;
            end if;
-        --else -- DEBUG
-        --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
+        else
+           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
@@ -509,6 +515,9 @@ procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
+     if reason /= "" then
+        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+     end if;
      ab.source_ip       := source_ip;
      ab.source_name     := "";
      ab.source_country  := "";
@@ -591,8 +600,8 @@ begin
                  block( source_ip );
               end if;
            end if;
-        --else -- DEBUG
-        --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
+        else
+           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
@@ -614,6 +623,9 @@ procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   old_log_level : a_log_level := log_level_start;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
+     if reason /= "" then
+        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+     end if;
      ab.source_ip       := source_ip;
      ab.source_name     := "";
      ab.source_country  := "";
@@ -696,8 +708,8 @@ begin
                  block( source_ip );
               end if;
            end if;
-        --else -- DEBUG
-        --   log_info( source_info.file ) @ ( "already blocked " & source_ip ); -- DEBUG
+        else
+           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG

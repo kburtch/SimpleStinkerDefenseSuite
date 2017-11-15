@@ -140,8 +140,16 @@ begin
 end get_timestamp;
 
 function parse_timestamp( s : date_string ) return timestamp_string is
+  result : timestamp_string;
+  dev_null : file_type;
 begin
-  return `date -d "$s" '+%s';`;
+  -- As a workaround, discard errors using dev_null
+  open( dev_null, out_file, "/dev/null" );
+  set_error( dev_null );
+  result := `date -d "$s" '+%s';`;
+  set_error( standard_error );
+  close( dev_null );
+  return result;
 end parse_timestamp;
 
 -- STATISTICS

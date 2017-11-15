@@ -184,9 +184,9 @@ procedure show_summary is
 begin
    log_ok( source_info.source_location ) @
       ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records" ) @
-      ( "; New usernames = " ) @ ( strings.image( new_cnt ) ) @
-      ( "; Old records = " ) @ ( strings.image( dup_cnt ) ) @
-      ( "; Old usernames = " ) @ ( strings.image( updated_cnt ) );
+      ( "; New usernames =" ) @ ( strings.image( new_cnt ) ) @
+      ( "; Old records =" ) @ ( strings.image( dup_cnt ) ) @
+      ( "; Old usernames =" ) @ ( strings.image( updated_cnt ) );
 end show_summary;
 
 -- RESET SUMMARY
@@ -442,6 +442,9 @@ pragma todo( team,
                   r.updated_on := this_run_on;
                   btree_io.set( sshd_logins_file, string( r.username ), r );
                end if;
+               log_info( source_info.source_location )
+                  @ ( source_ip )
+                  @ ( " caused a SSHD threat event" );
                sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon, message);
             end if; -- whitelisted
          --end if;

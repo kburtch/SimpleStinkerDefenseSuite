@@ -94,7 +94,7 @@ end count_web_request_codes;
 -- the web request for the presence of attack vector substrings.
 -----------------------------------------------------------------------------
 
-  function suspicious_web_request( request : string; source_ip : ip_string ) return boolean is
+  function suspicious_web_request( request : string; source_ip : ip_string; message : out string ) return boolean is
     key_code : key_codes;
     eof : boolean;
     key_code_string : string;
@@ -115,12 +115,11 @@ end count_web_request_codes;
                   vector := strings.field( vectors.vector, v, ASCII.LF );
                   exit when vector = "";
                   if strings.index( request, vector ) > 0 then
-                     log_info( source_info.source_location ) @ (
-                       string( source_ip ) &
+                     message := string( source_ip ) &
                        " made a suspicious web request '" &
                         strings.to_escaped( request ) &
                         "' with '" &
-                        strings.to_escaped( vector ) & "'" );
+                        strings.to_escaped( vector ) & "'";
                      found;
                      exit;
                   end if;
@@ -267,7 +266,7 @@ procedure show_summary is
 begin
   log_ok( source_info.source_location )
      @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
-     @ ( "; Attacks = " ) @ ( strings.image( attack_cnt ) );
+     @ ( "; Attacks =" ) @ ( strings.image( attack_cnt ) );
 end show_summary;
 
 
@@ -296,6 +295,7 @@ end reset_summary;
   source_ip : ip_string;
   host : dns_string;
   request : string;
+  message : string;
 
 begin
   -- Default
@@ -354,80 +354,92 @@ begin
      http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
      if http_status = "" then
         http_status := "999";
-        log_error( source_info.source_location ) @ ( "http_status is blank on log line" ) @ (log_line);
+        log_error( source_info.source_location ) @ ( "http_status is blank on log line " ) @ (log_line);
      elsif strings.length( http_status ) /= 3 then
         http_status := "999";
-        log_error( source_info.source_location ) @ ( "http_status is not length 3 on log line" ) @ (log_line);
+        log_error( source_info.source_location ) @ ( "http_status is not length 3 on log line " ) @ (log_line);
      elsif not strings.is_digit( http_status ) then
         http_status := "999";
-        log_error( source_info.source_location ) @ ( "http_status is not numeric on log line" ) @ (log_line);
+        log_error( source_info.source_location ) @ ( "http_status is not numeric on log line " ) @ (log_line);
      end if;
 
      if strings.index( " 400 401 403 404 405 413 414 500 999 ", string( http_status ) ) > 0 then
         request := strings.field( log_line, 2, '"' ) & strings.field( log_line, 6, '"' );
+        -- Check the IP number.  If it's whitelisted, ignore the rest of the processing
+        -- because it is somewhat expensive.
         raw_source_ip := raw_ip_string( strings.field( log_line, 1, ' ' ) );
         source_ip := validate_ip( raw_source_ip );
-        prepare_web_request( request );
-        if suspicious_web_request( request, source_ip ) then
-           host := get_ip_host_name( source_ip );
-           if not is_search_engine( host, source_ip ) then
-              -- remove colon in middle of date/time
-              -- convert month to number
-              begin
-                 tmp := strings.field( log_line, 2, '[' );
-                 tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
-                 tmp := strings.replace_slice( tmp, 12, 12, ' ' );
-                 if strings.index( tmp, "Jan" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "01" );
-                 elsif strings.index( tmp, "Feb" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "02" );
-                 elsif strings.index( tmp, "Mar" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "03" );
-                 elsif strings.index( tmp, "Apr" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "04" );
-                 elsif strings.index( tmp, "May" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "05" );
-                 elsif strings.index( tmp, "Jun" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "06" );
-                 elsif strings.index( tmp, "Jul" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "07" );
-                 elsif strings.index( tmp, "Aug" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "08" );
-                 elsif strings.index( tmp, "Sep" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "09" );
-                 elsif strings.index( tmp, "Oct" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "10" );
-                 elsif strings.index( tmp, "Nov" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "11" );
-                 elsif strings.index( tmp, "Dec" ) > 0 then
-                   tmp := strings.replace_slice( tmp, 4, 6, "12" );
+        if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
+           prepare_web_request( request );
+           if suspicious_web_request( request, source_ip, message ) then
+              host := get_ip_host_name( source_ip );
+              if not is_search_engine( host, source_ip ) then
+                 -- remove colon in middle of date/time
+                 -- convert month to number
+                 begin
+                    tmp := strings.field( log_line, 2, '[' );
+                    tmp := strings.delete( tmp, strings.index( tmp, ' ' ), strings.length( tmp ) );
+                    tmp := strings.replace_slice( tmp, 12, 12, ' ' );
+                    if strings.index( tmp, "Jan" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "01" );
+                    elsif strings.index( tmp, "Feb" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "02" );
+                    elsif strings.index( tmp, "Mar" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "03" );
+                    elsif strings.index( tmp, "Apr" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "04" );
+                    elsif strings.index( tmp, "May" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "05" );
+                    elsif strings.index( tmp, "Jun" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "06" );
+                    elsif strings.index( tmp, "Jul" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "07" );
+                    elsif strings.index( tmp, "Aug" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "08" );
+                    elsif strings.index( tmp, "Sep" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "09" );
+                    elsif strings.index( tmp, "Oct" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "10" );
+                    elsif strings.index( tmp, "Nov" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "11" );
+                    elsif strings.index( tmp, "Dec" ) > 0 then
+                      tmp := strings.replace_slice( tmp, 4, 6, "12" );
+                    end if;
+                    -- swap day and month
+                    tmp2 := strings.head( tmp, 3 );
+                    tmp := strings.delete( tmp, 1, 3 );
+                    tmp := strings.insert( tmp, 4, tmp2 );
+                    logged_on := parse_timestamp( date_string( tmp ) );
+                    if logged_on = "" then
+                       log_error( source_info.source_location )
+                              @ ( " - unable to convert date " )
+                              @ ( tmp )
+                              @ ( " on log line " )
+                              @ ( log_line );
+                       logged_on := this_run_on;
+                    end if;
+                 exception when others =>
+                     log_error( source_info.source_location )
+                            @ ( exceptions.exception_info )
+                            @ ( " - unable to convert date " )
+                            @ ( tmp )
+                            @ ( " on log line " )
+                            @ ( log_line );
+                     logged_on := this_run_on;
+                 end;
+                 if source_ip /= "" then
+                    log_info( source_info.source_location )
+                           @ ( source_ip )
+                           @ ( " caused a HTTP threat event" );
+                    http_record_and_block( source_ip, logged_on, this_run_on, true, message );
+                 else
+                    log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
                  end if;
-                 -- swap day and month
-                 tmp2 := strings.head( tmp, 3 );
-                 tmp := strings.delete( tmp, 1, 3 );
-                 tmp := strings.insert( tmp, 4, tmp2 );
-                 logged_on := parse_timestamp( date_string( tmp ) );
-              exception when others =>
-                  log_error( source_info.source_location )
-                         @ ( exceptions.exception_info )
-                         @ ( " - unable to convert date " )
-                         @ ( tmp )
-                         @ ( "on log line" )
-                         @ ( log_line );
-                  logged_on := this_run_on;
-              end;
-              if source_ip /= "" then
-                 if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
-                    -- TODO: no message yet
-                    http_record_and_block( source_ip, logged_on, this_run_on, true, "" );
-                 end if;
-              else
-                 log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
-              end if;
-              attack_cnt := @+1;
-           end if;
-        end if;
-     end if;
+                 attack_cnt := @+1;
+              end if; -- not search engine
+           end if; -- not suspicious
+        end if; -- not whitelisted
+     end if; -- not 4xx status
 
    -- periodically check for a new day and display the summary of activity
    -- on a new day

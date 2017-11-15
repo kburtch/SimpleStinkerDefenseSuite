@@ -8,11 +8,17 @@ with separate "lib/logging.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 
-  -- TODO: to do a full reset, ipset blockset must be deleted first.
-
   reply : string;
+  tmp : string;
 begin
   setupWorld( "reset_firewall", "log/blocker.log", echo_log );
+  put_line( "TODO: to do a full reset, ipset blockset must be deleted first." );
+  tmp := `ps -ef | fgrep "firewall.d" | wc -l;`;
+  if tmp /= "0" then
+     put_line( "firewall.d is running.  stop this first" );
+     command_line.set_exit_status( 192 );
+     return;
+  end if;
   put_line( "Reset firewall? (Y/N)" );
   reply := get_line;
   if reply = "y" then

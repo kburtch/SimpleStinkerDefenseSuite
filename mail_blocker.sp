@@ -102,7 +102,7 @@ procedure show_summary is
 begin
   log_ok( source_info.source_location )
      @ ( "Processed " ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
-     @ ( "; Attacks = " ) @ ( strings.image( attack_cnt ) );
+     @ ( "; Attacks =" ) @ ( strings.image( attack_cnt ) );
 end show_summary;
 
 
@@ -307,8 +307,14 @@ begin
       end if;
       if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
          if is_spam then
+            log_info( source_info.source_location )
+                  @ ( source_ip )
+                  @ ( " caused a SPAM threat event" );
             spam_record_and_block( source_ip, logged_on, this_run_on, true, message );
          else
+            log_info( source_info.source_location )
+                  @ ( source_ip )
+                  @ ( " caused a SMTP threat event" );
             mail_record_and_block( source_ip, logged_on, this_run_on, true, message );
          end if;
       end if;
