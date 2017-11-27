@@ -170,8 +170,10 @@ function clear_firewall return boolean is
     IPTABLES_CMD( "-A", "INPUT", "-p", "icmp", "-j", "ACCEPT" );
 
     -- Accept SSH connections
-    IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--dport", "22", "-j",
-      "ACCEPT" );
+    -- TODO: this rule must be dropped later or all SSH connections are
+    -- accepted.
+    --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--dport", "22", "-j",
+    --  "ACCEPT" );
 
     -- Default policies
     IPTABLES_CMD( "-P", "INPUT", "DROP" );
@@ -296,6 +298,7 @@ procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
+  blocked_on : timestamp_string;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
@@ -385,7 +388,28 @@ begin
               end if;
            end if;
         else
-           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
+           -- here, it's already blocked.  determine how long from most recent
+           -- blocking time.  If it's recent, it's just an info message.
+           blocked_on := ab.sshd_blocked_on;
+           if ab.smtp_blocked_on > blocked_on then
+              blocked_on := ab.smtp_blocked_on;
+           end if;
+           if ab.spam_blocked_on > blocked_on then
+              blocked_on := ab.spam_blocked_on;
+           end if;
+           if ab.http_blocked_on > blocked_on then
+              blocked_on := ab.http_blocked_on;
+           end if;
+           -- we expect some delay while blocking takes effect.  If an IP is
+           -- still not blocked after 5 minutes, try to re-block it
+           --log_info( source_info.file ) @ ( ts ) @ ( " " ) @ ( blocked_on ); -- DEBUG   :1510869238  1510869836
+           blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
+           if ts > blocked_on then
+              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              block( source_ip );
+           else
+              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+           end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
@@ -405,6 +429,7 @@ procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
+  blocked_on : timestamp_string;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
@@ -493,7 +518,27 @@ begin
               end if;
            end if;
         else
-           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
+           -- here, it's already blocked.  determine how long from most recent
+           -- blocking time.  If it's recent, it's just an info message.
+           blocked_on := ab.sshd_blocked_on;
+           if ab.smtp_blocked_on > blocked_on then
+              blocked_on := ab.smtp_blocked_on;
+           end if;
+           if ab.spam_blocked_on > blocked_on then
+              blocked_on := ab.spam_blocked_on;
+           end if;
+           if ab.http_blocked_on > blocked_on then
+              blocked_on := ab.http_blocked_on;
+           end if;
+           -- we expect some delay while blocking takes effect.  If an IP is
+           -- still not blocked after 5 minutes, try to re-block it
+           blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
+           if ts > blocked_on then
+              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              block( source_ip );
+           else
+              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+           end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
@@ -513,6 +558,7 @@ procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
+  blocked_on : timestamp_string;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
@@ -601,7 +647,27 @@ begin
               end if;
            end if;
         else
-           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
+           -- here, it's already blocked.  determine how long from most recent
+           -- blocking time.  If it's recent, it's just an info message.
+           blocked_on := ab.sshd_blocked_on;
+           if ab.smtp_blocked_on > blocked_on then
+              blocked_on := ab.smtp_blocked_on;
+           end if;
+           if ab.spam_blocked_on > blocked_on then
+              blocked_on := ab.spam_blocked_on;
+           end if;
+           if ab.http_blocked_on > blocked_on then
+              blocked_on := ab.http_blocked_on;
+           end if;
+           -- we expect some delay while blocking takes effect.  If an IP is
+           -- still not blocked after 5 minutes, try to re-block it
+           blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
+           if ts > blocked_on then
+              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              block( source_ip );
+           else
+              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+           end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
@@ -621,6 +687,7 @@ procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   ab : an_offender;
   msg : string;
   old_log_level : a_log_level := log_level_start;
+  blocked_on : timestamp_string;
 begin
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
@@ -709,7 +776,27 @@ begin
               end if;
            end if;
         else
-           log_warning( source_info.file ) @ ( "already blocked " & source_ip );
+           -- here, it's already blocked.  determine how long from most recent
+           -- blocking time.  If it's recent, it's just an info message.
+           blocked_on := ab.sshd_blocked_on;
+           if ab.smtp_blocked_on > blocked_on then
+              blocked_on := ab.smtp_blocked_on;
+           end if;
+           if ab.spam_blocked_on > blocked_on then
+              blocked_on := ab.spam_blocked_on;
+           end if;
+           if ab.http_blocked_on > blocked_on then
+              blocked_on := ab.http_blocked_on;
+           end if;
+           -- we expect some delay while blocking takes effect.  If an IP is
+           -- still not blocked after 5 minutes, try to re-block it
+           blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
+           if ts > blocked_on then
+              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              block( source_ip );
+           else
+              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+           end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
