@@ -8,6 +8,7 @@ procedure list_logins is
   pragma annotate( summary, "list_logins" )
                 @( description, "Write a report of login accounts to " )
                 @( description, "standard output." )
+                @( description, "Sort with 'sort -g -k2'." )
                 @( author, "Ken O. Burtch" );
   pragma license( gplv3 );
   pragma software_model( shell_script );

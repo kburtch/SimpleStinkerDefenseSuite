@@ -642,7 +642,7 @@ begin
                  log_info( source_info.source_location ) @ ( string( source_ip ) &
                    " SPAM offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has no SPAM spam" );
+                 log_info( source_info.source_location ) @ ( source_ip & " has no SPAM grace" );
                  block( source_ip );
               end if;
            end if;

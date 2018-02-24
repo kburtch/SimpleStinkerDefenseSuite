@@ -14,7 +14,7 @@ begin
   setupWorld( "reset_firewall", "log/blocker.log", echo_log );
   put_line( "TODO: to do a full reset, ipset blockset must be deleted first." );
   tmp := `ps -ef | fgrep "firewall.d" | wc -l;`;
-  if tmp /= "0" then
+  if tmp /= "1" then
      put_line( "firewall.d is running.  stop this first" );
      command_line.set_exit_status( 192 );
      return;

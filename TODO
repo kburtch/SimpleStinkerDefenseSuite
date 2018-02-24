@@ -3,6 +3,7 @@
     - need SSHD_HOME (like JAVA_HOME variable) to locate the project_path
   - "tail: ‘/var/log/secure’ has been replaced;  following end of new file"
   - suspend flag to update configuration
+  - zombie processes appeared...but all parent scripts were still running
 
 - ssh
   - hostname stub not working (need to specify hostname in config?)
