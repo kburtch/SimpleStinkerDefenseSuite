@@ -354,12 +354,17 @@ begin
      command_line.set_exit_status( 1 );
      return;
   end if;
+  opt_verbose := true; --hard-coded
 
   this_run_on := get_timestamp;
 
   health_check;
 
   startup_blocking;
+
+  -- Ensure there was a login attempt to kickstart the ssh summary
+
+  ssh( ssh_ping_user, "exit" );
 
   if not opt_daemon and not opt_verbose then
      put_line( "Preparing to run..." ); -- this will be overwritten
@@ -399,6 +404,81 @@ begin
            show_progress_line_no_file( this_run_on, processing_cnt, record_cnt_estimate );
         end if;
      end if;
+
+     -- Record validation
+     --
+     -- The data should normally be good.  Old records may have a different
+     -- format and throw exceptions so we provide reasonable defaults here
+     -- and update the old record.  We err on the side of blocking.
+
+     declare
+        modified_record : boolean := false;
+     begin
+        if universal_typeless( source_ip.sshd_blocked_on ) = "" then
+           source_ip.sshd_blocked_on := get_timestamp;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "sshd_blocked_on timestamp was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.sshd_offenses ) = "" then
+           source_ip.sshd_offenses := 1;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "sshd_offenses was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.smtp_blocked_on ) = "" then
+           source_ip.smtp_blocked_on := get_timestamp;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "smtp_blocked_on timestamp was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.smtp_offenses ) = "" then
+           source_ip.smtp_offenses := 1;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "smtp_offenses was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.spam_blocked_on ) = "" then
+           source_ip.spam_blocked_on := get_timestamp;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "spam_blocked_on timestamp was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.spam_offenses ) = "" then
+           source_ip.spam_offenses := 1;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "spam_offenses was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.http_blocked_on ) = "" then
+           source_ip.http_blocked_on := get_timestamp;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "html_blocked_on timestamp was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.http_offenses ) = "" then
+           source_ip.http_offenses := 1;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "http_offenses was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.grace ) = "" then
+           source_ip.grace := default_grace + 1;
+           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+                   @( "grace was blank" );
+           modified_record;
+        end if;
+        if universal_typeless( source_ip.updated_on ) = "" then
+           -- this will get set on write
+           modified_record;
+        end if;
+        if modified_record then
+           source_ip.updated_on := get_timestamp;
+           btree_io.replace( offender_file, key, source_ip );
+           log_warning( source_info.source_location ) @ ( "ip " ) @ (sip)
+                   @( "has been updated" );
+        end if;
+     end;
 
      sip := source_ip.source_ip;
      if source_ip.source_name = "" then
@@ -450,12 +530,12 @@ begin
              blocked_until := proposed_blocked_until;
           end if;
      when short_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                    hours_1 * source_ip.sshd_offenses )
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                      integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
+                       hours_1 * source_ip.sshd_offenses )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -640,8 +720,10 @@ begin
      ( "; Still blocked =" ) @ ( strings.image( number_blocked ) );
   shutdownWorld;
 exception when others =>
+  log_error( source_info.source_location ) @ ( exceptions.exception_info );
   if btree_io.is_open( offender_file ) then
      btree_io.close_cursor( offender_file, abtc );
+     btree_io.close( offender_file );
   end if;
   shutdown_blocking;
   shutdownWorld;

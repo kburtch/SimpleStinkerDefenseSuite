@@ -53,6 +53,10 @@ mail_grace    : constant grace_count := 4; --default_grace;
 alert_email   : constant email_string := "ken@pegasoft.ca";
 report_email  : constant email_string := "ken@pegasoft.ca";
 
+-- The ssh account to test SSH
+
+ssh_ping_user : constant string := "ken@localhost";
+
 end config;
 
 -- vim: ft=spar
