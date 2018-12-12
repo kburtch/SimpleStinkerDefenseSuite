@@ -11,7 +11,7 @@ with separate "lib/blocking.inc.sp";
   reply : string;
   tmp : string;
 begin
-  setupWorld( "reset_firewall", "log/blocker.log", echo_log );
+  setupWorld( "log/blocker.log", log_mode.echo );
   put_line( "TODO: to do a full reset, ipset blockset must be deleted first." );
   tmp := `ps -ef | fgrep "firewall.d" | wc -l;`;
   if tmp /= "1" then

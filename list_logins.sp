@@ -44,7 +44,7 @@ begin
   loop
      cnt := @ + 1;
      btree_io.get_next( sshd_logins_file, sshd_cursor, login_key, login );
-     if login.count > 45 then
+     --if login.count > 45 then
         put( login.username ) @ ( " " );
         put( login.count  ) @ ( " " );
         if login.kind = privileged_login then
@@ -58,7 +58,7 @@ begin
         end if;
         put( login.comment);
         new_line;
-     end if;
+     --end if;
   end loop;
 exception when others =>
   if btree_io.is_open( sshd_logins_file ) then

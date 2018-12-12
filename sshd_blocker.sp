@@ -18,7 +18,6 @@ pragma annotate( summary, "sshd_blocker [--version][-D][-f violations_file]" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-with separate "lib/logging.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 with separate "lib/logins.inc.sp";
@@ -38,15 +37,21 @@ begin
   end if;
 end create_login_hostname_variants;
 
-function remove_token( str : in out string; token : string ) return boolean is
+-- function remove_token( str : in out string; token : string ) return boolean is
+procedure remove_token( str : in out string; token : string; result : out boolean ) is
   p : natural;
 begin
+  if strings.length( token ) = 0 then
+    --log_warning( source_info.source_location ) @ ("token should not be empty" );
+    result := false;
+    return;
+  end if;
   p := strings.index( str, token );
   if p > 0 then
      str := strings.delete( @, p, p + strings.length( token )-1 );
      str := strings.insert( @, p, " " );
   end if;
-  return p > 0;
+  result := p > 0;
 end remove_token;
 
 procedure fix( str : in out string ) is
@@ -182,8 +187,8 @@ end get_raw_username_and_ip_number;
 
 procedure show_summary is
 begin
-   log_ok( source_info.source_location ) @
-      ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " log records" ) @
+   logs.ok( "Processed" ) @
+      ( strings.image( processing_cnt ) ) @ ( " log records" ) @
       ( "; New usernames =" ) @ ( strings.image( new_cnt ) ) @
       ( "; Old records =" ) @ ( strings.image( dup_cnt ) ) @
       ( "; Old usernames =" ) @ ( strings.image( updated_cnt ) );
@@ -208,7 +213,7 @@ begin
      raise configuration_error with "sshd violations file does not exist";
   end if;
 
-setupWorld( "SSHD blocker", "log/blocker.log", file_log );
+setupWorld( "log/blocker.log", log_mode.file );
 
 -- Process command options
 
@@ -282,19 +287,19 @@ pragma todo( team,
   "clean up main sshd logic and refactor with more subprograms",
   work_measure.story_points, 2,
   work_priority.level, 'l' );
-      found := remove_token( s, "Invalid user" );
+      remove_token( s, "Invalid user", found );
       if found then
-         found := remove_token( s, " from " );
+         remove_token( s, " from ", found );
          r.logged_on := parse_timestamp( date_string( strings.slice( s, 1, 15 ) ) );
          fix( s );
          --log_info( source_info.source_location ) @ ("raw string is '" & strings.to_escaped( s )& "'" ); -- DEBUG
          get_raw_username_and_ip_number( 4 ); -- was 2
          r.username := validate_user( raw_username );
          if validate_ip( raw_ip_string( raw_username ) ) /= "" then
-            log_warning( source_info.source_location ) @ ("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
+            logs.warning("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
          else
             if raw_username /= "" and r.username = "" then
-               log_warning( source_info.source_location ) @ ("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
+               logs.warning("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
             end if;
          end if;
          r.ssh_disallowed := true;
@@ -303,17 +308,17 @@ pragma todo( team,
             message := " no such user account";
             process;
          else
-            log_warning( source_info.source_location ) @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
+            logs.warning( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
          end if;
       end if;
       -- Entry: "not listed in" entries are key-pair logins to an existing account
       -- which failed.  Note that this will be a dup with "Failed password" if SSH
       -- PasswordAuthentication is on.
       -- e.g. User root from 181.26.141.145 not allowed because not listed in AllowUsers
-      found := remove_token( s, "not allowed because not listed in AllowUsers" );
+      remove_token( s, "not allowed because not listed in AllowUsers", found );
       if found then
-         found := remove_token( s, " from " );
-         found := remove_token( s, "User " );
+         remove_token( s, " from ", found );
+         remove_token( s, "User ", found );
          fix( s );
          -- Edge-case: If line reads "User User", the username will have been
          -- removed by remove_token.  Same with "User from".  Blank username
@@ -333,10 +338,10 @@ pragma todo( team,
                raw_username := raw_user_string( strings.field( s, 6, ' ' ) );
                r.username := validate_user( raw_username );
                if validate_ip( raw_ip_string( raw_username ) ) /= "" then
-                  log_warning( source_info.source_location ) @ ("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
+                  logs.warning("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
                else
                   if raw_username /= "" and r.username = "" then
-                     log_warning( source_info.source_location ) @ ("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
+                     logs.warning("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
                   end if;
                end if;
                source_addr  := dns_string( strings.field( s, 7, ' ' ) );
@@ -353,36 +358,36 @@ pragma todo( team,
                message := " remote login disallowed";
                process;
             else
-               log_warning( source_info.source_location ) @ ( "ip not found for address '" & source_addr & "'" );
+               logs.warning( "ip not found for address '" & source_addr & "'" );
             end if;
          end;
       end if;
       -- Entry: "Failed password" entries appear with SSH PasswordAuthentication
       -- e.g. Failed password for invalid user root from 180.128.21.46 port 52988 ssh2
-      found := remove_token( s, "Failed password" );
+      remove_token( s, "Failed password", found );
       if found then
          -- "user port from...port" is a possibility.  Unfortunately, sshd doesn't
          -- clearly deliniate the username.
          if index_reverse( s, " user port from " ) = 0 then
-            found := remove_token( s, " port  " );
+            remove_token( s, " port  ", found );
          end if;
          -- if waiting on a named pipe, refresh current time.
          -- remove noise
-         found := remove_token( s, " for " );
+         remove_token( s, " for ", found );
          -- "user from from" is a possibility, but it is safe to leave one as
          -- we delete one "from" and leave the other to be treated as a
          -- username
-         found := remove_token( s, " from " );
-         found := remove_token( s, "invalid user" );
+         remove_token( s, " from ", found );
+         remove_token( s, "invalid user", found );
          r.ssh_disallowed := found;
          fix( s );
          get_raw_username_and_ip_number( 5 );
          r.username := validate_user( raw_username );
          if validate_ip( raw_ip_string( raw_username ) ) /= "" then
-            log_warning( source_info.source_location ) @ ("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
+            logs.warning("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
          else
             if raw_username /= "" and r.username = "" then
-               log_warning( source_info.source_location ) @ ("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
+               logs.warning("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
             end if;
          end if;
          source_ip := validate_ip( raw_source_ip );
@@ -390,7 +395,7 @@ pragma todo( team,
             message := " login failed";
             process;
          else
-            log_warning( source_info.source_location ) @ ("skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
+            logs.warning("skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" );
          end if;
        end if;
        -- If we detected a failed login, process it
@@ -442,8 +447,7 @@ pragma todo( team,
                   r.updated_on := this_run_on;
                   btree_io.set( sshd_logins_file, string( r.username ), r );
                end if;
-               log_info( source_info.source_location )
-                  @ ( source_ip )
+               logs.info( source_ip )
                   @ ( " caused a SSHD threat event" );
                sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon, message);
             end if; -- whitelisted
@@ -491,7 +495,7 @@ shutdownWorld;
 
 exception when others =>
   -- Log the exception and close files
-  log_error( source_info.source_location ) @ ( exceptions.exception_info );
+  logs.error( exceptions.exception_info );
   if is_open( f ) then
      close( f );
   end if;

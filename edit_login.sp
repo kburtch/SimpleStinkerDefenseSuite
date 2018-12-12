@@ -20,7 +20,7 @@ procedure edit_login is
   sshd_logins_file : btree_io.file( a_sshd_login );
   key : string;
   login : a_sshd_login;
-  cnt : natural := 0;
+  --cnt : natural := 0;
   s   : string;
 begin
   put( "Username? " );

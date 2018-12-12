@@ -56,10 +56,12 @@ offender_file : btree_io.file( an_offender );
 -----------------------------------------------------------------------------
 
 procedure block( offender : ip_string ) is
-  old_log_level : a_log_level := log_level_start;
+  -- old_log_level : a_log_level := log_level_start;
+  old_log_level : logs.log_level;
 begin
+  logs.level_begin( old_log_level );
   if operating_mode = monitor_mode then
-     log_info( source_info.source_location ) @ ( offender & " would have been blocked" );
+     logs.info( offender & " would have been blocked" );
   else
      case firewall_kind is
      when iptables_firewall =>
@@ -79,12 +81,12 @@ begin
      end case;
 
      if os.status = 0 then
-        log_ok( source_info.source_location ) @ ( offender & " was blocked" );
+        logs.ok( offender & " was blocked" );
      else
         put_line( standard_error, "error " & strings.image( os.status ) & " on blocking " & offender );
      end if;
   end if;
-  log_level_end( old_log_level );
+  logs.level_end( old_log_level );
   -- Record the blocked ip
 end block;
 
@@ -94,10 +96,12 @@ end block;
 -----------------------------------------------------------------------------
 
 procedure unblock( offender : ip_string ) is
-  old_log_level : a_log_level := log_level_start;
+  -- old_log_level : a_log_level := log_level_start;
+  old_log_level : logs.log_level;
 begin
+  logs.level_begin( old_log_level );
   if operating_mode = monitor_mode then
-     log_info( source_info.source_location ) @ ( offender & " would have been unblocked" );
+     logs.info( offender & " would have been unblocked" );
   else
      case firewall_kind is
      when iptables_firewall =>
@@ -105,9 +109,9 @@ begin
        if $? = 0 then
           IPSET_CMD( "del", "blocklist", offender );
           if os.status = 0 then
-             log_ok( source_info.source_location ) @ ( offender & " was unblocked" );
+             logs.ok( offender & " was unblocked" );
           else
-             log_error( source_info.source_location ) @ ( "error" & strings.image( os.status ) & " on unblocking " & offender );
+             logs.error( "error" & strings.image( os.status ) & " on unblocking " & offender );
      end if;
        end if;
      when iptables_old_firewall =>
@@ -121,8 +125,9 @@ begin
      end case;
 
   end if;
-  log_level_end( old_log_level );
+  logs.level_end( old_log_level );
 end unblock;
+pragma assumption( used, unblock );
 
 
 -- CLEAR FIREWALL
@@ -189,7 +194,7 @@ function clear_firewall return boolean is
     IP6TABLES_CMD( "-A", "INPUT", "-j", "DROP" );
     IP6TABLES_CMD( "-A", "FORWARD", "-j", "DROP" );
 
-    log_info( source_info.source_location ) @ ( "iptables reset " );
+    logs.info( "iptables reset " );
   end reset_iptables;
 
   total_clear : boolean := false;
@@ -238,9 +243,10 @@ begin
      end case;
   end if;
   --TODO: process_blacklist;
-  log_info( source_info.source_location ) @ ( "firewall cleared" );
+  logs.info( "firewall cleared" );
   return total_clear;
 end clear_firewall;
+pragma assumption( used, clear_firewall );
 
 
 -- RESET FIREWALL
@@ -282,6 +288,7 @@ begin
   -- TODO: restore the current state of blocked offenders
 
 end reset_firewall;
+pragma assumption( used, reset_firewall );
 
 -----------------------------------------------------------------------------
 -- Blocking Functions
@@ -297,12 +304,14 @@ end reset_firewall;
 procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
-  old_log_level : a_log_level := log_level_start;
   blocked_on : timestamp_string;
+  -- old_log_level : a_log_level := log_level_start;
+  old_log_level : logs.log_level;
 begin
+  logs.level_begin( old_log_level );
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
-        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+        logs.info( source_ip ) @ ( reason );
      end if;
      -- TODO: refactor out initialization
      ab.source_ip       := source_ip;
@@ -333,7 +342,7 @@ begin
         ab.sshd_blocked    := short_blocked;
         ab.sshd_offenses := @+1;
      else -- DEBUG
-        log_info( source_info.source_location ) @ ( source_ip & " has SSHD grace" ); -- DEBUG
+        logs.info( source_ip & " has SSHD grace" ); -- DEBUG
      end if;
      if ab.sshd_offenses > 0 then
         block( source_ip );
@@ -349,7 +358,7 @@ begin
         if ab.sshd_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+              logs.info( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -365,7 +374,7 @@ begin
                 ab.sshd_blocked := short_blocked;
               end if;
            else
-              log_info( source_info.source_location ) @ ( source_ip & " has SSHD grace" );
+              logs.info( source_ip & " has SSHD grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.sshd_blocked > probation_blocked then
@@ -380,10 +389,10 @@ begin
                  msg := @ & " HTTP";
               end if;
               if msg /= "" then
-                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                 logs.info( string( source_ip ) &
                    " SSHD offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has no SSHD grace" );
+                 logs.info( source_ip & " has no SSHD grace" );
                  block( source_ip );
               end if;
            end if;
@@ -405,18 +414,19 @@ begin
            --log_info( source_info.file ) @ ( ts ) @ ( " " ) @ ( blocked_on ); -- DEBUG   :1510869238  1510869836
            blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
            if ts > blocked_on then
-              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              logs.warning( "reblocking already blocked " & source_ip );
               block( source_ip );
            else
-              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+              logs.info( "already blocked " & source_ip );
            end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
-  log_level_end( old_log_level );
+  logs.level_end( old_log_level );
 end sshd_record_and_block;
+pragma assumption( used, sshd_record_and_block );
 
 
 -- MAIL RECORD AND BLOCK
@@ -428,12 +438,14 @@ end sshd_record_and_block;
 procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
-  old_log_level : a_log_level := log_level_start;
   blocked_on : timestamp_string;
+  -- old_log_level : a_log_level := log_level_start;
+  old_log_level : logs.log_level;
 begin
+  logs.level_begin( old_log_level );
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
-        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+        logs.info( source_ip ) @ ( reason );
      end if;
      ab.source_ip       := source_ip;
      ab.source_name     := "";
@@ -463,7 +475,7 @@ begin
         ab.smtp_blocked    := short_blocked;
         ab.smtp_offenses := @+1;
      else
-        log_info( source_info.source_location ) @ ( source_ip & " has SMTP grace" );
+        logs.info( source_ip & " has SMTP grace" );
      end if;
      if ab.smtp_offenses > 0 then
         block( source_ip );
@@ -479,7 +491,7 @@ begin
         if ab.smtp_blocked <= probation_blocked then
            -- log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+              logs.info( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -495,7 +507,7 @@ begin
                 ab.smtp_blocked := short_blocked;
               end if;
            else
-              log_info( source_info.source_location ) @ ( source_ip & " has SMTP grace" );
+              logs.info( source_ip & " has SMTP grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.smtp_blocked > probation_blocked then
@@ -510,10 +522,10 @@ begin
                  msg := @ & " HTTP";
               end if;
               if msg /= "" then
-                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                 logs.info( string( source_ip ) &
                    " SMTP offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has no SMTP grace" );
+                 logs.info( source_ip & " has no SMTP grace" );
                  block( source_ip );
               end if;
            end if;
@@ -534,18 +546,19 @@ begin
            -- still not blocked after 5 minutes, try to re-block it
            blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
            if ts > blocked_on then
-              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              logs.warning( "reblocking already blocked " & source_ip );
               block( source_ip );
            else
-              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+              logs.info( "already blocked " & source_ip );
            end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
-  log_level_end( old_log_level );
+  logs.level_end( old_log_level );
 end mail_record_and_block;
+pragma assumption( used, mail_record_and_block );
 
 
 -- SPAM RECORD AND BLOCK
@@ -557,12 +570,14 @@ end mail_record_and_block;
 procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
-  old_log_level : a_log_level := log_level_start;
   blocked_on : timestamp_string;
+  -- old_log_level : a_log_level := log_level_start;
+  old_log_level : logs.log_level;
 begin
+  logs.level_begin( old_log_level );
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
-        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+        logs.info( source_ip ) @ ( reason );
      end if;
      ab.source_ip       := source_ip;
      ab.source_name     := "";
@@ -592,7 +607,7 @@ begin
         ab.spam_blocked  := short_blocked;
         ab.spam_offenses := @+1;
      else
-        log_info( source_info.source_location ) @ ( source_ip & " has SPAM grace" );
+        logs.info( source_ip & " has SPAM grace" );
      end if;
      if ab.spam_offenses > 0 then
         block( source_ip );
@@ -608,7 +623,7 @@ begin
         if ab.spam_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+              logs.info( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -624,7 +639,7 @@ begin
                 ab.spam_blocked := short_blocked;
               end if;
            else
-             log_info( source_info.source_location ) @ ( source_ip & " has SPAM grace" );
+             logs.info( source_ip & " has SPAM grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.spam_blocked > probation_blocked then
@@ -639,10 +654,10 @@ begin
                  msg := @ & " HTTP";
               end if;
               if msg /= "" then
-                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                 logs.info( string( source_ip ) &
                    " SPAM offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has no SPAM grace" );
+                 logs.info( source_ip & " has no SPAM grace" );
                  block( source_ip );
               end if;
            end if;
@@ -663,18 +678,19 @@ begin
            -- still not blocked after 5 minutes, try to re-block it
            blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
            if ts > blocked_on then
-              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              logs.warning( "reblocking already blocked " & source_ip );
               block( source_ip );
            else
-              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+              logs.info( "already blocked " & source_ip );
            end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
-  log_level_end( old_log_level );
+  logs.level_end( old_log_level );
 end spam_record_and_block;
+pragma assumption( used, spam_record_and_block );
 
 
 -- HTTP RECORD AND BLOCK
@@ -686,12 +702,14 @@ end spam_record_and_block;
 procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
   ab : an_offender;
   msg : string;
-  old_log_level : a_log_level := log_level_start;
   blocked_on : timestamp_string;
+  -- old_log_level : a_log_level := log_level_start;
+  old_log_level : logs.log_level;
 begin
+  logs.level_begin( old_log_level );
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
-        log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+        logs.info( source_ip ) @ ( reason );
      end if;
      ab.source_ip       := source_ip;
      ab.source_name     := "";
@@ -721,7 +739,7 @@ begin
         ab.http_blocked    := short_blocked;
         ab.http_offenses := @+1;
      else
-        log_info( source_info.source_location ) @ ( source_ip & " has HTTP grace" );
+        logs.info( source_ip & " has HTTP grace" );
      end if;
      if ab.http_offenses > 0 then
         block( source_ip );
@@ -737,7 +755,7 @@ begin
         if ab.http_blocked <= probation_blocked then
    --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
-              log_info( source_info.source_location ) @ ( source_ip ) @ ( reason );
+              logs.info( source_ip ) @ ( reason );
            end if;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -753,7 +771,7 @@ begin
                 ab.http_blocked := short_blocked;
               end if;
            else
-              log_info( source_info.source_location ) @ ( source_ip & " has HTTP grace" );
+              logs.info( source_ip & " has HTTP grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.http_blocked > probation_blocked then
@@ -768,10 +786,10 @@ begin
                  msg := " SPAM";
               end if;
               if msg /= "" then
-                 log_info( source_info.source_location ) @ ( string( source_ip ) &
+                 logs.info( string( source_ip ) &
                    " HTTP offender already blocked for" & msg );
               else
-                 log_info( source_info.source_location ) @ ( source_ip & " has no HTTP grace" );
+                 logs.info( source_ip & " has no HTTP grace" );
                  block( source_ip );
               end if;
            end if;
@@ -792,18 +810,19 @@ begin
            -- still not blocked after 5 minutes, try to re-block it
            blocked_on := timestamp_string( strings.trim( strings.image( integer( numerics.value( string( blocked_on ) ) ) + 600 ) ) );
            if ts > blocked_on then
-              log_warning( source_info.file ) @ ( "reblocking already blocked " & source_ip );
+              logs.warning( "reblocking already blocked " & source_ip );
               block( source_ip );
            else
-              log_info( source_info.file ) @ ( "already blocked " & source_ip );
+              logs.info( "already blocked " & source_ip );
            end if;
         end if;
      --else
         --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
-  log_level_end( old_log_level );
+  logs.level_end( old_log_level );
 end http_record_and_block;
+pragma assumption( used, http_record_and_block );
 
 
 -- NUMBER BLOCKED
@@ -817,7 +836,7 @@ function number_blocked return natural is
 begin
   total_str := `/sbin/ipset -L blocklist | wc -l;`;
   if $? /= 0 then
-     log_error( source_info.source_location ) @ ( "ipset did not run" );
+     logs.error( "ipset did not run" );
   end if;
   if total_str /= "" then
      total := numerics.value( total_str );
@@ -825,7 +844,7 @@ begin
   end if;
   return total;
 end number_blocked;
-
+pragma assumption( used, number_blocked );
 
 ------------------------------------------------------------------------------
 -- Housekeeping
@@ -845,6 +864,7 @@ begin
       btree_io.create( offender_file, string( offender_path ), offender_buffer_width, offender_buffer_width );
    end if;
 end startup_blocking;
+pragma assumption( used, startup_blocking );
 
 
 -- SHUTDOWN BLOCKING
@@ -858,5 +878,6 @@ begin
      btree_io.close( offender_file );
   end if;
 end shutdown_blocking;
+pragma assumption( used, shutdown_blocking );
 
 -- vim: ft=spar

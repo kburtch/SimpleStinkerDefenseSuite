@@ -2,8 +2,9 @@
 
 # Yesterday, and just after midnight today
 
-REPORT_DATE_TODAY=`date '+%b %e'`" 00:"
-REPORT_DATE_YESTERDAY=`date --date 'yesterday' '+%b %e'`
+#REPORT_DATE_TODAY=`date '+%b %e'`" 00:"
+REPORT_DATE_TODAY=`date '+%m/%d'`" 00:"
+REPORT_DATE_YESTERDAY=`date --date 'yesterday' '+%m/%d'`
 
 LOG_FILES=`ls -t log/blocker.log* | head -2`
 
@@ -13,6 +14,8 @@ OK_LINES=0
 
 echo "$LOG_FILES" | { while read LOG_FILE ; do
   TMP=`fgrep "$REPORT_DATE_TODAY" "$LOG_FILE" | wc -l`
+  let "LOG_LINES=LOG_LINES+TMP"
+  TMP=`fgrep "$REPORT_DATE_YESTERDAY" "$LOG_FILE" | wc -l`
   let "LOG_LINES=LOG_LINES+TMP"
   TMP=`fgrep "$REPORT_DATE_TODAY" "$LOG_FILE" | fgrep ':ERROR:' | fgrep -v "Nikto" | wc -l`
   let "ERR_LINES=ERR_LINES+TMP"
@@ -55,6 +58,7 @@ echo
 # Get all the summary reports from the blockers.  They all contain "process".
 echo "$LOG_FILES" | { while read LOG_FILE ; do
    fgrep "$REPORT_DATE_YESTERDAY" < "$LOG_FILE" | fgrep ':OK' | fgrep "Process" >> "t.t.$$"
+   fgrep "$REPORT_DATE_TODAY" < "$LOG_FILE" | fgrep ':OK' | fgrep "Process" >> "t.t.$$"
 done }
 TMP=`cat "t.t.$$"`
 rm "t.t.$$"

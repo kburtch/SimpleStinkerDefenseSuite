@@ -48,12 +48,20 @@ log_dup_count : natural := 0;                        -- number of dup entries
 -- Started a nested log level.  Increases the indent of log messages.
 -----------------------------------------------------------------------------
 
+procedure log_level_start_p( old_level : out a_log_level ) is
+begin
+  old_level := log_level;
+  log_level := @+1;
+end log_level_start_p;
+pragma assumption( used, log_level_start_p );
+
 function log_level_start return a_log_level is
   old_level : a_log_level := log_level;
 begin
   log_level := @+1;
   return old_level;
 end log_level_start;
+pragma assumption( used, log_level_start );
 
 
 --  LOG LEVEL END
@@ -64,6 +72,7 @@ end log_level_start;
 procedure log_level_end( old_level : a_log_level ) is begin
   log_level := old_level;
 end log_level_end;
+pragma assumption( used, log_level_end );
 
 
 --  LOG INDENT MESSAGE
@@ -142,6 +151,7 @@ begin
   end if;
   log_string_message := @ & m;
 end log_middle_part;
+pragma assumption( used, log_middle_part );
 
 
 --  LOG LAST PART
@@ -208,6 +218,7 @@ begin
   log_indent_required := 0;
   log_string_message := "";
 end log_last_part;
+pragma assumption( used, log_last_part );
 
 -----------------------------------------------------------------------------
 -- Loggers
@@ -237,6 +248,7 @@ begin
      put_line( standard_error, "unexpect chain context" );
   end case;
 end log_ok;
+pragma assumption( used, log_ok );
 
 
 --  LOG INFO
@@ -263,6 +275,7 @@ begin
      put_line( standard_error, "unexpect chain context" );
   end case;
 end log_info;
+pragma assumption( used, log_info );
 
 
 --  LOG WARNING
@@ -289,6 +302,7 @@ begin
      put_line( standard_error, "unexpect chain context" );
   end case;
 end log_warning;
+pragma assumption( used, log_warning );
 
 
 --  LOG ERROR
@@ -315,6 +329,7 @@ begin
      put_line( standard_error, "unexpect chain context" );
   end case;
 end log_error;
+pragma assumption( used, log_error );
 
 -----------------------------------------------------------------------------
 -- Housekeeping
@@ -336,6 +351,7 @@ begin
   log_mode := the_log_mode;
   log_info( "Start " & log_program_name & " run" );
 end log_start;
+pragma assumption( used, log_start );
 
 
 --  LOG END
@@ -350,5 +366,6 @@ begin
   log_info( "End " & log_program_name & " run" );
   log_mode := stderr_log;
 end log_end;
+pragma assumption( used, log_end );
 
 -- vim: ft=spar

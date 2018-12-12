@@ -18,7 +18,6 @@ pragma annotate( summary, "http_blocker [--version][-D][-f violations_file]" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-with separate "lib/logging.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 with separate "lib/key_codes.inc.sp";
@@ -40,28 +39,28 @@ opt_daemon  : boolean := false;   -- true of -D used
 -- For debugging
 -----------------------------------------------------------------------------
 
-procedure count_web_request_codes is
-   key_code : key_codes;
-   eof : boolean;
-   cnt : natural := 0;
-   s   : string;
-begin
-    dynamic_hash_tables.get_first( candidate_key_codes, key_code, eof );
-    while not eof loop
-       cnt := @+1;
-       dynamic_hash_tables.get_next( candidate_key_codes, key_code, eof );
-    end loop;
-    log_info( source_info.source_location ) @ ( "there are" &
-       strings.image( cnt ) & " request key codes" );
-    cnt := 0;
-    --btree_io.get_first( vectors_file, , s, eof );
-    --while not eof loop
-    --   cnt := @+1;
-    --   dynamic_hash_tables.get_next( attack_vectors, s, eof );
-    --end loop;
-    --log_info( source_info.source_location ) @ ( "there are" &
-    --   strings.image( cnt ) & " attack vector key codes" );
-end count_web_request_codes;
+--procedure count_web_request_codes is
+--   key_code : key_codes;
+--   eof : boolean;
+--   cnt : natural := 0;
+--   -- s   : string;
+--begin
+--    dynamic_hash_tables.get_first( candidate_key_codes, key_code, eof );
+--    while not eof loop
+--       cnt := @+1;
+--       dynamic_hash_tables.get_next( candidate_key_codes, key_code, eof );
+--    end loop;
+--    log_info( source_info.source_location ) @ ( "there are" &
+--       strings.image( cnt ) & " request key codes" );
+--    cnt := 0;
+--    --btree_io.get_first( vectors_file, , s, eof );
+--    --while not eof loop
+--    --   cnt := @+1;
+--    --   dynamic_hash_tables.get_next( attack_vectors, s, eof );
+--    --end loop;
+--    --log_info( source_info.source_location ) @ ( "there are" &
+--    --   strings.image( cnt ) & " attack vector key codes" );
+--end count_web_request_codes;
 
 
 -- PREPARE WEB REQUEST
@@ -73,8 +72,8 @@ end count_web_request_codes;
 
   procedure prepare_web_request( request : string ) is
      key_code : key_codes;
-     key_code_1 : key_codes;
-     key_code_2 : key_codes;
+     --key_code_1 : key_codes;
+     --key_code_2 : key_codes;
      key_code_string : string;
   begin
     dynamic_hash_tables.reset( candidate_key_codes );
@@ -94,7 +93,8 @@ end count_web_request_codes;
 -- the web request for the presence of attack vector substrings.
 -----------------------------------------------------------------------------
 
-  function suspicious_web_request( request : string; source_ip : ip_string; message : out string ) return boolean is
+  --function suspicious_web_request( request : string; source_ip : ip_string; message : out string ) return boolean is
+  procedure suspicious_web_request( request : string; source_ip : ip_string; message : out string; result : out boolean ) is
     key_code : key_codes;
     eof : boolean;
     key_code_string : string;
@@ -129,7 +129,7 @@ end count_web_request_codes;
          end if;
          dynamic_hash_tables.get_next( candidate_key_codes, key_code, eof );
     end loop;
-    return found;
+    result := found;
   end suspicious_web_request;
 
 
@@ -139,7 +139,8 @@ end count_web_request_codes;
 -- nslookup and includes trailing period.
 -----------------------------------------------------------------------------
 
-function is_search_engine( dns_host: dns_string; source_ip : ip_string ) return boolean is
+--function _search_engine( dns_host: dns_string; source_ip : ip_string ) return boolean is
+procedure check_for_search_engine( dns_host: dns_string; source_ip : ip_string; result : out boolean ) is
   found : boolean := false;
   host  : string;
 begin
@@ -187,11 +188,10 @@ begin
   end if;
   -- coccocbot is vietnam
   if found then
-     log_warning( source_info.source_location ) @ ( source_ip ) @
-                ( " is whitelisted as a seach engine" );
+     logs.warning( source_ip ) @ ( " is whitelisted as a seach engine" );
   end if;
-  return found;
-end is_search_engine;
+  result := found;
+end check_for_search_engine;
 
 
 -----------------------------------------------------------------------------
@@ -215,13 +215,14 @@ end usage;
 -----------------------------------------------------------------------------
 
 http_violations_file_path : file_path;
-http_log_mode : log_modes := file_log;
+http_log_mode : logs.log_modes := log_mode.file;
 
-function handle_command_options return boolean is
-  quit : boolean := false;
+--function handle_command_options return boolean is
+procedure handle_command_options( quit : out boolean ) is
   arg_pos : natural := 1;
   arg : string;
 begin
+  quit := false;
   while arg_pos <= command_line.argument_count loop
     arg := command_line.argument( arg_pos );
     if arg = "-h" or arg = "--help" then
@@ -237,7 +238,7 @@ begin
        end if;
     elsif arg = "-v" or arg = "--verbose" then
        opt_verbose;
-       http_log_mode := echo_log;
+       http_log_mode := log_mode.echo;
     elsif arg = "-V" or arg = "--version" then
        put_line( version );
        quit;
@@ -249,7 +250,6 @@ begin
     end if;
     arg_pos := @+1;
   end loop;
-  return quit;
 end handle_command_options;
 -----------------------------------------------------------------------------
 
@@ -266,8 +266,7 @@ this_day   : calendar.day_number;
 
 procedure show_summary is
 begin
-  log_ok( source_info.source_location )
-     @ ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
+  logs.ok ( "Processed" ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
      @ ( "; Attacks =" ) @ ( strings.image( attack_cnt ) );
 end show_summary;
 
@@ -298,7 +297,9 @@ end reset_summary;
   host : dns_string;
   request : string;
   message : string;
-
+  is_suspicious : boolean := false;
+  is_search_engine : boolean := false;
+  must_quit : boolean := false;
 begin
   -- Default
   http_violations_file_path := http_violations_file_paths( 1 );
@@ -313,12 +314,13 @@ begin
 
   -- Process command options
 
-  if handle_command_options then
+  handle_command_options( must_quit );
+  if must_quit  then
      command_line.set_exit_status( 1 );
      return;
   end if;
 
-  setupWorld( "HTTP Blocker", "log/blocker.log", http_log_mode );
+  setupWorld( "log/blocker.log", http_log_mode );
 
   startup_blocking;
 
@@ -356,13 +358,13 @@ begin
      http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
      if http_status = "" then
         http_status := "999";
-        log_error( source_info.source_location ) @ ( "http_status is blank on log line " ) @ (log_line);
+        logs.error( "http_status is blank on log line " ) @ (log_line);
      elsif strings.length( http_status ) /= 3 then
         http_status := "999";
-        log_error( source_info.source_location ) @ ( "http_status is not length 3 on log line " ) @ (log_line);
+        logs.error( "http_status is not length 3 on log line " ) @ (log_line);
      elsif not strings.is_digit( http_status ) then
         http_status := "999";
-        log_error( source_info.source_location ) @ ( "http_status is not numeric on log line " ) @ (log_line);
+        logs.error( "http_status is not numeric on log line " ) @ (log_line);
      end if;
 
      --if strings.index( " 200 ", string( http_status ) ) > 0 then
@@ -374,17 +376,18 @@ begin
         raw_source_ip := raw_ip_string( strings.field( log_line, 1, ' ' ) );
         source_ip := validate_ip( raw_source_ip );
         if source_ip = "" then
-           log_error( source_info.source_location )
-                  @ ( " - unable to validate IP '" )
+           logs.error( " - unable to validate IP '" )
                   @ ( raw_source_ip )
                   @ ( "' on log line " )
                   @ ( log_line );
         else
            if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
               prepare_web_request( request );
-              if suspicious_web_request( request, source_ip, message ) then
+              suspicious_web_request( request, source_ip, message, is_suspicious );
+              if is_suspicious then
                  host := get_ip_host_name( source_ip );
-                 if not is_search_engine( host, source_ip ) then
+                 check_for_search_engine( host, source_ip, is_search_engine );
+                 if not is_search_engine then
                     -- remove colon in middle of date/time
                     -- convert month to number
                     -- e.g. 28/Jan/2018:03:18:50 -0500
@@ -392,8 +395,7 @@ begin
                        tmp := strings.field( log_line, 2, '[' );
                        if strings.length( tmp ) < 20 then
                           logged_on := "";
-                          log_error( source_info.source_location )
-                                 @ ( " - unable to extract date '" )
+                          logs.error( " - unable to extract date '" )
                                  @ ( tmp )
                                  @ ( "' on log line " )
                                  @ ( log_line );
@@ -436,16 +438,14 @@ begin
                           logged_on := parse_timestamp( date_string( tmp ) );
                        end if;
                        if logged_on = "" then
-                          log_error( source_info.source_location )
-                                 @ ( " - unable to convert date " )
+                          logs.error( " - unable to convert date " )
                                  @ ( tmp )
                                  @ ( " on log line " )
                                  @ ( log_line );
                           logged_on := this_run_on;
                        end if;
                     exception when others =>
-                        log_error( source_info.source_location )
-                               @ ( exceptions.exception_info )
+                        logs.error( exceptions.exception_info )
                                @ ( " - unable to convert date " )
                                @ ( tmp )
                                @ ( " on log line " )
@@ -453,13 +453,11 @@ begin
                         logged_on := this_run_on;
                     end;
                     if source_ip /= "" then
-                       log_info( source_info.source_location )
-                              @ ( source_ip )
+                       logs.info( source_ip )
                               @ ( " caused a HTTP threat event" );
                        http_record_and_block( source_ip, logged_on, this_run_on, true, message );
                     else
-                       log_warning( source_info.source_location )
-                                @ ( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" )
+                       logs.warning( "skipping invalid ip '" & strings.to_escaped( raw_source_ip ) & "'" )
                                 @ ( " on the log line " )
                                 @ ( log_line );
                     end if;
@@ -498,7 +496,11 @@ begin
   shutdownWorld;
 
 exception when others =>
-  log_error( source_info.source_location ) @ ( exceptions.exception_info );
+  if logs.is_open then
+     logs.error( exceptions.exception_info );
+   else
+      put_line( standard_error, exceptions.exception_info );
+   end if;
   if btree_io.is_open( vectors_file ) then
      btree_io.close( vectors_file );
   end if;
@@ -507,7 +509,9 @@ exception when others =>
   end if;
   shutdown_blocking;
   shutdownWorld;
-  raise;
+  -- DEBUG
+  --raise;
+  ? exceptions.exception_info;
 end http_blocker;
 
 -- vim: ft=spar

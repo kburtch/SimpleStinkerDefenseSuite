@@ -33,6 +33,7 @@ procedure wash_blocked is
 
 opt_daemon  : boolean := false;   -- true of -D used
 
+wash_log_mode : logs.log_modes := log_mode.file;
 
 -- USAGE
 --
@@ -70,7 +71,7 @@ begin
        quit;
     elsif arg = "-v" or arg = "--verbose" then
        opt_verbose;
-       echo_logging;
+       wash_log_mode := log_mode.echo;
     elsif arg = "-V" or arg = "--version" then
        put_line( version );
        quit;
@@ -218,7 +219,7 @@ end is_south_american_ip;
   abtc : btree_io.cursor( an_offender );
   key : string;
   source_ip : an_offender;
-  j : json_string;
+  --j : json_string;
   source_host : dns_string;
   source_country : country_string;
   source_location : string;
@@ -232,6 +233,7 @@ end is_south_american_ip;
     end record;
     ipinfo : ipinfo_reply;
     j : json_string;
+    pragma assumption( used, ip ); -- to be investigated
   begin
     -- TODO: this relies on an internet service
     -- The return format varies....we strip here common fields we want.
@@ -250,6 +252,7 @@ end is_south_american_ip;
        location := ipinfo.city & "," & ipinfo.region & "," & string( ipinfo.country );
     end if;
   end search_ipinfo;
+  pragma assumption( used, search_ipinfo );
 
   -- https://freegeoip.net/json/78.196.118.157
   procedure search_freegeoip( ip : ip_string; country : out country_string; location : out string ) is
@@ -261,6 +264,7 @@ end is_south_american_ip;
     end record;
     freegeoip : freegeoip_reply;
     j : json_string;
+    pragma assumption( used, ip ); -- to be investigated
   begin
     -- TODO: this relies on an internet service
     -- The return format varies....we strip here common fields we want.
@@ -278,6 +282,7 @@ end is_south_american_ip;
        location := freegeoip.city & "," & freegeoip.region_name & "," & string( freegeoip.country_code );
     end if;
   end search_freegeoip;
+  pragma assumption( used, search_freegeoip );
 
 
   -- GeoIP Database (Maxmind)
@@ -326,13 +331,13 @@ end is_south_american_ip;
   begin
     tmp := `ps -ef;`;
     if strings.index( tmp, "http_blocker" ) = 0 then
-        log_error( source_info.source_location ) @ ( "http blocker is not running" );
+        logs.error( "http blocker is not running" );
     end if;
     if strings.index( tmp, "mail_blocker" ) = 0 then
-        log_error( source_info.source_location ) @ ( "mail blocker is not running" );
+        logs.error( "mail blocker is not running" );
     end if;
     if strings.index( tmp, "sshd_blocker" ) = 0 then
-        log_error( source_info.source_location ) @ ( "sshd blocker is not running" );
+        logs.error( "sshd blocker is not running" );
     end if;
   end health_check;
 
@@ -346,7 +351,7 @@ end is_south_american_ip;
   record_cnt_estimate : natural := 0;
 begin
   --setupWorld( "Wash Task", "log/wash.log" );
-  setupWorld( "Wash Task", "log/blocker.log", file_log );
+  setupWorld( "log/blocker.log", log_mode.file );
 
   -- Process command options
 
@@ -416,55 +421,55 @@ begin
      begin
         if universal_typeless( source_ip.sshd_blocked_on ) = "" then
            source_ip.sshd_blocked_on := get_timestamp;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "sshd_blocked_on timestamp was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.sshd_offenses ) = "" then
            source_ip.sshd_offenses := 1;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "sshd_offenses was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.smtp_blocked_on ) = "" then
            source_ip.smtp_blocked_on := get_timestamp;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "smtp_blocked_on timestamp was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.smtp_offenses ) = "" then
            source_ip.smtp_offenses := 1;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "smtp_offenses was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.spam_blocked_on ) = "" then
            source_ip.spam_blocked_on := get_timestamp;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "spam_blocked_on timestamp was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.spam_offenses ) = "" then
            source_ip.spam_offenses := 1;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "spam_offenses was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.http_blocked_on ) = "" then
            source_ip.http_blocked_on := get_timestamp;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "html_blocked_on timestamp was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.http_offenses ) = "" then
            source_ip.http_offenses := 1;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "http_offenses was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.grace ) = "" then
            source_ip.grace := default_grace + 1;
-           log_error( source_info.source_location ) @ ( "for " ) @ (sip)
+           logs.error( "for " ) @ (sip)
                    @( "grace was blank" );
            modified_record;
         end if;
@@ -475,7 +480,7 @@ begin
         if modified_record then
            source_ip.updated_on := get_timestamp;
            btree_io.replace( offender_file, key, source_ip );
-           log_warning( source_info.source_location ) @ ( "ip " ) @ (sip)
+           logs.warning( "ip " ) @ (sip)
                    @( "has been updated" );
         end if;
      end;
@@ -507,7 +512,7 @@ begin
         source_ip.source_name := source_host;
         source_ip.source_country := source_country;
         source_ip.location := source_location;
-        log_info( source_info.source_location ) @ ( sip & " updated for dns and geo location" );
+        logs.info( sip & " updated for dns and geo location" );
         needs_updating;
      end if;
 
@@ -674,14 +679,14 @@ begin
           -- TODO: might be better if this was pre-calculated
           if this_run_on > proposed_blocked_until then
              btree_io.remove( offender_file, key );
-             log_info( source_info.source_location ) @ ( sip & " removed" );
+             logs.info( sip & " removed" );
           end if;
      else -- needs updating
         -- If some aspect has gone probationary and if the worst block
         -- has expired, then mark the IP number as probationary.
         if blocked_until /= "" then
            if this_run_on > blocked_until then
-              log_info( source_info.source_location ) @ ( sip & " on probation" );
+              logs.info( sip & " on probation" );
               unblock( sip );
            end if;
         end if;
@@ -692,8 +697,7 @@ begin
         begin
            btree_io.set( offender_file, key, source_ip );
         exception when others =>
-           log_error( source_info.source_location )
-                   @( exceptions.exception_info );
+           logs.error( exceptions.exception_info );
         end;
         -- TODO: do I need this next line?
         btree_io.get( offender_file, key, source_ip );
@@ -714,13 +718,12 @@ begin
   btree_io.close_cursor( offender_file, abtc );
 
   shutdown_blocking;
-  log_ok( source_info.source_location ) @
-     ( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
+  logs.ok( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
      ( "; Updated =" ) @ ( strings.image( updating_cnt ) ) @
      ( "; Still blocked =" ) @ ( strings.image( number_blocked ) );
   shutdownWorld;
 exception when others =>
-  log_error( source_info.source_location ) @ ( exceptions.exception_info );
+  logs.error( exceptions.exception_info );
   if btree_io.is_open( offender_file ) then
      btree_io.close_cursor( offender_file, abtc );
      btree_io.close( offender_file );

@@ -287,6 +287,7 @@ chown&20
 ?cmd=
 &cms=
 ?cms=
+CMSTP
 /codepress
 /com_community
 /community/
@@ -707,6 +708,7 @@ mosConfig_live_site=
 /mouseenter/
 /mouseover/
 /ms-sql/
+mshta
 /mssql/
 /MSOffice
 /MuraProxy.cfc
@@ -870,6 +872,7 @@ register.php
 registration_rules.asp
 registration-success.html
 /registration
+regsvr32
 repertorylevel=
 /Request.xml
 ?_REQUEST=
@@ -899,6 +902,7 @@ ROOTURL=
 &row[
 /rtki.you
 /rtpd.cgi
+rundll32
 /rutorrent
 safe_mode
 sales
@@ -913,6 +917,7 @@ sales
 /SCRIPT
 /section.php?Module_Text=
 /seeAlbum
+SemrushBot
 /SendAlertEmail.php
 /SENDATASRVR/
 /set/

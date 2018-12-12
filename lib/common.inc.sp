@@ -3,6 +3,7 @@ separate;
 -- This is global so it can be used throughout
 
 opt_verbose : boolean := false;   -- true of -v used
+pragma assumption( used, opt_verbose );
 
 --PING_CMD    : constant command := "/bin/ping";
 
@@ -44,6 +45,7 @@ begin
   end if;
   return user_string( user );
 end validate_user;
+pragma assumption( used, validate_user );
 
 
 ------------------------------------------------------------------------------
@@ -57,16 +59,16 @@ end validate_user;
 ------------------------------------------------------------------------------
 
 function validate_ip( ip : raw_ip_string ) return ip_string is
-  p : positive;
+  p : positive := 1;
 
-  function expect_byte return boolean is
+  procedure expect_byte( result : out boolean ) is
     byte : string;
     ch   : character;
   begin
     loop
-    exit when p > strings.length( ip );
-    ch := strings.element( string( ip ), p );
-    exit when not strings.is_digit( ch );
+      exit when p > strings.length( ip );
+      ch := strings.element( string( ip ), p );
+      exit when not strings.is_digit( ch );
       byte := @ & ch;
       p := @ + 1;
     end loop;
@@ -75,44 +77,56 @@ function validate_ip( ip : raw_ip_string ) return ip_string is
           byte := "";
        end if;
     end if;
-    return byte /= "";
+    result := byte /= "";
   end expect_byte;
 
-  function expect_period return boolean is
+  procedure expect_period( result : out boolean ) is
     period : boolean;
   begin
-    if p > strings.length( ip ) then
-       return false;
-    end if;
+    declare
+      this_p : integer copies p;
+    begin
+      if this_p > strings.length( ip ) then
+         result := false;
+         return;
+      end if;
+    end;
     period := strings.element( string( ip ), p ) = '.';
-    p := @+1;
-    return period;
+    p := @ + 1;
+    result := period;
   end expect_period;
 
+  result : boolean;
 begin
   if ip = "" then
      return "";
   end if;
-  p := 1;
-  if not expect_byte then
+  expect_byte( result );
+  if not result then
      return "";
   end if;
-  if not expect_period then
+  expect_period( result );
+  if not result then
      return "";
   end if;
-  if not expect_byte then
+  expect_byte( result );
+  if not result then
      return "";
   end if;
-  if not expect_period then
+  expect_period( result );
+  if not result then
      return "";
   end if;
-  if not expect_byte then
+  expect_byte( result );
+  if not result then
      return "";
   end if;
-  if not expect_period then
+  expect_period( result );
+  if not result then
      return "";
   end if;
-  if not expect_byte then
+  expect_byte( result );
+  if not result then
      return "";
   end if;
   if p <= strings.length( ip ) then
@@ -120,6 +134,7 @@ begin
   end if;
   return ip_string( ip );
 end validate_ip;
+pragma assumption( used, validate_ip );
 
 -- TIME AND TIME ZONES
 --
@@ -132,12 +147,14 @@ function get_timezone return date_string is
 begin
   return `date '+%Z';`;
 end get_timezone;
+pragma assumption( used, get_timezone );
 
 function get_timestamp return timestamp_string is
   -- Note: epoch time is unaffected by timezone
 begin
   return `date '+%s';`;
 end get_timestamp;
+pragma assumption( used, get_timestamp );
 
 function parse_timestamp( s : date_string ) return timestamp_string is
   result : timestamp_string;
@@ -151,6 +168,7 @@ begin
   close( dev_null );
   return result;
 end parse_timestamp;
+pragma assumption( used, parse_timestamp );
 
 -- STATISTICS
 
@@ -230,10 +248,11 @@ begin
     arrays.shift_right( cache_last_ip_addr_ip );
     cache_last_ip_addr_ip( 1 ) := ip_string( s );
   else
-    log_warning( source_info.file ) @ ( "ping unable to identify host " & addr );
+    logs.warning( "ping unable to identify host " & addr );
   end if;
   return cache_last_ip_addr_ip( 1 );
 end get_ip_number;
+pragma assumption( used, get_ip_number );
 
 
 --  GET IP HOST NAME
@@ -270,13 +289,14 @@ begin
 
   -- If we found one, cache it.  If we found one.
   if $? = 1 then
-     log_info( source_info.file ) @ ( source_ip & " has no host name" );
+     logs.info( source_ip & " has no host name" );
   elsif $? > 1 then
-      log_info( source_info.file ) @ ( source_ip & " error trying to lookup hostname" );
+      logs.info( source_ip & " error trying to lookup hostname" );
   end if;
 
   return dns_string( tmp );
 end get_ip_host_name;
+pragma assumption( used, get_ip_host_name );
 
 -- Reverse DNS example
 -- /bin/dig +noall +answer -x 127.0.0.1 # localhost | cut -f 6
@@ -301,6 +321,7 @@ begin
    end loop;
   return p;
 end index_reverse;
+pragma assumption( used, index_reverse );
 
 ------------------------------------------------------------------------------
 -- UI
@@ -344,7 +365,7 @@ begin
      last_modified := files.last_modified( string( violations_file ) );
      if last_modified /= show_progress_line_last_modified then
         show_progress_line_last_modified := last_modified;
-        show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file"; ` ) );
+        show_progress_line_size_cache := natural( numerics.value(  `wc -l < "$violations_file";` ) );
     end if;
   end if;
 
@@ -378,13 +399,14 @@ begin
 exception when others =>
   put_line( "error calculating the progress line" );
 end show_progress_line;
+pragma assumption( used, show_progress_line );
 
 -- Same but no file to monitor
 
 procedure show_progress_line_no_file( start_time : timestamp_string; current_cnt : natural; estimated_cnt : natural ) is
   now       : timestamp_string;
   elapsed   : universal_numeric;
-  last_modified : calendar.time;
+  --last_modified : calendar.time;
   minutes_left : universal_typeless := " ??";
   percent   : universal_typeless := " ??";
 begin
@@ -422,6 +444,7 @@ begin
 exception when others =>
   put_line( "error calculating the progress line" );
 end show_progress_line_no_file;
+pragma assumption( used, show_progress_line_no_file );
 
 ------------------------------------------------------------------------------
 -- Housekeeping
@@ -434,11 +457,11 @@ configuration_error : exception;
 -- Startup the common features such as the log file.
 ------------------------------------------------------------------------------
 
-procedure setupWorld( the_program_name : string; the_log_path : string;
-  the_log_mode : log_modes ) is
+procedure setupWorld( the_log_path : string;
+  the_log_mode : logs.log_modes ) is
   min_version : constant string := "2.1";
 begin
-  log_start( the_program_name, the_log_path, the_log_mode );
+  logs.open( the_log_path, the_log_mode, 75 );
 
   -- probably should be improved...
   if HOSTNAME = "" then
@@ -469,6 +492,7 @@ pragma todo( team,
   dynamic_hash_tables.set( ip_whitelist, "209.159.182.101", "home" );
   dynamic_hash_tables.set( ip_whitelist, "207.219.237.66", "tier1" );
 end setupWorld;
+pragma assumption( used, setupWorld );
 
 -- SHUTDOWN WORLD
 --
@@ -476,7 +500,8 @@ end setupWorld;
 
 procedure shutdownWorld is
 begin
-   log_end;
+   logs.close;
 end shutdownWorld;
+pragma assumption( used, shutdownWorld );
 
 -- vim: ft=spar

@@ -11,6 +11,9 @@ type country_data is record
 end record;
 
 countries_path : constant file_path := "data/countries.btree";
+pragma assumption( used, countries_path );
+
 countries_width : constant positive := 128;
+pragma assumption( used, countries_width );
 
 -- vim: ft=spar

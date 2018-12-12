@@ -60,5 +60,6 @@ begin
   end loop;
   close( f );
 end check_known_logins;
+pragma assumption( used, check_known_logins );
 
 -- vim: ft=spar

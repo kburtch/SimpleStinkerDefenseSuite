@@ -18,7 +18,6 @@ pragma annotate( summary, "mail_blocker [--version][-D][-f violations_file]" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-with separate "lib/logging.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 
@@ -30,6 +29,8 @@ pragma assumption( applied, comment_string );
 -- Command line options
 
 opt_daemon  : boolean := false;   -- true of -D used
+
+mail_log_mode : logs.log_modes := log_mode.file;
 
 -----------------------------------------------------------------------------
 -- Housekeeping
@@ -63,7 +64,7 @@ begin
        quit;
     elsif arg = "-v" or arg = "--verbose" then
        opt_verbose;
-       echo_logging;
+       mail_log_mode := log_mode.echo;
     elsif arg = "-V" or arg = "--version" then
        put_line( version );
        quit;
@@ -100,8 +101,7 @@ record_cnt : natural;
 
 procedure show_summary is
 begin
-  log_ok( source_info.source_location )
-     @ ( "Processed " ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
+  logs.ok( "Processed " ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
      @ ( "; Attacks =" ) @ ( strings.image( attack_cnt ) );
 end show_summary;
 
@@ -123,11 +123,11 @@ end reset_summary;
   this_run_on : timestamp_string;
   log_line : string;
   tmp : string;
-  tmp2 : string;
+  --tmp2 : string;
   logged_on : timestamp_string;
   raw_source_ip : raw_ip_string;
   source_ip : ip_string;
-  request : string;
+  --request : string;
   p : natural;
   is_spam : boolean;
   message : string;
@@ -141,7 +141,7 @@ begin
      raise configuration_error with "smtp violations file does not exist";
   end if;
 
-  setupWorld( "MAIL Blocker", "log/blocker.log", file_log );
+  setupWorld( "log/blocker.log", mail_log_mode );
 
   -- Process command options
 
@@ -307,13 +307,11 @@ begin
       end if;
       if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
          if is_spam then
-            log_info( source_info.source_location )
-                  @ ( source_ip )
+            logs.info( source_ip )
                   @ ( " caused a SPAM threat event" );
             spam_record_and_block( source_ip, logged_on, this_run_on, true, message );
          else
-            log_info( source_info.source_location )
-                  @ ( source_ip )
+            logs.info( source_ip )
                   @ ( " caused a SMTP threat event" );
             mail_record_and_block( source_ip, logged_on, this_run_on, true, message );
          end if;
@@ -349,7 +347,7 @@ begin
   shutdownWorld;
 
 exception when others =>
-  log_error( source_info.source_location ) @ ( exceptions.exception_info );
+  logs.error( exceptions.exception_info );
   if is_open( f ) then
      close( f );
   end if;

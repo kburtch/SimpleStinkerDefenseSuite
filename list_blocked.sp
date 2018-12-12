@@ -22,7 +22,7 @@ procedure list_blocked is
   offender_cursor : btree_io.cursor( an_offender );
   offender_key : string;
   offender : an_offender;
-  j : json_string;
+  --j : json_string;
 
   countries_file : btree_io.file( country_data );
   country : country_data;

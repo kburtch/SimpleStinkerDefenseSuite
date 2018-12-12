@@ -11,7 +11,7 @@ pragma annotate( summary, "graph_series.sp" )
               @( param, "one, two or three data points" )
               @( author, "Ken O. Burtch" );
 pragma license( unrestricted );
-pragma software_model( nonstandard );
+pragma software_model( shell_script );
 
 procedure graph is
   graph_name : string;
@@ -29,7 +29,9 @@ procedure graph is
   canvas : pen.canvas_id;
 
   -- For Y-axis scale, 1 = 0..100, 2 = 0..200, etc.
-  y_axis_scale : constant float := 3;
+  base_y_axis_scale : constant float := 3;
+  y_axis_scale : float := base_y_axis_scale;
+  candidate_scale : float;
 
   --  TO X
   --
@@ -182,10 +184,22 @@ begin
      for i in arrays.first(data_array1)..arrays.last(data_array1) loop
          data_point := numerics.value( get_line( data_file ));
          data_array1(i) := data_point;
+         candidate_scale := numerics.ceiling( data_point / 100 );
+         if candidate_scale > y_axis_scale then
+            y_axis_scale := candidate_scale;
+         end if;
          data_point := numerics.value( get_line( data_file ));
          data_array2(i) := data_point;
+         candidate_scale := numerics.ceiling( data_point / 100 );
+         if candidate_scale > y_axis_scale then
+            y_axis_scale := candidate_scale;
+         end if;
          data_point := numerics.value( get_line( data_file ));
          data_array3(i) := data_point;
+         candidate_scale := numerics.ceiling( data_point / 100 );
+         if candidate_scale > y_axis_scale then
+            y_axis_scale := candidate_scale;
+         end if;
      end loop;
      close( data_file );
   else
