@@ -33,6 +33,8 @@ begin
   if login.kind = privileged_login then
      put( "privileged login " );
   elsif login.kind = service_login then
+     put( "service login " );
+  elsif login.kind = dictionary_login then
      put( "dictionary login " );
   elsif login.kind = existing_login then
      put( "existing login " );
@@ -50,6 +52,8 @@ begin
         if login.kind = privileged_login then
            put( "privileged login " );
         elsif login.kind = service_login then
+           put( "service login " );
+        elsif login.kind = dictionary_login then
            put( "dictionary login " );
         elsif login.kind = existing_login then
            put( "existing login " );

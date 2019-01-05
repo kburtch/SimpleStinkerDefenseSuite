@@ -14,6 +14,8 @@ type login_kind is (
    dictionary_login,
    existing_login,
    unknown_login_kind
+-- user role (guest/demo/developer)
+-- data service
 -- calling card
 );
 

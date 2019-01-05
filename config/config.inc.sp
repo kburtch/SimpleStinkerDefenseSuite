@@ -42,6 +42,9 @@ firewall_kind : constant firewall_kinds := iptables_firewall;
 
 -- How many violations to forgive before blocking takes effect.
 -- The value must be greater than zero.  The default is 1.
+-- Setting the grace to zero doesn't necessarily provide better
+-- defense, as an attacker usually tries more than once per
+-- session.
 -- Optionally, provide a different grace amount for SMTP/Spam
 -- violations.
 
@@ -56,6 +59,7 @@ report_email  : constant email_string := "ken@pegasoft.ca";
 -- The ssh account to test SSH
 
 ssh_ping_user : constant string := "ken@localhost";
+ssh_port : constant string := "8001";
 
 end config;
 

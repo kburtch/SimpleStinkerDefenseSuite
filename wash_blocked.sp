@@ -369,7 +369,7 @@ begin
 
   -- Ensure there was a login attempt to kickstart the ssh summary
 
-  ssh( ssh_ping_user, "exit" );
+  ssh( "-p", ssh_port, ssh_ping_user, "exit" );
 
   if not opt_daemon and not opt_verbose then
      put_line( "Preparing to run..." ); -- this will be overwritten
