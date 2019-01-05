@@ -6,6 +6,8 @@
 REPORT_DATE_TODAY=`date '+%m/%d'`" 00:"
 REPORT_DATE_YESTERDAY=`date --date 'yesterday' '+%m/%d'`
 
+FILTER_LIST="data/report_filter.txt"
+
 LOG_FILES=`ls -t log/blocker.log* | head -2`
 
 LOG_LINES=0
@@ -63,6 +65,14 @@ done }
 TMP=`cat "t.t.$$"`
 rm "t.t.$$"
 echo "$TMP"
+
+# To avoid double-counting some summary reports, record and filter out
+# ones we've already seen and reported on.
+
+if [ -f "$FILTER_LIST" ] ; then
+   TMP=`echo "$TMP" | fgrep -v -f "$FILTER_LIST"`
+fi
+echo "$TMP" > "$FILTER_LIST"
 
 # Separate the reports by blocker.
 # With the summary records, there may be multiple records since once is
