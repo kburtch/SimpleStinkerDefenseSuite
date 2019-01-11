@@ -13,7 +13,6 @@ procedure list_logins is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "lib/logging.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/logins.inc.sp";
 
@@ -38,13 +37,13 @@ begin
      put( "dictionary login " );
   elsif login.kind = existing_login then
      put( "existing login " );
-  elsif login.kind = role_login,
+  elsif login.kind = role_login then
      put( "role login " );
-  elsif login.kind = guest_login,
+  elsif login.kind = guest_login then
      put( "guest login " );
-  elsif login.kind =data_service_login,
+  elsif login.kind =data_service_login then
      put( "data service login " );
-  elsif login.kind = calling_card
+  elsif login.kind = calling_card then
      put( "calling card login " );
   else
      put( "unknown kind " );
@@ -65,13 +64,13 @@ begin
            put( "dictionary login " );
         elsif login.kind = existing_login then
            put( "existing login " );
-        elsif login.kind = role_login,
+        elsif login.kind = role_login then
            put( "role login " );
-        elsif login.kind = guest_login,
+        elsif login.kind = guest_login then
            put( "guest login " );
-        elsif login.kind =data_service_login,
+        elsif login.kind =data_service_login then
            put( "data service login " );
-        elsif login.kind = calling_card
+        elsif login.kind = calling_card then
            put( "calling card login " );
         else
            put( "unknown kind " );

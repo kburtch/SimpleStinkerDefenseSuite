@@ -864,7 +864,6 @@ begin
      ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
-     block( source_ip );
      btree_io.set( offender_file, string( source_ip ), ab );
   end if;
   logs.level_end( old_log_level );

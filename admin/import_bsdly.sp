@@ -35,23 +35,27 @@ begin
   setupWorld( "log/blocker.log", log_mode.file );
   startup_blocking;
 
+  if files.exists( traplist_filename ) then
+     logs.error( "download file already exists - erase first" );
+  end if;
+
   -- Download the latest traplist
 
-  logs.error( "downloading bsdly.net list" );
+  logs.info( "downloading bsdly.net list" );
   wget -q "https://www.bsdly.net/~peter/bsdly.net.traplist";
   status := $?;
   if status /= 0 then
-     put_line( "download failed with status " & strings.image( status ) );
+     logs.error( "download failed with status " & strings.image( status ) );
   end if;
   if not files.exists( traplist_filename ) then
-     put_line( "download failed - file not found" );
+     logs.error( "download failed - file not found" );
   end if;
 
   -- Import the traplist.
   -- we mark them as spammers.  however the list includes all kinds of
   -- attackers and may not actually be spammers.
 
-  logs.error( "importing bsdly.net list" );
+  logs.info( "importing bsdly.net list" );
   open( traplist_file, in_file, traplist_filename );
   while not end_of_file( traplist_file ) loop
     traplist_offender := get_line( traplist_file );
