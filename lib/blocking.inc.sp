@@ -827,6 +827,51 @@ end http_record_and_block;
 pragma assumption( used, http_record_and_block );
 
 
+-- FOREIGN RECORD AND BLOCK
+--
+-- Record the offending IP number from a third-party source and
+-- and block it with the configured firewall.  Do not provide grace.
+-- If we already seen it, don't add it again.
+-----------------------------------------------------------------------------
+
+procedure foreign_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; reason : string ) is
+  ab : an_offender;
+  old_log_level : logs.log_level;
+begin
+  logs.level_begin( old_log_level );
+  if not btree_io.has_element( offender_file, string( source_ip ) ) then
+     if reason /= "" then
+        logs.info( source_ip ) @ ( reason );
+     end if;
+     ab.source_ip       := source_ip;
+     ab.source_name     := "";
+     ab.source_country  := "";
+     ab.location        := "";
+     ab.sshd_blocked    := unblocked_blocked;
+     ab.sshd_blocked_on := ts;
+     ab.sshd_offenses   := 0;
+     ab.smtp_blocked    := unblocked_blocked;
+     ab.smtp_blocked_on := ts;
+     ab.smtp_offenses   := 0;
+     ab.spam_blocked    := banned_blocked;
+     ab.spam_blocked_on := ts;
+     ab.spam_offenses   := 1;
+     ab.http_blocked    := unblocked_blocked;
+     ab.http_blocked_on := ts;
+     ab.http_offenses   := 0;
+     ab.grace           := 0;
+     ab.created_on      := ts;
+     ab.logged_on       := logged_on;
+     ab.updated_on      := ts;
+     ab.data_type       := real_data;
+     block( source_ip );
+     btree_io.set( offender_file, string( source_ip ), ab );
+  end if;
+  logs.level_end( old_log_level );
+end foreign_record_and_block;
+pragma assumption( used, foreign_record_and_block );
+
+
 -- NUMBER BLOCKED
 --
 -- The number of IP addresses currently blocked, or 999999 on an error.

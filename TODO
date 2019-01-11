@@ -1,3 +1,5 @@
+- bsdly.net - traplist: https://www.bsdly.net/~peter/bsdly.net.traplist
+
 - daemons
   - general utility for reading configuration into Bash shell
     - need SSHD_HOME (like JAVA_HOME variable) to locate the project_path

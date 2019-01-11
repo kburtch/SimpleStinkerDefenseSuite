@@ -490,6 +490,7 @@ pragma todo( team,
   dynamic_hash_tables.set( ip_whitelist, "45.56.68.190", "lntxap01" );
   dynamic_hash_tables.set( ip_whitelist, "198.58.125.175", "armitage" );
   dynamic_hash_tables.set( ip_whitelist, "209.159.182.101", "home" );
+  dynamic_hash_tables.set( ip_whitelist, "24.140.239.16", "ludbrook" );
   dynamic_hash_tables.set( ip_whitelist, "207.219.237.66", "tier1" );
 end setupWorld;
 pragma assumption( used, setupWorld );

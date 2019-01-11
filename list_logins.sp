@@ -38,6 +38,14 @@ begin
      put( "dictionary login " );
   elsif login.kind = existing_login then
      put( "existing login " );
+  elsif login.kind = role_login,
+     put( "role login " );
+  elsif login.kind = guest_login,
+     put( "guest login " );
+  elsif login.kind =data_service_login,
+     put( "data service login " );
+  elsif login.kind = calling_card
+     put( "calling card login " );
   else
      put( "unknown kind " );
   end if;
@@ -57,6 +65,14 @@ begin
            put( "dictionary login " );
         elsif login.kind = existing_login then
            put( "existing login " );
+        elsif login.kind = role_login,
+           put( "role login " );
+        elsif login.kind = guest_login,
+           put( "guest login " );
+        elsif login.kind =data_service_login,
+           put( "data service login " );
+        elsif login.kind = calling_card
+           put( "calling card login " );
         else
            put( "unknown kind " );
         end if;

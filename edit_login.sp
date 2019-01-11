@@ -38,7 +38,8 @@ begin
   put( "Comment:  " ) @ ( login.comment ); new_line;
   new_line;
   put_line( " 0 privileged_login, 1 service_login, 2 dictionary_login," );
-  put_line( " 3 existing_login, 4 unknown_login_kind" );
+  put_line( " 3 existing_login, 4 unknown_login_kind, 5 role_login," );
+  put_line( " 6 guest_login, 7 data_service_login, 8 calling_card" );
   put( "New Kind? " );
   s := get_line;
   s := strings.trim( @ );
@@ -48,13 +49,17 @@ begin
   when "2" => login.kind := dictionary_login;
   when "3" => login.kind := existing_login;
   when "4" => login.kind := unknown_login_kind;
+  when "5" => login.kind := role_login;
+  when "6" => login.kind := guest_login;
+  when "7" => login.kind := data_service_login;
+  when "8" => login.kind := calling_card;
   when others => put_line( "I don't know that kind" );
   end case;
   login.comment := comment_string( strings.trim( s ) );
-  put( "New Reason? " );
+  put( "New Reason? ('x' aborts) " );
   login.comment := get_line;
   login.comment := comment_string( strings.trim( @ ) );
-  if login.comment /= "" then
+  if login.comment /= "x" then
      btree_io.replace( sshd_logins_file, key, login );
   end if;
   btree_io.close( sshd_logins_file );

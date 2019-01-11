@@ -100,6 +100,24 @@ MAIL_EVENTS=0
 TMP=`echo "$MAIL_SUMMARY" | cut -d\; -f2 | cut -d= -f2 | tr -d ' '`
 MAIL_EVENTS=`echo "$TMP" | paste -sd+ | bc`
 
+# For spam events, older log entries do not have the spam line item.
+# We will process it the slow way without paste/bc.
+
+SPAM_EVENTS=0
+echo "$MAIL_SUMMARY" | ( while read LINE ; do
+   TMP=`echo "$LINE" | cut -d\; -f3 | cut -d= -f2 | tr -d ' '`
+   if [ "$TMP" != "" ] ; then
+      let "SPAM_EVENTS=SPAM_EVENTS+TMP"
+   fi
+done
+echo "$SPAM_EVENTS" > "t.t.$$"
+)
+SPAM_EVENTS=`cat "t.t.$$"`
+rm "t.t.$$"
+
+#TMP=`echo "$MAIL_SUMMARY" | cut -d\; -f3 | cut -d= -f2 | tr -d ' '`
+#SPAM_EVENTS=`echo "$TMP" | paste -sd+ | bc`
+
 # For the ipset block list, there's 8 lines of headers
 
 CURRENT_BLOCKS=`/sbin/ipset -L blocklist  | wc -l`
@@ -113,7 +131,7 @@ TOTAL_ON_FILE=`fgrep Country <blocked.out | wc -l`
 
 # Chart the trend.
 
-bash graph_series.sh "threat_trend" $HTTP_EVENTS $SSH_EVENTS $MAIL_EVENTS
+bash graph_series.sh "threat_trend" $HTTP_EVENTS $SSH_EVENTS $MAIL_EVENTS $SPAM_EVENTS
 
 # Dump the logins.
 
@@ -129,6 +147,7 @@ echo >> /var/www/html/pegasoft/ssds/daily_summary.frag
 echo "New HTTP Blocks:      $HTTP_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
 echo "New SSH  Blocks:      $SSH_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
 echo "New Mail Blocks:      $MAIL_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
+echo "New Spam Blocks:      $SPAM_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
 echo "Currently Blocked:    $CURRENT_BLOCKS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
 echo "Currently Monitoring: $TOTAL_ON_FILE" >> /var/www/html/pegasoft/ssds/daily_summary.frag
 

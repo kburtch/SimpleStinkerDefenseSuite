@@ -12,7 +12,6 @@ procedure wash_blocked is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "lib/logging.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
   with separate "lib/countries.inc.sp";

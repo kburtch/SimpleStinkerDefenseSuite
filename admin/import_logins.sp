@@ -1,8 +1,8 @@
 #!/usr/local/bin/spar
 
-with separate "../config/contributors.inc.sp";
-with separate "../lib/world.inc.sp";
-with separate "../config/config.inc.sp";
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
 
 procedure import_logins is
   pragma annotate( summary, "import_logins" )
@@ -12,32 +12,33 @@ procedure import_logins is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "../lib/logging.inc.sp";
-  with separate "../lib/common.inc.sp";
-  with separate "../lib/logins.inc.sp";
+  with separate "lib/logging.inc.sp";
+  with separate "lib/common.inc.sp";
+  with separate "lib/logins.inc.sp";
 
   pragma restriction( no_external_commands );
 
   bt : btree_io.file( a_sshd_login );
-  key : string;
+  --key : string;
   login : a_sshd_login;
   j : json_string;
   json_file : file_type;
   json_path : string;
 begin
-  if command_line.argument_count /= 1 then
-     put_line( standard_error, "expected an export file path argument" );
-     command_line.set_exit_status( 192 );
-     return;
-  end if;
-  json_path := command_line.argument( 1 );
+  --if command_line.argument_count /= 1 then
+  --   put_line( standard_error, "expected an export file path argument" );
+  --   command_line.set_exit_status( 192 );
+  --   return;
+  --end if;
+  --json_path := command_line.argument( 1 );
 
-  cd .. ;
-  -- TODO: create if not exist
-  btree_io.open( bt, "../" & sshd_logins_path, sshd_logins_buffer_width, sshd_logins_buffer_width );
+  --cd .. ;
+  btree_io.open( bt, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
   open( json_file, in_file, json_path );
-  while not end_of_file( json_file ) loop
-     j := json_string( get_line( json_file ) );
+  --while not end_of_file( json_file ) loop
+  while not end_of_file( standard_input ) loop
+     --j := json_string( get_line( json_file ) );
+     j := json_string( get_line );
      records.to_record( login, j );
      btree_io.set( bt, string( login.username ), login );
   end loop;

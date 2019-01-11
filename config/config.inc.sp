@@ -59,7 +59,7 @@ report_email  : constant email_string := "ken@pegasoft.ca";
 -- The ssh account to test SSH
 
 ssh_ping_user : constant string := "ken@localhost";
-ssh_port : constant string := "8001";
+ssh_port : constant string := "22";
 
 end config;
 

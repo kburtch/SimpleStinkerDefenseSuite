@@ -90,8 +90,9 @@ end handle_command_options;
 
 -----------------------------------------------------------------------------
 
-attack_cnt : natural;
-record_cnt : natural;
+attack_cnt : natural; -- number of smtp attackers
+spam_cnt   : natural; -- number of spammers
+record_cnt : natural; -- number of records processed
 
 
 -- SHOW SUMMARY
@@ -102,7 +103,8 @@ record_cnt : natural;
 procedure show_summary is
 begin
   logs.ok( "Processed " ) @ ( strings.image( record_cnt ) ) @ ( " log records" )
-     @ ( "; Attacks =" ) @ ( strings.image( attack_cnt ) );
+     @ ( "; Attacks =" ) @ ( strings.image( attack_cnt ) )
+     @ ( "; Spam =" ) @ ( strings.image( spam_cnt ) );
 end show_summary;
 
 
@@ -113,8 +115,9 @@ end show_summary;
 
 procedure reset_summary is
 begin
-  record_cnt := 0;
   attack_cnt := 0;
+  record_cnt := 0;
+  spam_cnt := 0;
 end reset_summary;
 
 -----------------------------------------------------------------------------
@@ -270,7 +273,7 @@ begin
       source_ip := validate_ip( raw_source_ip );
       logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
 --? "spam " & raw_source_ip & "/" & source_ip;
-        attack_cnt := @+1;
+      spam_cnt := @+1;
       is_spam;
       message := " sent a SPAM message";
    end if;

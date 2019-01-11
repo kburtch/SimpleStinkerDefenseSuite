@@ -13,10 +13,11 @@ type login_kind is (
    service_login,
    dictionary_login,
    existing_login,
-   unknown_login_kind
--- user role (guest/demo/developer)
--- data service
--- calling card
+   unknown_login_kind,
+   role_login,
+   guest_login,
+   data_service_login,
+   calling_card
 );
 
 type a_sshd_login is record

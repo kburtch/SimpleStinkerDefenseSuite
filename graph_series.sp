@@ -2,13 +2,13 @@
 
 pragma annotate( summary, "graph_series.sp" )
               @( description, "Plot one or more series of data points on " )
-              @( description, "a graph.  The maximum number of series is 3. " )
-              @( description, "A history of 3 data points is maintained. " )
+              @( description, "a graph.  The maximum number of series is 4. " )
+              @( description, "A history of 4 data points is maintained. " )
               @( description, "The graph will be saved as a bmp file. If " )
               @( description, "Imagemagick is installed, it will also be " )
               @( description, "saved as a png file." )
               @( param, "the graph name" )
-              @( param, "one, two or three data points" )
+              @( param, "one, two, three or four data points" )
               @( author, "Ken O. Burtch" );
 pragma license( unrestricted );
 pragma software_model( shell_script );
@@ -23,6 +23,7 @@ procedure graph is
   data_array1 : data_arrays;
   data_array2 : data_arrays;
   data_array3 : data_arrays;
+  data_array4 : data_arrays;
   data_point : universal_numeric;
   data_file_name : string;
 
@@ -170,8 +171,8 @@ begin
   end if;
 
   num_series := $# - 1;
-  if num_series > 3 then
-     put_line( "the maximum number of series is 3" );
+  if num_series > 4 then
+     put_line( "the maximum number of series is 4" );
      command_line.set_exit_status(192);
      return;
   end if;
@@ -179,6 +180,7 @@ begin
   -- read the history
 
   data_file_name := graph_name & ".dat";
+  candidate_scale := candidate_scale;
   if files.exists( "data/" & data_file_name ) then
      open( data_file, in_file, "data/" & data_file_name );
      for i in arrays.first(data_array1)..arrays.last(data_array1) loop
@@ -200,6 +202,12 @@ begin
          if candidate_scale > y_axis_scale then
             y_axis_scale := candidate_scale;
          end if;
+         data_point := numerics.value( get_line( data_file ));
+         data_array4(i) := data_point;
+         candidate_scale := numerics.ceiling( data_point / 100 );
+         if candidate_scale > y_axis_scale then
+            y_axis_scale := candidate_scale;
+         end if;
      end loop;
      close( data_file );
   else
@@ -207,6 +215,7 @@ begin
          data_array1(i) := 0;
          data_array2(i) := 0;
          data_array3(i) := 0;
+         data_array4(i) := 0;
      end loop;
   end if;
 
@@ -224,6 +233,11 @@ begin
      arrays.shift_left( data_array3 );
      data_point := natural( numerics.value( $4 ));
      data_array3( arrays.last( data_array3 ) ) := data_point;
+  end if;
+  if num_series > 3 then
+     arrays.shift_left( data_array4 );
+     data_point := natural( numerics.value( $5 ));
+     data_array4( arrays.last( data_array4 ) ) := data_point;
   end if;
 
   -- Note that off-screen canvases are broken.  We will need a frame buffer.
@@ -243,6 +257,9 @@ begin
   end if;
   if num_series > 2 then
      draw_series( data_array3, y_axis_scale, pen_color_name.darkblue, pen_color_name.blue );
+  end if;
+  if num_series > 3 then
+     draw_series( data_array4, y_axis_scale, pen_color_name.darkblue, pen_color_name.yellow );
   end if;
 
   -- Save the graph
@@ -264,7 +281,8 @@ begin
   for i in arrays.first(data_array1)..arrays.last(data_array1) loop
       put_line( data_file, strings.image( data_array1(i) ) )
              @( data_file, strings.image( data_array2(i) ) )
-             @( data_file, strings.image( data_array3(i) ) );
+             @( data_file, strings.image( data_array3(i) ) )
+             @( data_file, strings.image( data_array4(i) ) );
   end loop;
   close( data_file );
 end graph;
