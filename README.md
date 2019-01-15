@@ -27,7 +27,7 @@ unauthorized servers can be blacklisted.
 ## Requirements
 
 SSDS is written in the SparForte, a high-integrity language.
-It requires SparForte 2.1.
+It requires SparForte 2.2.
 It requires the Berkeley DB library.
 It also requires a Bourne Compatible shell (e.g. bash).
 
@@ -46,6 +46,10 @@ Turn off your firewall, if you have one.
 Run reset\_firewall to initialize the firewall.
 Run the sshd, mail and http daemons on boot.
 Run wash blocked -D from cron every hour or as often as needed.
+
+e.g. in your crontab:
+00      *      *      *      *     cd /root/ssds; /usr/local/bin/spar ssds_hourly.sp
+50      00     *      *      *     cd /root/ssds; /usr/local/bin/spar ssds_daily.sp
 
 Configure your log rotation software to rotate the log file.
 

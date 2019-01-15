@@ -841,7 +841,7 @@ begin
   logs.level_begin( old_log_level );
   if not btree_io.has_element( offender_file, string( source_ip ) ) then
      if reason /= "" then
-        logs.info( source_ip ) @ ( reason );
+        logs.info( source_ip ) @ ( " " ) @ ( reason );
      end if;
      ab.source_ip       := source_ip;
      ab.source_name     := "";
@@ -855,7 +855,7 @@ begin
      ab.smtp_offenses   := 0;
      ab.spam_blocked    := banned_blocked;
      ab.spam_blocked_on := ts;
-     ab.spam_offenses   := 1;
+     ab.spam_offenses   := banned_threshhold;
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
      ab.http_offenses   := 0;
