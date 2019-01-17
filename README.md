@@ -30,6 +30,7 @@ SSDS is written in the SparForte, a high-integrity language.
 It requires SparForte 2.2.
 It requires the Berkeley DB library.
 It also requires a Bourne Compatible shell (e.g. bash).
+The new dashboard web page requires xfvb (to render the graph) and imagemagik (to convert the graph to a web-friendly format).
 
 The current version has been tested on CENTOS 7/Red Hat 7.
 
@@ -44,12 +45,13 @@ Select monitor\_mode if you want to test the software first.
 
 Turn off your firewall, if you have one.
 Run reset\_firewall to initialize the firewall.
-Run the sshd, mail and http daemons on boot.
-Run wash blocked -D from cron every hour or as often as needed.
+Run the start\_ssds.sh script to start the sshd, mail and http daemons.  (Or run start\_ssds.sh on boot.)
+Run the stop\_ssds.sh script to stop the sshd, mail and http daemons.
 
-e.g. in your crontab:
-00      *      *      *      *     cd /root/ssds; /usr/local/bin/spar ssds_hourly.sp
-50      00     *      *      *     cd /root/ssds; /usr/local/bin/spar ssds_daily.sp
+Install the hourly and daily tasks in your crontab.  For example:
+
+00      *      *      *      *     cd /path-to-ssds; /usr/local/bin/spar ssds\_hourly.sp
+50      00     *      *      *     cd /path-to-ssds; /usr/local/bin/spar ssds\_daily.sp
 
 Configure your log rotation software to rotate the log file.
 
@@ -60,6 +62,4 @@ Configure your log rotation software to rotate the log file.
     size 1M
     rotate 9
 }
-
-TODO: there will be a master daemon to manage the smaller daemons.
 
