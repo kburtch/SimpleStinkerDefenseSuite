@@ -4,7 +4,6 @@ with separate "config/config.inc.sp";
 
 procedure reset_firewall is
 
-with separate "lib/logging.inc.sp";
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 

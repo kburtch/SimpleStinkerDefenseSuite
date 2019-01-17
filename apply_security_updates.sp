@@ -15,8 +15,6 @@ pragma annotate( summary, "apply_security_updates" )
 pragma license( gplv3 );
 pragma software_model( shell_script );
 
-  with separate "lib/logging.inc.sp";
-
   result : string;
   summary_line : string;
   free_meg : natural := 0;
@@ -28,7 +26,7 @@ begin
   if $? /= 0 then
      put_line( "yum not working" );
   elsif strings.index( summary_line, "No packages needed for security" ) = 0 then
-     log_info( source_info.source_location ) @ ( "No security updates" );
+     logs.info( "No security updates" );
   else
      -- TODO this is wrong
      cnt := numerics.value( `echo "$result" | wc -l;` );
