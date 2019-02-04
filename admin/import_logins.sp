@@ -12,7 +12,6 @@ procedure import_logins is
   pragma license( gplv3 );
   pragma software_model( shell_script );
 
-  with separate "lib/logging.inc.sp";
   with separate "lib/common.inc.sp";
   with separate "lib/logins.inc.sp";
 
@@ -24,26 +23,61 @@ procedure import_logins is
   j : json_string;
   json_file : file_type;
   json_path : string;
+  rec_cnt : natural := 1;
 begin
-  --if command_line.argument_count /= 1 then
-  --   put_line( standard_error, "expected an export file path argument" );
-  --   command_line.set_exit_status( 192 );
-  --   return;
-  --end if;
-  --json_path := command_line.argument( 1 );
+  if command_line.argument_count > 1 then
+     put_line( standard_error, "expected an json file path argument" );
+     command_line.set_exit_status( 192 );
+     return;
+  elsif command_line.argument_count > 1 then
+     json_path := command_line.argument( 1 );
+  end if;
 
-  --cd .. ;
-  btree_io.open( bt, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
-  open( json_file, in_file, json_path );
-  --while not end_of_file( json_file ) loop
-  while not end_of_file( standard_input ) loop
-     --j := json_string( get_line( json_file ) );
-     j := json_string( get_line );
-     records.to_record( login, j );
+  if files.exists( string( sshd_logins_path ) ) then
+     btree_io.open( bt, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
+  else
+     btree_io.create( bt, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
+  end if;
+  if json_path /= "" then
+     open( json_file, in_file, json_path );
+  end if;
+
+  loop
+     if json_path = "" then
+        exit when end_of_file( current_input );
+        -- by explicitly choosing current input, it suppresses echoing
+        -- to the terminal.
+        begin
+           j := json_string( get_line( current_input ) );
+        exception when others =>
+           -- this will be file not open when input is exhausted
+           exit;
+        end;
+     else
+        exit when end_of_file( json_file );
+        j := json_string( get_line( json_file ) );
+     end if;
+     -- KLUDGE: This should not be needed.
+     if strings.head( j, 1 ) = "." then
+        j := strings.delete( j, 1, 1 );
+     end if;
+     begin
+        records.to_record( login, j );
+     exception when others =>
+        put_line( standard_error, "Error in JSON record" &
+          strings.image( rec_cnt ) );
+        raise;
+     end;
      btree_io.set( bt, string( login.username ), login );
+     rec_cnt := @+1;
   end loop;
-  btree_io.close( bt );
-  close( json_file );
+  if btree_io.is_open( bt ) then
+     btree_io.close( bt );
+  end if;
+  if is_open( json_file ) then
+     close( json_file );
+  end if;
+  put_line( "Logins imported:" & strings.image( rec_cnt ) );
 exception when others =>
   if btree_io.is_open( bt ) then
      btree_io.close( bt );

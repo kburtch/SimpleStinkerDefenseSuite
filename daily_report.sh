@@ -72,7 +72,12 @@ echo "$TMP"
 if [ -f "$FILTER_LIST" ] ; then
    TMP=`echo "$TMP" | fgrep -v -f "$FILTER_LIST"`
 fi
-echo "$TMP" > "$FILTER_LIST"
+# Save the new set of filters so we don't double-count
+if [ -n "$TMP" ] ; then
+   echo "$TMP" > "$FILTER_LIST"
+elif [ -f "$FILTER_LIST" ] ; then
+   rm "$FILTER_LIST"
+fi
 
 # Separate the reports by blocker.
 # With the summary records, there may be multiple records since once is
@@ -85,20 +90,32 @@ MAIL_SUMMARY=`echo "$TMP" | fgrep "mail_blocker"`
 HTTP_EVENTS=0
 TMP=`echo "$HTTP_SUMMARY" | cut -d\; -f2 | cut -d= -f2 | tr -d ' '`
 HTTP_EVENTS=`echo "$TMP" | paste -sd+ | bc`
+if [ "$HTTP_EVENTS" = "" ] ; then
+   HTTP_EVENTS=0
+fi
 
 SSH_NEW=0
 TMP=`echo "$SSH_SUMMARY" | cut -d\; -f2 | cut -d= -f2 | tr -d ' '`
 SSH_NEW=`echo "$TMP" | paste -sd+ | bc`
+if [ "$SSH_NEW" = "" ] ; then
+   SSH_NEW=0
+fi
 
 SSH_OLD=0
 TMP=`echo "$SSH_SUMMARY" | cut -d\; -f4 | cut -d= -f2 | tr -d ' '`
 SSH_OLD=`echo "$TMP" | paste -sd+ | bc`
+if [ "$SSH_OLD" = "" ] ; then
+   SSH_OLD=0
+fi
 
 let "SSH_EVENTS=SSH_NEW+SSH_OLD"
 
 MAIL_EVENTS=0
 TMP=`echo "$MAIL_SUMMARY" | cut -d\; -f2 | cut -d= -f2 | tr -d ' '`
 MAIL_EVENTS=`echo "$TMP" | paste -sd+ | bc`
+if [ "$MAIL_EVENTS" = "" ] ; then
+   MAIL_EVENTS=0
+fi
 
 # For spam events, older log entries do not have the spam line item.
 # We will process it the slow way without paste/bc.

@@ -1,4 +1,4 @@
-- bsdly.net - traplist: https://www.bsdly.net/~peter/bsdly.net.traplist
+- a calling card login should immediately block an ip
 
 - daemons
   - general utility for reading configuration into Bash shell
