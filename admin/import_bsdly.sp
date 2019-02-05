@@ -72,7 +72,6 @@ end handle_command_options;
   this_run_on : timestamp_string;
 
   import_log_mode : logs.log_modes := log_mode.echo;
-
 begin
   this_run_on := get_timestamp;
 
@@ -93,7 +92,7 @@ begin
   startup_blocking;
 
   if files.exists( traplist_filename ) then
-     logs.error( "download file already exists - erase first" );
+     rm "$traplist_filename";
   end if;
 
   -- Download the latest traplist
@@ -106,24 +105,27 @@ begin
   end if;
   if not files.exists( traplist_filename ) then
      logs.error( "download failed - file not found" );
+     status := 192;
   end if;
 
   -- Import the traplist.
   -- we mark them as spammers.  however the list includes all kinds of
   -- attackers and may not actually be spammers.
 
-  logs.info( "importing bsdly.net list" );
-  open( traplist_file, in_file, traplist_filename );
-  while not end_of_file( traplist_file ) loop
-    traplist_offender := get_line( traplist_file );
-    if strings.length( traplist_offender ) > 0 then
-       if strings.element( traplist_offender, 1 ) /= '#' then
-          foreign_record_and_block( traplist_offender, this_run_on, this_run_on, traplist_message );
-          process_cnt := @ + 1;
+  if status = 0 then
+     logs.info( "importing bsdly.net list" );
+     open( traplist_file, in_file, traplist_filename );
+     while not end_of_file( traplist_file ) loop
+       traplist_offender := get_line( traplist_file );
+       if strings.length( traplist_offender ) > 0 then
+          if strings.element( traplist_offender, 1 ) /= '#' then
+             foreign_record_and_block( traplist_offender, this_run_on, this_run_on, traplist_message );
+             process_cnt := @ + 1;
+          end if;
        end if;
-    end if;
-  end loop;
-  delete( traplist_file );
+     end loop;
+     delete( traplist_file );
+  end if;
 
   logs.ok( "Processed" ) @ ( strings.image( process_cnt ) ) @ ( " IP numbers" );
 

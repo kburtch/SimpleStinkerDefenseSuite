@@ -1,4 +1,6 @@
 - a calling card login should immediately block an ip
+- why do json backup files have a "period" at the start?
+- setup scripts not working problem from the reset_firewall script
 
 - daemons
   - general utility for reading configuration into Bash shell
