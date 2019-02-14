@@ -45,11 +45,11 @@ begin
            if reply = "y" then
               put_line( "Creating country list" );
               cd setup;
-              spar init_countries.sp ;
+              spar init_countries.sp;
               cd ..;
               put_line( "Creating HTTP attack vectors list" );
               cd setup;
-              spar init_countries.sp ;
+              spar init_http_vectors.sp;
               cd .. ;
               put_line( "Importing blocked ip list" );
               gzip -c -d backups/offenders.gz | spar admin/import_blocked.sp ;
