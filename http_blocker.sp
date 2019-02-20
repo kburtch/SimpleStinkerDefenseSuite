@@ -283,6 +283,42 @@ begin
 end reset_summary;
 
 
+-- APACHE LOG FIELD REVERSE
+--
+-- Starting from the end of an Apache log line, count "field" fields and
+-- return the n-th field.  Handle quote marks.
+-- If a URL in the log contains special characters, then it can confuse
+-- the search for fields at the end of the log line.
+-----------------------------------------------------------------------------
+
+function apache_log_field_reverse( log_line : string; field : positive ) return string is
+   delimiter_cnt : natural := 1;
+   i : natural := strings.length( log_line ) - 1;
+   last_delimiter : natural := i;
+   in_quote : boolean := true;
+   field_content : string;
+begin
+   while i > 0 loop
+      if strings.element( log_line, i ) = ASCII.Quotation then
+         in_quote := not @;
+      end if;
+      if not in_quote then
+         if strings.element( log_line, i ) = ' ' or
+            strings.element( log_line, i ) = ASCII.HT then
+            if delimiter_cnt = natural( field ) then
+               field_content := strings.slice( log_line, i+1, last_delimiter-1 );
+               exit;
+            end if;
+            last_delimiter := i;
+            delimiter_cnt := @ + 1;
+         end if;
+      end if;
+      i := @-1;
+   end loop;
+   return field_content;
+end apache_log_field_reverse;
+
+
 -----------------------------------------------------------------------------
 
   f : file_type;
@@ -350,12 +386,19 @@ begin
         end if;
      end if;
 
+     http_status := http_status_string( apache_log_field_reverse( log_line, 4 ) );
+
      tmp := strings.field( log_line, 3, '"' );
 
-     -- Get the status code
-     -- If invalid, use code 999
+     -- Fallback to reading from left
 
-     http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
+     if strings.length( http_status ) /= 3 then
+        logs.error( "http status is ") @ (http_status) @ (": falling back" );
+        http_status := http_status_string( strings.field( tmp, 2, ' ' ) );
+     end if;
+
+     -- If http status is invalid, use code 999
+
      if http_status = "" then
         http_status := "999";
         logs.error( "http_status is blank on log line " ) @ (log_line);
