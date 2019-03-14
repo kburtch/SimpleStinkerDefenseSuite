@@ -61,6 +61,17 @@ report_email  : constant email_string := "ken@pegasoft.ca";
 ssh_ping_user : constant string := "ken@localhost";
 ssh_port : constant string := "22";
 
+-- List of whitelisted IP numbers
+-- IP number and description in CSV format pairs
+
+ip_whitelist_config : constant array(1..6) of string :=
+( "127.0.0.1,localhost",
+  "45.56.68.190,lntxap01",
+  "198.58.125.175,armitage",
+  "209.159.182.101,home",
+  "157.52.4.6,ludbrook",
+  "207.219.237.66,tier1" );
+
 end config;
 
 -- vim: ft=spar

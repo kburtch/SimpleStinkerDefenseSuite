@@ -460,6 +460,8 @@ configuration_error : exception;
 procedure setupWorld( the_log_path : string;
   the_log_mode : logs.log_modes ) is
   min_version : constant string := "2.1";
+  ip : ip_string;
+  desc : ip_string; -- not really
 begin
   logs.open( the_log_path, the_log_mode, 75 );
 
@@ -486,12 +488,12 @@ pragma todo( team,
   work_measure.story_points, 1,
   work_priority.level, 'l' );
 
-  dynamic_hash_tables.set( ip_whitelist, "127.0.0.1", "localhost" );
-  dynamic_hash_tables.set( ip_whitelist, "45.56.68.190", "lntxap01" );
-  dynamic_hash_tables.set( ip_whitelist, "198.58.125.175", "armitage" );
-  dynamic_hash_tables.set( ip_whitelist, "209.159.182.101", "home" );
-  dynamic_hash_tables.set( ip_whitelist, "24.140.239.16", "ludbrook" );
-  dynamic_hash_tables.set( ip_whitelist, "207.219.237.66", "tier1" );
+  for i in arrays.first(ip_whitelist_config)..arrays.last(ip_whitelist_config) loop
+      ip := strings.csv_field( ip_whitelist_config(i), 1 );
+      desc :=strings.csv_field( ip_whitelist_config(i), 2 );
+      dynamic_hash_tables.set( ip_whitelist, ip, desc );
+      logs.info( "whitelisted " ) @ (ip) @( " as " ) @ (desc);
+  end loop;
 end setupWorld;
 pragma assumption( used, setupWorld );
 
