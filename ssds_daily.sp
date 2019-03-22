@@ -22,7 +22,7 @@ begin
   rm "$TMP";
 
   -- Backup database
-  spar "nightly_backup.sp";
+  spar -m "nightly_backup.sp";
 
 end ssds_daily;
 

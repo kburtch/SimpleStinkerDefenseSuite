@@ -878,15 +878,19 @@ pragma assumption( used, foreign_record_and_block );
 
 function number_blocked return natural is
   total_str : string;
+  tmp_total : natural;
   total : natural := 999999;
 begin
   total_str := `/sbin/ipset -L blocklist | wc -l;`;
   if $? /= 0 then
      logs.error( "ipset did not run" );
-  end if;
-  if total_str /= "" then
-     total := numerics.value( total_str );
-     total := @-7;
+  elsif total_str /= "" then
+     tmp_total := numerics.value( total_str );
+     if tmp_total < 7 then
+        logs.error("ipset results unexpectedly short: " & strings.to_escaped( total_str ) );
+     else
+        total := tmp_total-7;
+     end if;
   end if;
   return total;
 end number_blocked;
