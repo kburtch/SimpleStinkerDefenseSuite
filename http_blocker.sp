@@ -355,10 +355,49 @@ begin
 
      -- for all intents and purposes, the apache log line is a space
      -- delimited CSV, which also handles the double-quotes.
+     --
+     -- There are also cases where the fallback code below does not work
+     -- because of code with quotes in the identification string.
 
      http_status := http_status_string( strings.csv_field( log_line, 7, ' ' ) );
 
-     -- If http status is invalid, use code 999
+     -- However, csv_field may fail on malformed log lines such as requests
+     -- that include embedded malicious source code with quotes.  Apache
+     -- does not escape these quotes.  As a workaround, search for the field
+     -- starting at the end of the log line.
+     --
+     -- TODO: this should probably be a function.
+
+     if strings.length( http_status ) /= 3 then
+        declare
+          p       : natural := strings.length( log_line );
+          last_p  : natural := p;
+          f       : natural := 4;
+          inQuote : boolean := false;
+          ch      : character;
+        begin
+           while p > 0 loop
+              ch := strings.element( log_line, p );
+              if ch = ' ' and not inQuote then
+                 f := @-1;
+                 exit when f = 0;
+                 last_p := p-1;
+              elsif ch = '"' then
+                 inQuote := not inQuote;
+              end if;
+              p := @-1;
+           end loop;
+           -- p stops on a space.  if we didn't exhaust the string
+           -- and the status field (4th from right) was found.
+           if p > 0 and f = 0 then
+              http_status := strings.slice( log_line, p+1, last_p);
+           end if;
+        end;
+     end if;
+
+     -- It is still possible for both of these operations above to fail
+     -- to get the http status.  In that case, it's assigned code 999
+     -- and treated as a failure.
 
      if http_status = "" then
         http_status := "999";

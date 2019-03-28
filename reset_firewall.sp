@@ -49,7 +49,7 @@ begin
               cd ..;
               put_line( "Creating HTTP attack vectors list" );
               cd setup;
-              spar init_http_vectors.sp;
+              spar -C init_http_vectors.sp;
               cd .. ;
               put_line( "Importing blocked ip list" );
               gzip -c -d backups/offenders.gz | spar admin/import_blocked.sp ;
