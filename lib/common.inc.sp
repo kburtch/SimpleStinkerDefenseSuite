@@ -170,6 +170,15 @@ begin
 end parse_timestamp;
 pragma assumption( used, parse_timestamp );
 
+function get_date_string( ts : timestamp_string ) return date_string is
+  s : string;
+begin
+  s := "@" & strings.trim( string( ts ) );
+  s := `date "-d" "$s";`;
+  return date_string( s );
+end get_date_string;
+pragma assumption( used, get_date_string );
+
 -- STATISTICS
 
 pragma todo( team,

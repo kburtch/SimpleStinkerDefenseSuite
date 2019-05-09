@@ -18,8 +18,6 @@ procedure lookup_ip is
   with separate "lib/countries.inc.sp";
   with separate "lib/reports.inc.sp";
 
-  pragma restriction( no_external_commands );
-
 -- USAGE
 --
 -- Show the help

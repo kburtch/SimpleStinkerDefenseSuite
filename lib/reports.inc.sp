@@ -3,16 +3,16 @@ separate;
 procedure ip_report( the_offender : in out an_offender; the_country_name : string ) is
 begin
   put_line( the_offender.source_ip )
-         @( "  DNS:       " & the_offender.source_name )
-         @( "  Country:   " & the_country_name )
-         @( "  Location:  " & the_offender.location )
-         @( "  Tracked:   " & the_offender.created_on )
-         @( "  Last Seen: " & the_offender.logged_on )
-         @( "  SSHD:     " & strings.image( the_offender.sshd_offenses ) )
-         @( "  SMTP:     " & strings.image( the_offender.smtp_offenses ) )
-         @( "  SPAM:     " & strings.image( the_offender.spam_offenses ) )
-         @( "  HTTP:     " & strings.image( the_offender.http_offenses ) );
-  put( "  Status:   " );
+         @( "  DNS:           " & the_offender.source_name )
+         @( "  Country:       " & the_country_name )
+         @( "  Location:      " & the_offender.location )
+         @( "  Tracked Since: " & get_date_string( the_offender.created_on ) )
+         @( "  Last Events:   " & get_date_string( the_offender.logged_on ) )
+         @( "  SSHD Events:  " & strings.image( the_offender.sshd_offenses ) )
+         @( "  SMTP Events:  " & strings.image( the_offender.smtp_offenses ) )
+         @( "  SPAM Events:  " & strings.image( the_offender.spam_offenses ) )
+         @( "  HTTP Events:  " & strings.image( the_offender.http_offenses ) );
+  put( "  Status:      " );
   if the_offender.sshd_blocked = unblocked_blocked and
      the_offender.smtp_blocked = unblocked_blocked and
      the_offender.spam_blocked = unblocked_blocked and
