@@ -307,7 +307,7 @@ procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_st
   ab : an_offender;
   msg : string;
   blocked_on : timestamp_string;
-  -- old_log_level : a_log_level := log_level_start;
+  freq : natural;
   old_log_level : logs.log_level;
 begin
   logs.level_begin( old_log_level );
@@ -362,11 +362,24 @@ begin
            if reason /= "" then
               logs.info( source_ip ) @ ( reason );
            end if;
+           begin
+             freq := abs( numerics.value(string(ab.logged_on)) - numerics.value(string(logged_on)) );
+           exception when others =>
+              -- DEBUG
+              logs.warning( ab.logged_on);
+              logs.warning( logged_on );
+           end;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
-           if ab.grace > 0 then
+           -- If a two events occur in under 3 seconds, assume it is
+           -- automated and block outright.  Otherwise, deduct grace.
+           if freq <= 3 then
+              ab.grace := 0;
+              logs.info( source_ip & " looks like a bot because 2 violations logged in" & strings.image( freq ) & " second(s)" );
+           elsif ab.grace > 0 then
               ab.grace := @-1;
            end if;
+           -- If grace is exhausted, then block
            if ab.grace = 0 then
               ab.sshd_blocked_on := ts;
               ab.sshd_offenses := @+1;
