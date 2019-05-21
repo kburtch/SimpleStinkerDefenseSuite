@@ -334,9 +334,14 @@ begin
      ab.http_offenses   := 0;
      ab.grace           := default_grace+1;
      ab.created_on      := ts;
-     ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     -- The logged date may be invalid.  Use the current time if it is.
+     if strings.is_digit( logged_on ) then
+        ab.logged_on := logged_on;
+     else
+        ab.logged_on := ts;
+     end if;
      if ab.grace > 0 then
         ab.grace := @-1;
      end if;
@@ -365,7 +370,8 @@ begin
            begin
              freq := abs( numerics.value(string(ab.logged_on)) - numerics.value(string(logged_on)) );
            exception when others =>
-              -- DEBUG
+              -- ab.logged_in is occasionally blank
+              freq := 0;
               logs.warning( ab.logged_on);
               logs.warning( logged_on );
            end;
@@ -480,9 +486,14 @@ begin
      ab.http_offenses   := 0;
      ab.grace           := mail_grace+1;
      ab.created_on      := ts;
-     ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     -- The logged date may be invalid.  Use the current time if it is.
+     if strings.is_digit( logged_on ) then
+        ab.logged_on := logged_on;
+     else
+        ab.logged_on := ts;
+     end if;
      if ab.grace > 0 then
         ab.grace := @-1;
      end if;
@@ -612,9 +623,14 @@ begin
      ab.http_offenses   := 0;
      ab.grace           := mail_grace+1;
      ab.created_on      := ts;
-     ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     -- The logged date may be invalid.  Use the current time if it is.
+     if strings.is_digit( logged_on ) then
+        ab.logged_on := logged_on;
+     else
+        ab.logged_on := ts;
+     end if;
      if ab.grace > 0 then
         ab.grace := @-1;
      end if;
@@ -744,9 +760,14 @@ begin
      ab.http_offenses   := 0;
      ab.grace           := default_grace+1;
      ab.created_on      := ts;
-     ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     -- The logged date may be invalid.  Use the current time if it is.
+     if strings.is_digit( logged_on ) then
+        ab.logged_on := logged_on;
+     else
+        ab.logged_on := ts;
+     end if;
      if ab.grace > 0 then
         ab.grace := @-1;
      end if;

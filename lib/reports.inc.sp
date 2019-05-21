@@ -7,11 +7,13 @@ begin
          @( "  Country:       " & the_country_name )
          @( "  Location:      " & the_offender.location )
          @( "  Tracked Since: " & get_date_string( the_offender.created_on ) )
-         @( "  Last Events:   " & get_date_string( the_offender.logged_on ) )
+         @( "  Last Event:    " & get_date_string( the_offender.logged_on ) )
+         @( "  Last Updated:  " & get_date_string( the_offender.updated_on ) )
          @( "  SSHD Events:  " & strings.image( the_offender.sshd_offenses ) )
          @( "  SMTP Events:  " & strings.image( the_offender.smtp_offenses ) )
          @( "  SPAM Events:  " & strings.image( the_offender.spam_offenses ) )
-         @( "  HTTP Events:  " & strings.image( the_offender.http_offenses ) );
+         @( "  HTTP Events:  " & strings.image( the_offender.http_offenses ) )
+         @( "  Grace:         " & strings.image( the_offender.grace ) );
   put( "  Status:      " );
   if the_offender.sshd_blocked = unblocked_blocked and
      the_offender.smtp_blocked = unblocked_blocked and
