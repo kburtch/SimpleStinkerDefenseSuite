@@ -8,11 +8,15 @@ REPORT_DATE_YESTERDAY=`date --date 'yesterday' '+%m/%d'`
 
 FILTER_LIST="data/report_filter.txt"
 
-LOG_FILES=`ls -t log/blocker.log* | head -2`
-
 LOG_LINES=0
 ERR_LINES=0
 OK_LINES=0
+
+# Look at the last two log files.  Assemble entries for today or yesterday
+# only.  Add up the number of errors.  This assumes the report runs close
+# to midnight so there are few entries for today.
+
+LOG_FILES=`ls -t log/blocker.log* | head -2`
 
 echo "$LOG_FILES" | { while read LOG_FILE ; do
   TMP=`fgrep "$REPORT_DATE_TODAY" "$LOG_FILE" | wc -l`
@@ -48,10 +52,14 @@ echo "Errors: $ERR_LINES"
 echo "OK:     $OK_LINES"
 echo "Total:  $LOG_LINES lines"
 echo
+
+# Show the errors reported for yesterday and the beginning of today only.
+
 echo "Errors"
 echo
 echo "$LOG_FILES" | { while read LOG_FILE ; do
-  fgrep "$REPORT_DATE" "$LOG_FILE" | fgrep ':ERROR:' | fgrep -v "Nikto"
+  fgrep "$REPORT_DATE_YESTERDAY" "$LOG_FILE" | fgrep ':ERROR:' | fgrep -v "Nikto"
+  fgrep "$REPORT_DATE_TODAY" "$LOG_FILE" | fgrep ':ERROR:' | fgrep -v "Nikto"
 done }
 echo
 echo "Reports"

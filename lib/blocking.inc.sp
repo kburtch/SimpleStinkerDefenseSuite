@@ -348,8 +348,6 @@ begin
      if ab.grace = 0 then
         ab.sshd_blocked    := short_blocked;
         ab.sshd_offenses := @+1;
-     else -- DEBUG
-        logs.info( source_ip & " has SSHD grace" ); -- DEBUG
      end if;
      if ab.sshd_offenses > 0 then
         block( source_ip );
@@ -363,17 +361,17 @@ begin
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
         if ab.sshd_blocked <= probation_blocked then
-   --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
               logs.info( source_ip ) @ ( reason );
            end if;
            begin
+             -- the speed of consecutive attacks from one IP (in seconds)
              freq := abs( numerics.value(string(ab.logged_on)) - numerics.value(string(logged_on)) );
            exception when others =>
-              -- ab.logged_in is occasionally blank
+              -- ab.logged_in may be occasionally blank such as when it was not
+              -- correctly determined from the logs.  Assume these are
+              -- malformed log entries and treat as a bot attack.
               freq := 0;
-              logs.warning( ab.logged_on);
-              logs.warning( logged_on );
            end;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
@@ -441,8 +439,6 @@ begin
               logs.info( "already blocked " & source_ip );
            end if;
         end if;
-     --else
-        --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
   logs.level_end( old_log_level );
@@ -515,7 +511,6 @@ begin
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
         if ab.smtp_blocked <= probation_blocked then
-           -- log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
               logs.info( source_ip ) @ ( reason );
            end if;
@@ -578,8 +573,6 @@ begin
               logs.info( "already blocked " & source_ip );
            end if;
         end if;
-     --else
-        --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
   logs.level_end( old_log_level );
@@ -652,7 +645,6 @@ begin
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
         if ab.spam_blocked <= probation_blocked then
-   --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
               logs.info( source_ip ) @ ( reason );
            end if;
@@ -715,8 +707,6 @@ begin
               logs.info( "already blocked " & source_ip );
            end if;
         end if;
-     --else
-        --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
   logs.level_end( old_log_level );
@@ -789,7 +779,6 @@ begin
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
         if ab.http_blocked <= probation_blocked then
-   --log_info( source_info.file ) @ ( "re-blocking ip " & source_ip ); -- DEBUG
            if reason /= "" then
               logs.info( source_ip ) @ ( reason );
            end if;
@@ -852,8 +841,6 @@ begin
               logs.info( "already blocked " & source_ip );
            end if;
         end if;
-     --else
-        --log_info( source_info.file ) @ ( "skipping dup IP " & source_ip ); -- DEBUG
      end if;
   end if;
   logs.level_end( old_log_level );

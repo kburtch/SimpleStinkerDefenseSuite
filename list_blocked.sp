@@ -17,12 +17,9 @@ procedure list_blocked is
   with separate "lib/countries.inc.sp";
   with separate "lib/reports.inc.sp";
 
-  pragma restriction( no_external_commands );
-
   offender_cursor : btree_io.cursor( an_offender );
   offender_key : string;
   offender : an_offender;
-  --j : json_string;
 
   countries_file : btree_io.file( country_data );
   country : country_data;
