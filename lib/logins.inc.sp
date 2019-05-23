@@ -31,9 +31,12 @@ type a_sshd_login is record
      updated_on : timestamp_string;
      data_type       : data_types;
 end record;
+pragma assumption( applied, a_sshd_login );
 
 sshd_logins_path : constant file_path := "data/sshd_logins.btree";
+pragma assumption( used, sshd_logins_path );
 sshd_logins_buffer_width : constant positive := 2048;
+pragma assumption( used, sshd_logins_buffer_width );
 
 ------------------------------------------------------------------------------
 -- KNOWN LOGINS

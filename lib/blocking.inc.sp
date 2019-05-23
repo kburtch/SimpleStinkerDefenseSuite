@@ -303,7 +303,7 @@ pragma assumption( used, reset_firewall );
 -- If it already has a record, update the existing record.
 -----------------------------------------------------------------------------
 
-procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string ) is
+procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string; kind : login_kind ) is
   ab : an_offender;
   msg : string;
   blocked_on : timestamp_string;
@@ -342,7 +342,14 @@ begin
      else
         ab.logged_on := ts;
      end if;
-     if ab.grace > 0 then
+     -- calling card logins are automatically blocked
+     if kind = calling_card then
+        ab.grace := 0;
+        logs.info( source_ip & " used a calling card login" );
+     elsif kind = privileged_login then
+        ab.grace := 0;
+        logs.info( source_ip & " used a privileged login" );
+     elsif ab.grace > 0 then
         ab.grace := @-1;
      end if;
      if ab.grace = 0 then
@@ -380,6 +387,13 @@ begin
            if freq <= 3 then
               ab.grace := 0;
               logs.info( source_ip & " looks like a bot because 2 violations logged in" & strings.image( freq ) & " second(s)" );
+           -- calling card logins are automatically blocked
+           elsif kind = calling_card then
+              ab.grace := 0;
+              logs.info( source_ip & " used a calling card login" );
+           elsif kind = privileged_login then
+              ab.grace := 0;
+              logs.info( source_ip & " used a privileged login" );
            elsif ab.grace > 0 then
               ab.grace := @-1;
            end if;

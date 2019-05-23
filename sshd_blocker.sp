@@ -19,8 +19,8 @@ pragma license( gplv3 );
 pragma software_model( shell_script );
 
 with separate "lib/common.inc.sp";
-with separate "lib/blocking.inc.sp";
 with separate "lib/logins.inc.sp";
+with separate "lib/blocking.inc.sp";
 
 procedure create_login_hostname_variants( base : in out string; stub : in out string ) is
   p : natural;
@@ -413,6 +413,7 @@ pragma todo( team,
          r.data_type := real_data;
          r.comment := "";
          -- Virtual usernames: based on hostname or an empty string
+         -- TODO: This does not work properly and should be improved.
          if string( r.username ) = string( HOSTNAME ) then
             r.username := " HOSTNAME";
          elsif string( r.username ) = hostname_base then
@@ -425,6 +426,7 @@ pragma todo( team,
          records.to_json( j, r );
          --if mode in monitor_mode..honeypot_mode then
             if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
+               old_r.kind := unknown_login_kind;
                if btree_io.has_element( sshd_logins_file, string( r.username ) ) then
                   btree_io.get( sshd_logins_file, string( r.username ), old_r );
 pragma todo( team,
@@ -449,7 +451,7 @@ pragma todo( team,
                end if;
                logs.info( source_ip )
                   @ ( " caused a SSHD threat event" );
-               sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon, message);
+               sshd_record_and_block( source_ip, r.logged_on, this_run_on, opt_daemon, message, old_r.kind);
             end if; -- whitelisted
          --end if;
       end if;

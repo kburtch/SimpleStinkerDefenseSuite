@@ -12,6 +12,7 @@ procedure import_bsdly is
   pragma software_model( shell_script );
 
   with separate "lib/common.inc.sp";
+  with separate "lib/logins.inc.sp";
   with separate "lib/blocking.inc.sp";
 
 opt_daemon  : boolean := false;   -- true of -D used

@@ -14,6 +14,19 @@ begin
          @( "  SPAM Events:  " & strings.image( the_offender.spam_offenses ) )
          @( "  HTTP Events:  " & strings.image( the_offender.http_offenses ) )
          @( "  Grace:         " & strings.image( the_offender.grace ) );
+
+  put( "  Data Type:     " );
+  case the_offender.data_type is
+  when real_data =>
+    put_line( "real data" );
+  when proxy_data =>
+    put_line( "proxy data" );
+  when test_data =>
+    put_line( "test data" );
+  when others =>
+    put_line( "unknown" );
+  end case;
+
   put( "  Status:      " );
   if the_offender.sshd_blocked = unblocked_blocked and
      the_offender.smtp_blocked = unblocked_blocked and

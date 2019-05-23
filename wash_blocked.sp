@@ -13,6 +13,7 @@ procedure wash_blocked is
   pragma software_model( shell_script );
 
   with separate "lib/common.inc.sp";
+  with separate "lib/logins.inc.sp";
   with separate "lib/blocking.inc.sp";
   with separate "lib/countries.inc.sp";
 

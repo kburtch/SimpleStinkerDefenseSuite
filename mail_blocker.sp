@@ -19,6 +19,7 @@ pragma license( gplv3 );
 pragma software_model( shell_script );
 
 with separate "lib/common.inc.sp";
+with separate "lib/logins.inc.sp";
 with separate "lib/blocking.inc.sp";
 
 -- This type is used in several places but not here.  As a workaround,

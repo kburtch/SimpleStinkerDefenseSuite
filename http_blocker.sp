@@ -19,6 +19,7 @@ pragma license( gplv3 );
 pragma software_model( shell_script );
 
 with separate "lib/common.inc.sp";
+with separate "lib/logins.inc.sp";
 with separate "lib/blocking.inc.sp";
 with separate "lib/key_codes.inc.sp";
 with separate "lib/urls.inc.sp";

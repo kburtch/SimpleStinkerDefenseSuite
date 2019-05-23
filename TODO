@@ -1,6 +1,3 @@
-- a calling card login should immediately block an ip
-- setup scripts not working problem from the reset_firewall script
-
 - daemons
   - general utility for reading configuration into Bash shell
     - need SSHD_HOME (like JAVA_HOME variable) to locate the project_path
