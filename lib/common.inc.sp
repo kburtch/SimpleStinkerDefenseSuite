@@ -22,6 +22,25 @@ pragma todo( team,
   work_priority.level, 'l' );
 
 ------------------------------------------------------------------------------
+-- Types of Accounts
+------------------------------------------------------------------------------
+-- TODO: existing, disabled should be a different type and not be here
+
+type login_kind is (
+   privileged_login,
+   service_login,
+   dictionary_login,
+   existing_login,
+   unknown_login_kind,
+   role_login,
+   guest_login,
+   data_service_login,
+   calling_card,
+   disabled_login,
+   email_alias_login
+);
+
+------------------------------------------------------------------------------
 -- Usernames
 ------------------------------------------------------------------------------
 

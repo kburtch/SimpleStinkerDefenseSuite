@@ -50,8 +50,8 @@ Run the stop\_ssds.sh script to stop the sshd, mail and http daemons.
 
 Install the hourly and daily tasks in your crontab.  For example:
 
-00      *      *      *      *     cd /path-to-ssds; /usr/local/bin/spar ssds\_hourly.sp
-50      00     *      *      *     cd /path-to-ssds; /usr/local/bin/spar ssds\_daily.sp
+00      *      *      *      *     cd /path-to-ssds; nice /usr/local/bin/spar ssds\_hourly.sp
+50      00     *      *      *     cd /path-to-ssds; nice /usr/local/bin/spar ssds\_daily.sp
 
 Configure your log rotation software to rotate the log file.
 

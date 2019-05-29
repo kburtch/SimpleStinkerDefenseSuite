@@ -49,7 +49,7 @@ firewall_kind : constant firewall_kinds := iptables_firewall;
 -- violations.
 
 default_grace : constant grace_count := 1;
-mail_grace    : constant grace_count := 4; --default_grace;
+mail_grace    : constant grace_count := 4;
 
 -- The email address to receive alerts.
 

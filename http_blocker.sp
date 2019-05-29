@@ -19,7 +19,6 @@ pragma license( gplv3 );
 pragma software_model( shell_script );
 
 with separate "lib/common.inc.sp";
-with separate "lib/logins.inc.sp";
 with separate "lib/blocking.inc.sp";
 with separate "lib/key_codes.inc.sp";
 with separate "lib/urls.inc.sp";
@@ -95,7 +94,7 @@ opt_daemon  : boolean := false;   -- true of -D used
 -----------------------------------------------------------------------------
 
   --function suspicious_web_request( request : string; source_ip : ip_string; message : out string ) return boolean is
-  procedure suspicious_web_request( request : string; source_ip : ip_string; message : out string; result : out boolean ) is
+  procedure suspicious_web_request( request : string; message : out string; result : out boolean ) is
     key_code : key_codes;
     eof : boolean;
     key_code_string : string;
@@ -116,8 +115,10 @@ opt_daemon  : boolean := false;   -- true of -D used
                   vector := strings.field( vectors.vector, v, ASCII.LF );
                   exit when vector = "";
                   if strings.index( request, vector ) > 0 then
-                     message := string( source_ip ) &
-                       " made a suspicious web request '" &
+                     -- The IP is added to the message elsewhere...not sure
+                     -- where but it isn't needed here.
+                     -- message := string( source_ip ) &
+                     message := " made a suspicious web request '" &
                         strings.to_escaped( request ) &
                         "' with '" &
                         strings.to_escaped( vector ) & "'";
@@ -429,7 +430,7 @@ begin
         else
            if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
               prepare_web_request( request );
-              suspicious_web_request( request, source_ip, message, is_suspicious );
+              suspicious_web_request( request, message, is_suspicious );
               if is_suspicious then
                  host := get_ip_host_name( source_ip );
                  check_for_search_engine( host, source_ip, is_search_engine );

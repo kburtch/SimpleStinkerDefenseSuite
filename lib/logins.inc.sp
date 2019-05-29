@@ -5,31 +5,26 @@ separate;
 ------------------------------------------------------------------------------
 
 ------------------------------------------------------------------------------
--- SUSPICIOUS LOGINS
+-- LOGIN ACCOUNTS
 ------------------------------------------------------------------------------
 
-type login_kind is (
-   privileged_login,
-   service_login,
-   dictionary_login,
-   existing_login,
-   unknown_login_kind,
-   role_login,
-   guest_login,
-   data_service_login,
-   calling_card
+type a_login_existence is (
+   unknown_existence,
+   active_existence,
+   disabled_existence,
+   no_existence
 );
 
 type a_sshd_login is record
      username   : user_string;
      count      : natural;
-     ssh_disallowed : boolean;
      kind       : login_kind;
      comment    : comment_string;
      created_on : timestamp_string;
      logged_on  : timestamp_string;
      updated_on : timestamp_string;
-     data_type       : data_types;
+     data_type  : data_types;
+     existence  : a_login_existence;
 end record;
 pragma assumption( applied, a_sshd_login );
 
@@ -67,5 +62,23 @@ begin
   close( f );
 end check_known_logins;
 pragma assumption( used, check_known_logins );
+
+
+-- INIT LOGIN
+--
+-- Initialize a login record with reasonable defaults.
+------------------------------------------------------------------------------
+
+procedure init_login( login_rec : in out a_sshd_login; created_on : timestamp_string; logged_on : timestamp_string ) is
+begin
+  login_rec.count := 1;
+  login_rec.data_type := real_data;
+  login_rec.comment := "";
+  login_rec.logged_on := logged_on;
+  login_rec.existence := disabled_existence;
+  login_rec.kind := unknown_login_kind;
+  login_rec.created_on := created_on;
+end init_login;
+pragma assumption( used, init_login );
 
 -- vim: ft=spar

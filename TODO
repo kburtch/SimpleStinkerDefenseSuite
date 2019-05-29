@@ -1,3 +1,5 @@
+- wash should erase single-use login names after a set period as probably random data
+
 - daemons
   - general utility for reading configuration into Bash shell
     - need SSHD_HOME (like JAVA_HOME variable) to locate the project_path
@@ -26,7 +28,6 @@
 
 - mail
   - should mail blocker record login names?
-  - expiring after 3 months -- did I finish this?
   - SpamHaus support? https://www.spamhaus.org/sbl/
   - myself is blocking for email access on:
     Sep 19 15:44:13 pegasoft postfix/submission/smtpd[6130]: warning: hostname ppp101.static.dsl.ontario.net does not resolve to address 209.159.182.101: Name or service not known

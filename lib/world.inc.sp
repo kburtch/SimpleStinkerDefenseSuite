@@ -44,6 +44,10 @@ type grace_count is new natural;
 
 ------------------------------------------------------------------------------
 -- Usernames
+--
+-- Standard UNIX limits usernames to 8 characters.  32 are allowed on Linux,
+-- though some commands may be affected (like PS showing UID's instead for
+-- long usernames).
 ------------------------------------------------------------------------------
 
 type user_string is new string;

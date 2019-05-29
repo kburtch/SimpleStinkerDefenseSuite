@@ -19,8 +19,8 @@ pragma license( gplv3 );
 pragma software_model( shell_script );
 
 with separate "lib/common.inc.sp";
-with separate "lib/logins.inc.sp";
 with separate "lib/blocking.inc.sp";
+with separate "lib/logins.inc.sp";
 
 -- This type is used in several places but not here.  As a workaround,
 -- mark it used.  Until this is sorted out.
@@ -139,6 +139,9 @@ end reset_summary;
   last_day   : calendar.day_number;
   this_day   : calendar.day_number;
 
+  sshd_logins_file : btree_io.file( a_sshd_login );
+  login_rec : a_sshd_login;
+  is_old_login : boolean;
 begin
   -- Check for file existence
   if not files.exists( string( smtp_violations_file_path ) ) then
@@ -152,6 +155,12 @@ begin
   if handle_command_options then
      command_line.set_exit_status( 1 );
      return;
+  end if;
+
+  if files.exists( string( sshd_logins_path ) ) then
+     btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
+  else
+     btree_io.create( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
   end if;
 
   startup_blocking;
@@ -279,6 +288,84 @@ begin
       message := " sent a SPAM message";
    end if;
 
+   -- Send mail to an unknown user
+   --
+   -- Treat as a spam event
+
+   if strings.index( log_line, "User unknown in local recipient table" ) > 0 then
+      raw_source_ip := raw_ip_string( strings.field( log_line, 3, '[' ) );
+      raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
+      source_ip := validate_ip( raw_source_ip );
+      logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
+
+      -- Get the username of the email
+
+      tmp := strings.field( log_line, 2, "<" );
+      tmp := strings.field( @, 1, ">" );
+      tmp := strings.field( @, 1, "@" );
+      login_rec.username := user_string( tmp );
+      -- Virtual usernames: based on hostname or an empty string
+      -- TODO: This does not work properly and should be improved.
+      -- TODO: refactor out
+      if string( login_rec.username ) = string( HOSTNAME ) then
+         login_rec.username := " HOSTNAME";
+      -- these only in sshd blocker
+      -- elsif string( login_rec.username ) = hostname_base then
+      --    login_rec.username := " HOSTNAME_BASE";
+      -- elsif string( login_rec.username ) = hostname_stub then
+      --    login_rec.username := " HOSTNAME_STUB";
+      elsif login_rec.username = "" then
+         login_rec.username := " BLANK_NAME";
+      end if;
+
+      if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
+         -- Reasonable defaults for the login record
+         is_old_login := false;
+         if btree_io.has_element( sshd_logins_file, string( login_rec.username ) ) then
+            -- Get the existing record
+            -- TODO: other gets should probably use an exception handler also
+            begin
+               btree_io.get( sshd_logins_file, string( login_rec.username ), login_rec );
+               is_old_login := true;
+            exception when others =>
+               logs.error( "failed to read login record: " & exceptions.exception_info );
+            end;
+         else
+            -- Create a new one using login_rec
+            if dynamic_hash_tables.has_element( known_logins, login_rec.username ) then
+               login_rec.kind := existing_login;
+            end if;
+            login_rec.created_on := this_run_on;
+         end if;
+         if is_old_login then
+pragma todo( team,
+  "skipping old violations could be improved.  there could be multiple attacks " &
+  "at the same time.  subsequent attacks in the same second are currently " &
+  "skipped",
+  work_measure.unknown, 0,
+  work_priority.level, 'l' );
+            -- Dups handled in SSHD blocker but not here
+            login_rec.count := @ + 1;
+         else
+            init_login( login_rec, this_run_on, logged_on );
+            login_rec.comment := "from spam";
+            -- login_rec.count := 1;
+            -- login_rec.data_type := real_data;
+            -- login_rec.comment := "spam";
+            -- login_rec.logged_on := logged_on;
+            -- login_rec.ssh_disallowed := false;
+            -- login_rec.kind := unknown_login_kind;
+         end if;
+         login_rec.logged_on := logged_on;
+         login_rec.updated_on := this_run_on;
+         btree_io.set( sshd_logins_file, string( login_rec.username ), login_rec );
+         -- New logins not counted here
+         is_spam;
+         spam_cnt := @+1;
+         message := " email to unknown user " & string( login_rec.username );
+      end if; -- not whitelisted
+   end if;
+
 -- Aug  3 21:05:34 pegasoft postfix/smtpd[6517]: connect from unknown[216.16.85.53]
 --     if strings.index( log_line, "postfix/smtpd" ) > 0 then
 --        if strings.index( log_line, " connect from" ) > 0 then
@@ -343,6 +430,7 @@ begin
      new_line;
   end if;
 
+  btree_io.close( sshd_logins_file );
   close( f );
   show_summary;
 
@@ -352,6 +440,9 @@ begin
 
 exception when others =>
   logs.error( exceptions.exception_info );
+  if btree_io.is_open( sshd_logins_file ) then
+     btree_io.close( sshd_logins_file );
+  end if;
   if is_open( f ) then
      close( f );
   end if;

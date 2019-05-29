@@ -15,8 +15,30 @@ type blocking_status is (
   blacklisted_blocked
 );
 
--- Note: offenses is american, offences is Canadian
--- TODO: smtp should probably be renamed mail since not just smtp
+--type an_offender is record
+--     source_ip       : ip_string;
+--     source_name     : dns_string;
+--     source_country  : country_string;
+--     location        : string;
+--     sshd_blocked    : blocking_status;
+--     sshd_blocked_on : timestamp_string;
+--     sshd_offenses   : natural;
+--     smtp_blocked    : blocking_status;
+--     smtp_blocked_on : timestamp_string;
+--     smtp_offenses   : natural;
+--     spam_blocked    : blocking_status;
+--     spam_blocked_on : timestamp_string;
+--     spam_offenses   : natural;
+--     http_blocked    : blocking_status;
+--     http_blocked_on : timestamp_string;
+--     http_offenses   : natural;
+--     grace           : grace_count;
+--     created_on      : timestamp_string;
+--     logged_on       : timestamp_string;
+--     updated_on      : timestamp_string;
+--     data_type       : data_types;
+--end record;
+
 type an_offender is record
      source_ip       : ip_string;
      source_name     : dns_string;
@@ -24,20 +46,21 @@ type an_offender is record
      location        : string;
      sshd_blocked    : blocking_status;
      sshd_blocked_on : timestamp_string;
-     sshd_offenses   : natural;
-     smtp_blocked    : blocking_status;
-     smtp_blocked_on : timestamp_string;
-     smtp_offenses   : natural;
+     sshd_offences   : natural;
+     mail_blocked    : blocking_status;
+     mail_blocked_on : timestamp_string;
+     mail_offences   : natural;
      spam_blocked    : blocking_status;
      spam_blocked_on : timestamp_string;
-     spam_offenses   : natural;
+     spam_offences   : natural;
      http_blocked    : blocking_status;
      http_blocked_on : timestamp_string;
-     http_offenses   : natural;
+     http_offences   : natural;
      grace           : grace_count;
      created_on      : timestamp_string;
      logged_on       : timestamp_string;
      updated_on      : timestamp_string;
+     sourced_from    : string;
      data_type       : data_types;
 end record;
 
@@ -322,16 +345,16 @@ begin
      ab.location        := "";
      ab.sshd_blocked    := unblocked_blocked;
      ab.sshd_blocked_on := ts;
-     ab.sshd_offenses   := 0;
-     ab.smtp_blocked    := unblocked_blocked;
-     ab.smtp_blocked_on := ts;
-     ab.smtp_offenses   := 0;
+     ab.sshd_offences   := 0;
+     ab.mail_blocked    := unblocked_blocked;
+     ab.mail_blocked_on := ts;
+     ab.mail_offences   := 0;
      ab.spam_blocked    := unblocked_blocked;
      ab.spam_blocked_on := ts;
-     ab.spam_offenses   := 0;
+     ab.spam_offences   := 0;
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
-     ab.http_offenses   := 0;
+     ab.http_offences   := 0;
      ab.grace           := default_grace+1;
      ab.created_on      := ts;
      ab.updated_on      := ts;
@@ -342,21 +365,29 @@ begin
      else
         ab.logged_on := ts;
      end if;
+
      -- calling card logins are automatically blocked
      if kind = calling_card then
         ab.grace := 0;
-        logs.info( source_ip & " used a calling card login" );
+        logs.info( source_ip & " tried a calling card login" );
+     -- privileged logins, if they exist, should not be publically accessible
+     -- are automatically blocked
      elsif kind = privileged_login then
         ab.grace := 0;
-        logs.info( source_ip & " used a privileged login" );
+        logs.info( source_ip & " tried a privileged login" );
+     -- a service, like mysql, should not be publically accessible
+     elsif kind = service_login then
+        ab.grace := 0;
+        logs.info( source_ip & " tried a service login" );
      elsif ab.grace > 0 then
         ab.grace := @-1;
      end if;
+
      if ab.grace = 0 then
         ab.sshd_blocked    := short_blocked;
-        ab.sshd_offenses := @+1;
+        ab.sshd_offences := @+1;
      end if;
-     if ab.sshd_offenses > 0 then
+     if ab.sshd_offences > 0 then
         block( source_ip );
      end if;
      btree_io.set( offender_file, string( source_ip ), ab );
@@ -382,6 +413,7 @@ begin
            end;
            ab.logged_on       := logged_on;
            ab.updated_on      := ts;
+
            -- If a two events occur in under 3 seconds, assume it is
            -- automated and block outright.  Otherwise, deduct grace.
            if freq <= 3 then
@@ -390,29 +422,36 @@ begin
            -- calling card logins are automatically blocked
            elsif kind = calling_card then
               ab.grace := 0;
-              logs.info( source_ip & " used a calling card login" );
+              logs.info( source_ip & " tried a calling card login" );
+           -- privileged logins, if they exist, should not be publically accessible
+           -- are automatically blocked
            elsif kind = privileged_login then
               ab.grace := 0;
-              logs.info( source_ip & " used a privileged login" );
+              logs.info( source_ip & " tried a privileged login" );
+           -- a service, like mysql, should not be publically accessible
+           elsif kind = service_login then
+              ab.grace := 0;
+              logs.info( source_ip & " tried a service login" );
            elsif ab.grace > 0 then
               ab.grace := @-1;
            end if;
+
            -- If grace is exhausted, then block
            if ab.grace = 0 then
               ab.sshd_blocked_on := ts;
-              ab.sshd_offenses := @+1;
-              if ab.sshd_offenses > banned_threshhold then
+              ab.sshd_offences := @+1;
+              if ab.sshd_offences > banned_threshhold then
                 ab.sshd_blocked := banned_blocked;
               else
                 ab.sshd_blocked := short_blocked;
               end if;
            else
-              logs.info( source_ip & " has SSHD grace" );
+              logs.info( source_ip & " has grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.sshd_blocked > probation_blocked then
               msg := "";
-              if ab.smtp_blocked > probation_blocked then
+              if ab.mail_blocked > probation_blocked then
                  msg := @ & " SMTP";
               end if;
               if ab.spam_blocked > probation_blocked then
@@ -425,7 +464,7 @@ begin
                  logs.info( string( source_ip ) &
                    " SSHD offender already blocked for" & msg );
               else
-                 logs.info( source_ip & " has no SSHD grace" );
+                 logs.info( source_ip & " has no grace" );
                  block( source_ip );
               end if;
            end if;
@@ -433,8 +472,8 @@ begin
            -- here, it's already blocked.  determine how long from most recent
            -- blocking time.  If it's recent, it's just an info message.
            blocked_on := ab.sshd_blocked_on;
-           if ab.smtp_blocked_on > blocked_on then
-              blocked_on := ab.smtp_blocked_on;
+           if ab.mail_blocked_on > blocked_on then
+              blocked_on := ab.mail_blocked_on;
            end if;
            if ab.spam_blocked_on > blocked_on then
               blocked_on := ab.spam_blocked_on;
@@ -484,16 +523,16 @@ begin
      ab.location        := "";
      ab.sshd_blocked    := unblocked_blocked;
      ab.sshd_blocked_on := ts;
-     ab.sshd_offenses   := 0;
-     ab.smtp_blocked    := unblocked_blocked;
-     ab.smtp_blocked_on := ts;
-     ab.smtp_offenses   := 0;
+     ab.sshd_offences   := 0;
+     ab.mail_blocked    := unblocked_blocked;
+     ab.mail_blocked_on := ts;
+     ab.mail_offences   := 0;
      ab.spam_blocked    := unblocked_blocked;
      ab.spam_blocked_on := ts;
-     ab.spam_offenses   := 0;
+     ab.spam_offences   := 0;
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
-     ab.http_offenses   := 0;
+     ab.http_offences   := 0;
      ab.grace           := mail_grace+1;
      ab.created_on      := ts;
      ab.updated_on      := ts;
@@ -508,12 +547,12 @@ begin
         ab.grace := @-1;
      end if;
      if ab.grace = 0 then
-        ab.smtp_blocked    := short_blocked;
-        ab.smtp_offenses := @+1;
+        ab.mail_blocked    := short_blocked;
+        ab.mail_offences := @+1;
      else
-        logs.info( source_ip & " has SMTP grace" );
+        logs.info( source_ip & " has grace" );
      end if;
-     if ab.smtp_offenses > 0 then
+     if ab.mail_offences > 0 then
         block( source_ip );
      end if;
      btree_io.set( offender_file, string( source_ip ), ab );
@@ -524,7 +563,7 @@ begin
      -- when reading the whole log file.  In daemon mode, we know all entries
      -- are new.
      if is_daemon or ab.logged_on < logged_on then
-        if ab.smtp_blocked <= probation_blocked then
+        if ab.mail_blocked <= probation_blocked then
            if reason /= "" then
               logs.info( source_ip ) @ ( reason );
            end if;
@@ -534,18 +573,18 @@ begin
               ab.grace := @-1;
            end if;
            if ab.grace = 0 then
-              ab.smtp_blocked_on := ts;
-              ab.smtp_offenses := @+1;
-              if ab.smtp_offenses > banned_threshhold then
-                ab.smtp_blocked := banned_blocked;
+              ab.mail_blocked_on := ts;
+              ab.mail_offences := @+1;
+              if ab.mail_offences > banned_threshhold then
+                ab.mail_blocked := banned_blocked;
               else
-                ab.smtp_blocked := short_blocked;
+                ab.mail_blocked := short_blocked;
               end if;
            else
-              logs.info( source_ip & " has SMTP grace" );
+              logs.info( source_ip & " has grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
-           if ab.smtp_blocked > probation_blocked then
+           if ab.mail_blocked > probation_blocked then
               msg := "";
               if ab.sshd_blocked > probation_blocked then
                  msg := " SSHD";
@@ -560,7 +599,7 @@ begin
                  logs.info( string( source_ip ) &
                    " SMTP offender already blocked for" & msg );
               else
-                 logs.info( source_ip & " has no SMTP grace" );
+                 logs.info( source_ip & " has no grace" );
                  block( source_ip );
               end if;
            end if;
@@ -568,8 +607,8 @@ begin
            -- here, it's already blocked.  determine how long from most recent
            -- blocking time.  If it's recent, it's just an info message.
            blocked_on := ab.sshd_blocked_on;
-           if ab.smtp_blocked_on > blocked_on then
-              blocked_on := ab.smtp_blocked_on;
+           if ab.mail_blocked_on > blocked_on then
+              blocked_on := ab.mail_blocked_on;
            end if;
            if ab.spam_blocked_on > blocked_on then
               blocked_on := ab.spam_blocked_on;
@@ -618,16 +657,16 @@ begin
      ab.location        := "";
      ab.sshd_blocked    := unblocked_blocked;
      ab.sshd_blocked_on := ts;
-     ab.sshd_offenses   := 0;
-     ab.smtp_blocked    := unblocked_blocked;
-     ab.smtp_blocked_on := ts;
-     ab.smtp_offenses   := 0;
+     ab.sshd_offences   := 0;
+     ab.mail_blocked    := unblocked_blocked;
+     ab.mail_blocked_on := ts;
+     ab.mail_offences   := 0;
      ab.spam_blocked    := unblocked_blocked;
      ab.spam_blocked_on := ts;
-     ab.spam_offenses   := 0;
+     ab.spam_offences   := 0;
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
-     ab.http_offenses   := 0;
+     ab.http_offences   := 0;
      ab.grace           := mail_grace+1;
      ab.created_on      := ts;
      ab.updated_on      := ts;
@@ -643,11 +682,11 @@ begin
      end if;
      if ab.grace = 0 then
         ab.spam_blocked  := short_blocked;
-        ab.spam_offenses := @+1;
+        ab.spam_offences := @+1;
      else
-        logs.info( source_ip & " has SPAM grace" );
+        logs.info( source_ip & " has grace" );
      end if;
-     if ab.spam_offenses > 0 then
+     if ab.spam_offences > 0 then
         block( source_ip );
      end if;
      btree_io.set( offender_file, string( source_ip ), ab );
@@ -669,14 +708,14 @@ begin
            end if;
            if ab.grace = 0 then
               ab.spam_blocked_on := ts;
-              ab.spam_offenses := @+1;
-              if ab.spam_offenses > banned_threshhold then
+              ab.spam_offences := @+1;
+              if ab.spam_offences > banned_threshhold then
                 ab.spam_blocked := banned_blocked;
               else
                 ab.spam_blocked := short_blocked;
               end if;
            else
-             logs.info( source_ip & " has SPAM grace" );
+             logs.info( source_ip & " has grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.spam_blocked > probation_blocked then
@@ -684,7 +723,7 @@ begin
               if ab.sshd_blocked > probation_blocked then
                  msg := " SSDH";
               end if;
-              if ab.smtp_blocked > probation_blocked then
+              if ab.mail_blocked > probation_blocked then
                  msg := @ & " SMTP";
               end if;
               if ab.http_blocked > probation_blocked then
@@ -694,7 +733,7 @@ begin
                  logs.info( string( source_ip ) &
                    " SPAM offender already blocked for" & msg );
               else
-                 logs.info( source_ip & " has no SPAM grace" );
+                 logs.info( source_ip & " has no grace" );
                  block( source_ip );
               end if;
            end if;
@@ -702,8 +741,8 @@ begin
            -- here, it's already blocked.  determine how long from most recent
            -- blocking time.  If it's recent, it's just an info message.
            blocked_on := ab.sshd_blocked_on;
-           if ab.smtp_blocked_on > blocked_on then
-              blocked_on := ab.smtp_blocked_on;
+           if ab.mail_blocked_on > blocked_on then
+              blocked_on := ab.mail_blocked_on;
            end if;
            if ab.spam_blocked_on > blocked_on then
               blocked_on := ab.spam_blocked_on;
@@ -752,16 +791,16 @@ begin
      ab.location        := "";
      ab.sshd_blocked    := unblocked_blocked;
      ab.sshd_blocked_on := ts;
-     ab.sshd_offenses   := 0;
-     ab.smtp_blocked    := unblocked_blocked;
-     ab.smtp_blocked_on := ts;
-     ab.smtp_offenses   := 0;
+     ab.sshd_offences   := 0;
+     ab.mail_blocked    := unblocked_blocked;
+     ab.mail_blocked_on := ts;
+     ab.mail_offences   := 0;
      ab.spam_blocked    := unblocked_blocked;
      ab.spam_blocked_on := ts;
-     ab.spam_offenses   := 0;
+     ab.spam_offences   := 0;
      ab.http_blocked    := unblocked_blocked;
      ab.http_blocked_on := ts;
-     ab.http_offenses   := 0;
+     ab.http_offences   := 0;
      ab.grace           := default_grace+1;
      ab.created_on      := ts;
      ab.updated_on      := ts;
@@ -777,11 +816,11 @@ begin
      end if;
      if ab.grace = 0 then
         ab.http_blocked    := short_blocked;
-        ab.http_offenses := @+1;
+        ab.http_offences := @+1;
      else
-        logs.info( source_ip & " has HTTP grace" );
+        logs.info( source_ip & " has grace" );
      end if;
-     if ab.http_offenses > 0 then
+     if ab.http_offences > 0 then
         block( source_ip );
      end if;
      btree_io.set( offender_file, string( source_ip ), ab );
@@ -803,14 +842,14 @@ begin
            end if;
            if ab.grace = 0 then
               ab.http_blocked_on := ts;
-              ab.http_offenses := @+1;
-              if ab.http_offenses > banned_threshhold then
+              ab.http_offences := @+1;
+              if ab.http_offences > banned_threshhold then
                 ab.http_blocked := banned_blocked;
               else
                 ab.http_blocked := short_blocked;
               end if;
            else
-              logs.info( source_ip & " has HTTP grace" );
+              logs.info( source_ip & " has grace" );
            end if;
            btree_io.set( offender_file, string( source_ip ), ab );
            if ab.http_blocked > probation_blocked then
@@ -818,7 +857,7 @@ begin
               if ab.sshd_blocked > probation_blocked then
                  msg := @ & " SSHD";
               end if;
-              if ab.smtp_blocked > probation_blocked then
+              if ab.mail_blocked > probation_blocked then
                  msg := @ & " SMTP";
               end if;
               if ab.spam_blocked > probation_blocked then
@@ -828,7 +867,7 @@ begin
                  logs.info( string( source_ip ) &
                    " HTTP offender already blocked for" & msg );
               else
-                 logs.info( source_ip & " has no HTTP grace" );
+                 logs.info( source_ip & " has no grace" );
                  block( source_ip );
               end if;
            end if;
@@ -836,8 +875,8 @@ begin
            -- here, it's already blocked.  determine how long from most recent
            -- blocking time.  If it's recent, it's just an info message.
            blocked_on := ab.sshd_blocked_on;
-           if ab.smtp_blocked_on > blocked_on then
-              blocked_on := ab.smtp_blocked_on;
+           if ab.mail_blocked_on > blocked_on then
+              blocked_on := ab.mail_blocked_on;
            end if;
            if ab.spam_blocked_on > blocked_on then
               blocked_on := ab.spam_blocked_on;
@@ -884,21 +923,22 @@ begin
      ab.location        := "";
      ab.sshd_blocked    := banned_blocked;
      ab.sshd_blocked_on := ts;
-     ab.sshd_offenses   := banned_threshhold;
-     ab.smtp_blocked    := banned_blocked;
-     ab.smtp_blocked_on := ts;
-     ab.smtp_offenses   := banned_threshhold;
+     ab.sshd_offences   := banned_threshhold;
+     ab.mail_blocked    := banned_blocked;
+     ab.mail_blocked_on := ts;
+     ab.mail_offences   := banned_threshhold;
      ab.spam_blocked    := banned_blocked;
      ab.spam_blocked_on := ts;
-     ab.spam_offenses   := banned_threshhold;
+     ab.spam_offences   := banned_threshhold;
      ab.http_blocked    := banned_blocked;
      ab.http_blocked_on := ts;
-     ab.http_offenses   := banned_threshhold;
+     ab.http_offences   := banned_threshhold;
      ab.grace           := 0;
      ab.created_on      := ts;
      ab.logged_on       := logged_on;
      ab.updated_on      := ts;
      ab.data_type       := real_data;
+     ab.sourced_from    := reason;
      btree_io.set( offender_file, string( source_ip ), ab );
   end if;
   logs.level_end( old_log_level );

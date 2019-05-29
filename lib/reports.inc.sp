@@ -13,7 +13,8 @@ begin
          @( "  SMTP Events:  " & strings.image( the_offender.smtp_offenses ) )
          @( "  SPAM Events:  " & strings.image( the_offender.spam_offenses ) )
          @( "  HTTP Events:  " & strings.image( the_offender.http_offenses ) )
-         @( "  Grace:         " & strings.image( the_offender.grace ) );
+         @( "  Grace:         " & strings.image( the_offender.grace ) )
+         @( "  Sourced From:  " & the_offender.sourced_from );
 
   put( "  Data Type:     " );
   case the_offender.data_type is

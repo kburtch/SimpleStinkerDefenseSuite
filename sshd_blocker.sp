@@ -180,6 +180,7 @@ begin
    end if;
 end get_raw_username_and_ip_number;
 
+
 -- SHOW SUMMARY
 --
 -- Show a summary of activity.
@@ -194,6 +195,7 @@ begin
       ( "; Old usernames =" ) @ ( strings.image( updated_cnt ) );
 end show_summary;
 
+
 -- RESET SUMMARY
 --
 -- Clear counters for the summary.
@@ -206,6 +208,8 @@ begin
   dup_cnt := 0;
   updated_cnt := 0;
 end reset_summary;
+
+is_old_login : boolean;
 
 begin
   -- Check for file existence
@@ -290,7 +294,7 @@ pragma todo( team,
       remove_token( s, "Invalid user", found );
       if found then
          remove_token( s, " from ", found );
-         r.logged_on := parse_timestamp( date_string( strings.slice( s, 1, 15 ) ) );
+         init_login( r, this_run_on, parse_timestamp( date_string( strings.slice( s, 1, 15 ) ) ) );
          fix( s );
          --log_info( source_info.source_location ) @ ("raw string is '" & strings.to_escaped( s )& "'" ); -- DEBUG
          get_raw_username_and_ip_number( 4 ); -- was 2
@@ -302,7 +306,6 @@ pragma todo( team,
                logs.warning("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
             end if;
          end if;
-         r.ssh_disallowed := true;
          source_ip := validate_ip( raw_source_ip );
          if source_ip /= "" then
             message := " no such user account";
@@ -353,7 +356,7 @@ pragma todo( team,
                   source_ip := get_ip_number( source_addr );
                end if;
             end if;
-            r.ssh_disallowed := true;
+            r.existence := disabled_existence;
             if source_ip /= "" then
                message := " remote login disallowed";
                process;
@@ -379,7 +382,7 @@ pragma todo( team,
          -- username
          remove_token( s, " from ", found );
          remove_token( s, "invalid user", found );
-         r.ssh_disallowed := found;
+         r.existence := no_existence;
          fix( s );
          get_raw_username_and_ip_number( 5 );
          r.username := validate_user( raw_username );
@@ -427,8 +430,18 @@ pragma todo( team,
          --if mode in monitor_mode..honeypot_mode then
             if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
                old_r.kind := unknown_login_kind;
+               -- In case the entry is corrupt, handle any exception.  If it is corrupt,
+               -- treat as a new entry and overwrite.
+               is_old_login := false;
                if btree_io.has_element( sshd_logins_file, string( r.username ) ) then
-                  btree_io.get( sshd_logins_file, string( r.username ), old_r );
+                  begin
+                     btree_io.get( sshd_logins_file, string( r.username ), old_r );
+                     is_old_login := true;
+                  exception when others =>
+                     logs.error( "failed to read login record: " & exceptions.exception_info );
+                  end;
+               end if;
+               if is_old_login then
 pragma todo( team,
   "skipping old violations could be improved.  there could be multiple attacks " &
   "at the same time.  subsequent attacks in the same second are currently " &

@@ -13,7 +13,6 @@ procedure wash_blocked is
   pragma software_model( shell_script );
 
   with separate "lib/common.inc.sp";
-  with separate "lib/logins.inc.sp";
   with separate "lib/blocking.inc.sp";
   with separate "lib/countries.inc.sp";
 
@@ -425,22 +424,22 @@ begin
                    @( "sshd_blocked_on timestamp was blank" );
            modified_record;
         end if;
-        if universal_typeless( source_ip.sshd_offenses ) = "" then
-           source_ip.sshd_offenses := 1;
+        if universal_typeless( source_ip.sshd_offences ) = "" then
+           source_ip.sshd_offences := 1;
            logs.error( "for " ) @ (sip)
-                   @( "sshd_offenses was blank" );
+                   @( "sshd_offences was blank" );
            modified_record;
         end if;
-        if universal_typeless( source_ip.smtp_blocked_on ) = "" then
-           source_ip.smtp_blocked_on := get_timestamp;
+        if universal_typeless( source_ip.mail_blocked_on ) = "" then
+           source_ip.mail_blocked_on := get_timestamp;
            logs.error( "for " ) @ (sip)
-                   @( "smtp_blocked_on timestamp was blank" );
+                   @( "mail_blocked_on timestamp was blank" );
            modified_record;
         end if;
-        if universal_typeless( source_ip.smtp_offenses ) = "" then
-           source_ip.smtp_offenses := 1;
+        if universal_typeless( source_ip.mail_offences ) = "" then
+           source_ip.mail_offences := 1;
            logs.error( "for " ) @ (sip)
-                   @( "smtp_offenses was blank" );
+                   @( "mail_offences was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.spam_blocked_on ) = "" then
@@ -449,10 +448,10 @@ begin
                    @( "spam_blocked_on timestamp was blank" );
            modified_record;
         end if;
-        if universal_typeless( source_ip.spam_offenses ) = "" then
-           source_ip.spam_offenses := 1;
+        if universal_typeless( source_ip.spam_offences ) = "" then
+           source_ip.spam_offences := 1;
            logs.error( "for " ) @ (sip)
-                   @( "spam_offenses was blank" );
+                   @( "spam_offences was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.http_blocked_on ) = "" then
@@ -461,10 +460,10 @@ begin
                    @( "html_blocked_on timestamp was blank" );
            modified_record;
         end if;
-        if universal_typeless( source_ip.http_offenses ) = "" then
-           source_ip.http_offenses := 1;
+        if universal_typeless( source_ip.http_offences ) = "" then
+           source_ip.http_offences := 1;
            logs.error( "for " ) @ (sip)
-                   @( "http_offenses was blank" );
+                   @( "http_offences was blank" );
            modified_record;
         end if;
         if universal_typeless( source_ip.grace ) = "" then
@@ -524,7 +523,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                    weeks_1 * source_ip.sshd_offenses )
+                    weeks_1 * source_ip.sshd_offences )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -540,7 +539,7 @@ begin
                  strings.trim(
                    strings.image(
                       integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                       hours_1 * source_ip.sshd_offenses )
+                       hours_1 * source_ip.sshd_offences )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -554,18 +553,18 @@ begin
      when others => null;
      end case;
 
-     case source_ip.smtp_blocked is
+     case source_ip.mail_blocked is
      when banned_blocked =>
           proposed_blocked_until :=
             timestamp_string(
               strings.trim(
                 strings.image(
-                  integer( numerics.value( string( source_ip.smtp_blocked_on ) ) ) +
-                    weeks_1 * source_ip.smtp_offenses )
+                  integer( numerics.value( string( source_ip.mail_blocked_on ) ) ) +
+                    weeks_1 * source_ip.mail_offences )
              )
           );
           if this_run_on > proposed_blocked_until then
-             source_ip.smtp_blocked := probation_blocked;
+             source_ip.mail_blocked := probation_blocked;
              needs_updating;
           end if;
           if proposed_blocked_until > blocked_until then
@@ -576,12 +575,12 @@ begin
             timestamp_string(
               strings.trim(
                 strings.image(
-                  integer( numerics.value( string( source_ip.smtp_blocked_on ) ) ) +
-                    hours_1 * source_ip.smtp_offenses )
+                  integer( numerics.value( string( source_ip.mail_blocked_on ) ) ) +
+                    hours_1 * source_ip.mail_offences )
              )
           );
           if this_run_on > proposed_blocked_until then
-             source_ip.smtp_blocked := probation_blocked;
+             source_ip.mail_blocked := probation_blocked;
              needs_updating;
           end if;
           if proposed_blocked_until > blocked_until then
@@ -598,7 +597,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
-                    weeks_1 * source_ip.spam_offenses )
+                    weeks_1 * source_ip.spam_offences )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -614,7 +613,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
-                    hours_1 * source_ip.spam_offenses )
+                    hours_1 * source_ip.spam_offences )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -635,7 +634,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    weeks_1 * source_ip.http_offenses )
+                    weeks_1 * source_ip.http_offences )
              )
           );
           if this_run_on > proposed_blocked_until then
@@ -651,7 +650,7 @@ begin
               strings.trim(
                 strings.image(
                   integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    hours_1 * source_ip.http_offenses )
+                    hours_1 * source_ip.http_offences )
              )
           );
           if this_run_on > proposed_blocked_until then

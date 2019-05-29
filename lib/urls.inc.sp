@@ -6,6 +6,8 @@ separate;
 
 type attack_vector_string is new string;
 type http_status_string is new string;
+pragma assumption( applied, http_status_string );
+
 --type url_string is new string;
 
 type attack_vector_kinds is ( unknown_vector, forbidden_vector, suspicious_vector );
