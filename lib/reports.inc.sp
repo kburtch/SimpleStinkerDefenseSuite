@@ -9,10 +9,10 @@ begin
          @( "  Tracked Since: " & get_date_string( the_offender.created_on ) )
          @( "  Last Event:    " & get_date_string( the_offender.logged_on ) )
          @( "  Last Updated:  " & get_date_string( the_offender.updated_on ) )
-         @( "  SSHD Events:  " & strings.image( the_offender.sshd_offenses ) )
-         @( "  SMTP Events:  " & strings.image( the_offender.smtp_offenses ) )
-         @( "  SPAM Events:  " & strings.image( the_offender.spam_offenses ) )
-         @( "  HTTP Events:  " & strings.image( the_offender.http_offenses ) )
+         @( "  SSHD Events:  " & strings.image( the_offender.sshd_offences ) )
+         @( "  SMTP Events:  " & strings.image( the_offender.mail_offences ) )
+         @( "  SPAM Events:  " & strings.image( the_offender.spam_offences ) )
+         @( "  HTTP Events:  " & strings.image( the_offender.http_offences ) )
          @( "  Grace:         " & strings.image( the_offender.grace ) )
          @( "  Sourced From:  " & the_offender.sourced_from );
 
@@ -30,12 +30,12 @@ begin
 
   put( "  Status:      " );
   if the_offender.sshd_blocked = unblocked_blocked and
-     the_offender.smtp_blocked = unblocked_blocked and
+     the_offender.mail_blocked = unblocked_blocked and
      the_offender.spam_blocked = unblocked_blocked and
      the_offender.http_blocked = unblocked_blocked then
      put_line( "  unblocked" );
   elsif the_offender.sshd_blocked <= probation_blocked and
-     the_offender.smtp_blocked <= probation_blocked and
+     the_offender.mail_blocked <= probation_blocked and
      the_offender.spam_blocked <= probation_blocked and
      the_offender.http_blocked <= probation_blocked then
      put_line( "  probation" );
@@ -54,19 +54,19 @@ begin
      when others =>
        put( "  SSHD unknown" );
      end case;
-     case the_offender.smtp_blocked is
+     case the_offender.mail_blocked is
      when unblocked_blocked =>
-       put( "  SMTP unblocked" );
+       put( "  Mail unblocked" );
      when probation_blocked =>
-       put( "  SMTP probation" );
+       put( "  Mail probation" );
      when short_blocked =>
-       put( "  SMTP short blocked" );
+       put( "  Mail short blocked" );
      when banned_blocked =>
-       put( "  SMTP banned" );
+       put( "  Mail banned" );
      when blacklisted_blocked =>
-       put( "  SMTP blacklisted" );
+       put( "  Mail blacklisted" );
      when others =>
-       put( "  SMTP unknown" );
+       put( "  Mail unknown" );
      end case;
      case the_offender.spam_blocked is
      when unblocked_blocked =>
