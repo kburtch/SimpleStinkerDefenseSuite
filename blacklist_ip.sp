@@ -41,15 +41,15 @@ begin
      offender.source_name     := "";
      offender.source_country  := "";
      offender.location        := "";
-     offender.sshd_offenses   := 0;
-     offender.smtp_offenses   := 0;
-     offender.http_offenses   := 0;
+     offender.sshd_offences   := 0;
+     offender.mail_offences   := 0;
+     offender.http_offences   := 0;
   end if;
 
   offender.sshd_blocked    := blacklisted_blocked;
   offender.sshd_blocked_on := this_run_on;
-  offender.smtp_blocked    := blacklisted_blocked;
-  offender.smtp_blocked_on := this_run_on;
+  offender.mail_blocked    := blacklisted_blocked;
+  offender.mail_blocked_on := this_run_on;
   offender.http_blocked    := blacklisted_blocked;
   offender.http_blocked_on := this_run_on;
   offender.created_on      := this_run_on;

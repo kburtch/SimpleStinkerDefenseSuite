@@ -27,7 +27,6 @@
   Wed Sep 27 14:19:24 EDT 2017:WARNING:sshd_blocker.sp: 264:saw invalid username 'bwadmin 101.230.200.173 port'
 
 - mail
-  - should mail blocker record login names?
   - SpamHaus support? https://www.spamhaus.org/sbl/
   - myself is blocking for email access on:
     Sep 19 15:44:13 pegasoft postfix/submission/smtpd[6130]: warning: hostname ppp101.static.dsl.ontario.net does not resolve to address 209.159.182.101: Name or service not known
