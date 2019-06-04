@@ -5,11 +5,17 @@ begin
   put_line( the_offender.source_ip )
          @( "  DNS:           " & the_offender.source_name )
          @( "  Country:       " & the_country_name )
-         @( "  Location:      " & the_offender.location )
-         @( "  Tracked Since: " & get_date_string( the_offender.created_on ) )
-         @( "  Last Event:    " & get_date_string( the_offender.logged_on ) )
-         @( "  Last Updated:  " & get_date_string( the_offender.updated_on ) )
-         @( "  SSHD Events:  " & strings.image( the_offender.sshd_offences ) )
+         @( "  Location:      " & the_offender.location );
+  if the_offender.created_on /= "" then
+     put_line( "  Tracked Since: " & get_date_string( the_offender.created_on ) );
+  end if;
+  if the_offender.logged_on /= "" then
+     put_line( "  Last Event:    " & get_date_string( the_offender.logged_on ) );
+  end if;
+  if the_offender.updated_on /= "" then
+     put_line( "  Last Updated:  " & get_date_string( the_offender.updated_on ) );
+  end if;
+  put_line( "  SSHD Events:  " & strings.image( the_offender.sshd_offences ) )
          @( "  SMTP Events:  " & strings.image( the_offender.mail_offences ) )
          @( "  SPAM Events:  " & strings.image( the_offender.spam_offences ) )
          @( "  HTTP Events:  " & strings.image( the_offender.http_offences ) )

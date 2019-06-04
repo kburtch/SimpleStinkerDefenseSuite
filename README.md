@@ -44,9 +44,9 @@ to your system.
 Select monitor\_mode if you want to test the software first.
 
 Turn off your firewall, if you have one.
-Run reset\_firewall to initialize the firewall.
-Run the start\_ssds.sh script to start the sshd, mail and http daemons.  (Or run start\_ssds.sh on boot.)
-Run the stop\_ssds.sh script to stop the sshd, mail and http daemons.
+Run reset\_firewall to initialize the firewall.  Type "N" to recover from backups.
+Run the start\_ssds.sp script to start the sshd, mail and http daemons.  (Or run start\_ssds.sp on boot.)
+Run the stop\_ssds.sp script to stop the sshd, mail and http daemons.
 
 Install the hourly and daily tasks in your crontab.  For example:
 
@@ -62,4 +62,28 @@ Configure your log rotation software to rotate the log file.
     size 1M
     rotate 9
 }
+
+## Commands
+
+Admin
+
+The admin directory contains management commands, like backup and restore.
+
+Setup
+
+The setup directory contains commands related to first-time setup.
+
+## Recoverying From a Locked State
+
+The SparForte language doesn't provide the Berkeley BSD commands to rollback
+an unfinished transaction.  This may be provided in the future.  Your databases
+may become locked when shutting down your server while the wash\_blocked task
+is running, for example.
+
+If this happens, you may see multiple wash\_blocked tasks running on your
+server.  They are likely blocked because of an open database transaction.
+
+To recover, delete the data/\_\_db and .btree files in the data directory.
+Run the reset\_firewall.sp script, and type "Y" to recover from backups.
+Then start restart the firewall with start\_ssds.sp.
 

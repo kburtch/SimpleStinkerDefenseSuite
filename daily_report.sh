@@ -1,10 +1,31 @@
 #!/bin/bash
+#
+# Daily Report
+# by Ken O. Burtch
+# Produce the daily email report as well as update the web dashboard.
+#############################################################################
+
+# If a non-empty string, runs the report for testing.
+
+DRY_RUN=
+
+# The location of the web dashboard.
+
+WEBROOT="/var/www/html/pegasoft/ssds"
 
 # Yesterday, and just after midnight today
 
-#REPORT_DATE_TODAY=`date '+%b %e'`" 00:"
 REPORT_DATE_TODAY=`date '+%m/%d'`" 00:"
 REPORT_DATE_YESTERDAY=`date --date 'yesterday' '+%m/%d'`
+TMP_DIR="run"
+TMP1="$TMP_DIR""/""tmp1.$$"
+TMP2="$TMP_DIR""/""tmp2.$$"
+TMP3="$TMP_DIR""/""tmp3.$$"
+TMP_BLK="$TMP_DIR""/""tmp_blk"
+
+TL="$WEBROOT""/""top_logins.frag"
+DS="$WEBROOT""/""daily_summary.frag"
+TC="$WEBROOT""/""top_countries.frag"
 
 FILTER_LIST="data/report_filter.txt"
 
@@ -31,16 +52,16 @@ echo "$LOG_FILES" | { while read LOG_FILE ; do
   let "OK_LINES=OK_LINES+TMP"
   TMP=`fgrep "$REPORT_DATE_YESTERDAY" "$LOG_FILE" | fgrep ':OK' | wc -l`
   let "OK_LINES=OK_LINES+TMP"
-  echo "$LOG_LINES" > t.t.$$
-  echo "$ERR_LINES" > t2.t.$$
-  echo "$OK_LINES" > t3.t.$$
+  echo "$LOG_LINES" > "$TMP1"
+  echo "$ERR_LINES" > "$TMP2"
+  echo "$OK_LINES" > "$TMP3"
 done }
-LOG_LINES=`cat "t.t.$$"`
-ERR_LINES=`cat "t2.t.$$"`
-OK_LINES=`cat "t3.t.$$"`
-rm t.t.$$
-rm t2.t.$$
-rm t3.t.$$
+LOG_LINES=`cat "$TMP1"`
+ERR_LINES=`cat "$TMP2"`
+OK_LINES=`cat "$TMP3"`
+rm "$TMP1"
+rm "$TMP2"
+rm "$TMP3"
 
 # LOG_LINES=`fgrep "$REPORT_DATE" log/blocker.log | wc -l`
 # ERR_LINES=`fgrep "$REPORT_DATE" log/blocker.log | fgrep ':ERROR:' | fgrep -v "Nickto" | wc -l`
@@ -77,14 +98,16 @@ echo "$TMP"
 # To avoid double-counting some summary reports, record and filter out
 # ones we've already seen and reported on.
 
-if [ -f "$FILTER_LIST" ] ; then
-   TMP=`echo "$TMP" | fgrep -v -f "$FILTER_LIST"`
-fi
-# Save the new set of filters so we don't double-count
-if [ -n "$TMP" ] ; then
-   echo "$TMP" > "$FILTER_LIST"
-elif [ -f "$FILTER_LIST" ] ; then
-   rm "$FILTER_LIST"
+if [ -z "$DRY_RUN" ] ; then
+   if [ -f "$FILTER_LIST" ] ; then
+      TMP=`echo "$TMP" | fgrep -v -f "$FILTER_LIST"`
+   fi
+   # Save the new set of filters so we don't double-count
+   if [ -n "$TMP" ] ; then
+      echo "$TMP" > "$FILTER_LIST"
+   elif [ -f "$FILTER_LIST" ] ; then
+      rm "$FILTER_LIST"
+   fi
 fi
 
 # Separate the reports by blocker.
@@ -150,31 +173,107 @@ let "CURRENT_BLOCKS=CURRENT_BLOCKS-8"
 
 # Dump the blocked list.
 
-/usr/local/bin/spar list_blocked.sp > blocked.out
-COUNTRY_SUMMARY=`fgrep Country <blocked.out | cut -d: -f2 | sort | uniq -c | sort -rn | head -30`
-TOTAL_ON_FILE=`fgrep Country <blocked.out | wc -l`
+# TODO: not blocked.out, write a specific script to do this without the overhead
+# This can take a long time and generate a lot of data.
+
+# TODO: Total on file is calculated by the wash and could be saved
+
+#NEEDED=1
+#if [ -n "$DRY_RUN" ] ; then
+#   if [ -f "$TMP_BLK" ] ; then
+#      NEEDED=
+#   fi
+#fi
+#if [ -n "$NEEDED" ] ; then
+#   /usr/local/bin/spar -m list_blocked.sp > "$TMP_BLK"
+#fi
+#COUNTRY_SUMMARY=`fgrep Country < "$TMP_BLK" | cut -d: -f2 | sort | uniq -c | sort -rn | head -30`
+#if [ -z "$DRY_RUN" ] ; then
+#   rm "$TMP_BLK"
+#fi
+
+# From the wash_blocked task.
+
+COUNTRY_SUMMARY=`sort -nr data/country_cnt.txt | head -n 30`
+TOTAL_ON_FILE=`cat /root/ssds/data/blocking_cnt.txt`
+TOTAL_LOGINS=`cat /root/ssds/data/login_cnt.txt`
+DISK_USAGE=`du -sh data | cut -f1`
 
 # Chart the trend.
 
-bash graph_series.sh "threat_trend" $HTTP_EVENTS $SSH_EVENTS $MAIL_EVENTS $SPAM_EVENTS
+if [ -z "$DRY_RUN" ] ; then
+   bash graph_series.sh "threat_trend" $HTTP_EVENTS $SSH_EVENTS $MAIL_EVENTS $SPAM_EVENTS
+fi
 
 # Dump the logins.
 
-TOP_LOGINS=`/usr/local/bin/spar list_logins.sp | sort -nr -k2 | fgrep -v "logins:" | head -n 30`
-echo "$TOP_LOGINS" > /var/www/html/pegasoft/ssds/top_logins.frag
+TOP_LOGINS=`/usr/local/bin/spar -m list_logins.sp | sort -nr -k2 | fgrep -v "logins:" | head -n 30`
+echo "$TOP_LOGINS" > "$TL"
 
-# Summary:
+# Daily Summary:
 
-echo "Errors: $ERR_LINES" > /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "OK:     $OK_LINES" >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "Total:  $LOG_LINES lines" >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "New HTTP Blocks:      $HTTP_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "New SSH  Blocks:      $SSH_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "New Mail Blocks:      $MAIL_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "New Spam Blocks:      $SPAM_EVENTS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "Currently Blocked:    $CURRENT_BLOCKS" >> /var/www/html/pegasoft/ssds/daily_summary.frag
-echo "Currently Monitoring: $TOTAL_ON_FILE" >> /var/www/html/pegasoft/ssds/daily_summary.frag
+echo '<div style="background-color: whitesmoke; padding: 0 10px 0 10px">' > "$DS"
+echo "<p><b>Log Summary</b></p>" >> "$DS"
+echo '<table style="border: none; padding: none; border-collapse: collapse>"' >> "$DS"
 
-echo "$COUNTRY_SUMMARY" > /var/www/html/pegasoft/ssds/top_countries.frag
+BGCOLOR="background-color: none"
+if [ $ERR_LINES -ge 60 ] ; then
+   BGCOLOR="background-color: red"
+fi
+
+echo "<tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="'"$BGCOLOR"'">'"$ERR_LINES""</span>""</td><td>""<span>"" Errors""</span>""</td>" >> "$DS" 
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span>'"$OK_LINES""</span>""</td><td>""<span>"" Reports (OK)""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span>'"$LOG_LINES""</span>""</td><td>""<span>"" Lines""</span>""</td>" >> "$DS"
+echo "</tr>" >> "$DS"
+echo "</table>" >> "$DS"
+echo "</div>" >> "$DS"
+
+echo >> "$DS"
+echo '<div style="background-color: whitesmoke; padding: 0 5px 0 5 px">' >> "$DS"
+echo "<p><b>Yesterday's Blocks</b></p>" >> "$DS"
+echo '<table style="border: none; padding: none; border-collapse: collapse">' >> "$DS"
+echo "<tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: red" align="right">'"$HTTP_EVENTS""</span>""</td><td>""<span>"" for Web""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: green" align="right">'"$SSH_EVENTS""</span>""</td><td>""<span>"" for Login""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: blue" align="right">'"$MAIL_EVENTS""</span>""</td><td>""<span>"" for Mail""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: goldenrod" align="right">'"$SPAM_EVENTS""</span>""</td><td>""<span>"" for Spam""</span>""</td>" >> "$DS"
+echo "</tr>" >> "$DS"
+echo "</table>" >> "$DS"
+echo "</div>" >> "$DS"
+
+BGCOLOR="background-color: none"
+if [ "$CURRENT_BLOCKS" -gt 25000 ] ; then
+   BGCOLOR="background-color: red"
+elif [ "$CURRENT_BLOCKS" -gt 12000 ] ; then
+   BGCOLOR="background-color: orange"
+elif [ "$CURRENT_BLOCKS" -eq 0 ] ; then
+   BGCOLOR="background-color: red"
+fi
+
+# TODO: this could be monitored by the hourly task
+echo >> "$DS"
+echo '<div style="background-color: whitesmoke; padding: 0 5px 0 5 px">' >> "$DS"
+echo "<p><b>Midnight Snapshot</b></p>" >> "$DS"
+echo '<table style="border: none; padding: none; border-collapse: collapse">' >> "$DS"
+echo "<tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="'"$BGCOLOR"'">'"$CURRENT_BLOCKS""</span>""</td><td>""<span>"" Actively Blocked""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right: 3px;">''<span>'"$TOTAL_ON_FILE""</span>""</td><td>""<span>"" Monitored""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right: 3px;">''<span>'"$TOTAL_LOGINS""</span>""</td><td>""<span>""Usernames Known""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+echo '<td style="text-align:right; min-width: 50px; padding-right: 3px;">''<span>'"$DISK_USAGE""</span>""</td><td>""<span>""Used""</span>""</td>" >> "$DS"
+echo "</tr>" >> "$DS"
+echo "</table>" >> "$DS"
+echo "</div>" >> "$DS"
+
+# By Country
+
+echo "$COUNTRY_SUMMARY" > "$TC"
 

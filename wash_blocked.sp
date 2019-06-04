@@ -14,6 +14,7 @@ procedure wash_blocked is
 
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
+  with separate "lib/logins.inc.sp";
   with separate "lib/countries.inc.sp";
 
   pragma annotate( todo, "GeoIP should probably be moved to central server so it doesn't have to be install" );
@@ -340,6 +341,62 @@ end is_south_american_ip;
     end if;
   end health_check;
 
+  type country_table_rec is record
+       cname : country_string;
+       total : natural;
+  end record;
+  country_table : dynamic_hash_tables.table( json_string );
+
+  -- Country Counts
+  --
+  -- Save the number of suspicious IP's by country
+
+  procedure country_counts_report is
+    f     : file_type;
+    countries_file : btree_io.file( country_data );
+    country : country_data;
+    ctr   : country_table_rec;
+    empty : boolean := false;
+    j     : json_string;
+    tmp   : country_string;
+  begin
+    btree_io.open( countries_file, string( countries_path ), countries_width, countries_width );
+    if files.exists( "/root/ssds/data/country_cnt.txt" ) then
+       rm /root/ssds/data/country_cnt.txt;
+    end if;
+    -- TODO: probably should write and switch
+    create( f, out_file, "/root/ssds/data/country_cnt.txt" );
+    dynamic_hash_tables.get_first( country_table, j, empty );
+    while not empty loop
+       records.to_record( ctr, j );
+       begin
+         btree_io.get( countries_file, string( ctr.cname ), country );
+         tmp := country_string( country.common_name );
+       exception when others =>
+         -- as a precaution, if it's blank use "unknown"
+         tmp := ctr.cname;
+         if tmp = "" then
+            tmp := "unknown";
+         end if;
+       end;
+       put( f, ctr.total, "ZZZZZZ" );
+       put_line( f, " " & tmp );
+       dynamic_hash_tables.get_next( country_table, j, empty );
+    end loop;
+    close( f );
+    btree_io.close( countries_file );
+  exception when others =>
+     ? "exception";
+     logs.error( exceptions.exception_info );
+     ? exceptions.exception_info;
+     if btree_io.is_open( countries_file ) then
+        btree_io.close( countries_file );
+     end if;
+     if is_open( f ) then
+        close( f );
+     end if;
+  end country_counts_report;
+
   this_run_on : timestamp_string;
   proposed_blocked_until : timestamp_string;
   blocked_until : timestamp_string;
@@ -348,6 +405,8 @@ end is_south_american_ip;
   updating_cnt   : natural := 0;
   pos : natural;
   record_cnt_estimate : natural := 0;
+  login_cnt : natural := 0;
+
 begin
   --setupWorld( "Wash Task", "log/wash.log" );
   setupWorld( "log/blocker.log", log_mode.file );
@@ -399,6 +458,20 @@ begin
   btree_io.open_cursor( offender_file, abtc );
   btree_io.get_first( offender_file, abtc, key, source_ip );
   loop
+     declare
+       ctr : country_table_rec;
+       j : json_string;
+     begin
+       ctr.cname := source_ip.source_country;
+       ctr.total := 1;
+       j := dynamic_hash_tables.get( country_table, source_ip.source_country );
+       if j /= "" then
+          records.to_record( ctr, j );
+          ctr.total := @ + 1;
+       end if;
+       records.to_json( j, ctr );
+       dynamic_hash_tables.set( country_table, source_ip.source_country, j );
+     end;
 
      -- show progress line
 
@@ -717,9 +790,62 @@ begin
   btree_io.close_cursor( offender_file, abtc );
 
   shutdown_blocking;
+
+  logs.info( "Washing login accounts" );
+  declare
+     sshd_logins_file : btree_io.file( a_sshd_login );
+     sshd_cursor : btree_io.cursor( a_sshd_login );
+     login_key : string;
+     login : a_sshd_login;
+  begin
+     btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
+     btree_io.open_cursor( sshd_logins_file, sshd_cursor );
+     btree_io.get_first( sshd_logins_file, sshd_cursor, login_key, login );
+     loop
+        login_cnt := @ + 1;
+        -- anything that is 3 months old and only referred to once is
+        -- considered random and is erased.
+        begin
+           proposed_blocked_until :=
+              timestamp_string(
+                strings.trim(
+                  strings.image(
+                    integer( numerics.value( string( login.updated_on ) ) ) +
+                      months_3 )
+                )
+             );
+             if this_run_on > proposed_blocked_until and
+                login.count = 1 and
+                login.existence /= active_existence and
+                -- TODO: some of these are mislabeled
+                --login.existence /= disabled_existence and
+                login.kind = unknown_login_kind then
+                   btree_io.remove( sshd_logins_file, login.username );
+                   logs.info( login.username & " removed" );
+             end if;
+        exception when others =>
+          logs.error( "on removing " ) @ ( login.username ) @ (" ") @ ( exceptions.exception_info );
+        end;
+        btree_io.get_next( sshd_logins_file, sshd_cursor, login_key, login );
+     end loop;
+   exception when others =>
+     if btree_io.is_open( sshd_logins_file ) then
+        btree_io.close_cursor( sshd_logins_file, sshd_cursor );
+        btree_io.close( sshd_logins_file );
+     end if;
+  end;
+
+  -- Save data for dashboard
+
+  echo "$processing_cnt" > /root/ssds/data/blocking_cnt.txt;
+  echo "$login_cnt" > /root/ssds/data/login_cnt.txt;
+
+  country_counts_report;
+
   logs.ok( "Processed" ) @ ( strings.image( processing_cnt ) ) @ ( " blocking records" ) @
      ( "; Updated =" ) @ ( strings.image( updating_cnt ) ) @
-     ( "; Still blocked =" ) @ ( strings.image( number_blocked ) );
+     ( "; Still blocked =" ) @ ( strings.image( number_blocked ) ) @
+     ( "; Login Accounts =" ) @ ( strings.image( login_cnt ) );
   shutdownWorld;
 exception when others =>
   logs.error( exceptions.exception_info );

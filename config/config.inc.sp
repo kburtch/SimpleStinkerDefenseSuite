@@ -69,7 +69,7 @@ ip_whitelist_config : constant array(1..6) of string :=
   "45.56.68.190,lntxap01",
   "198.58.125.175,armitage",
   "209.159.182.101,home",
-  "157.52.4.6,ludbrook",
+  "45.72.168.54,ludbrook",
   "207.219.237.66,tier1" );
 
 end config;

@@ -16,7 +16,7 @@ procedure lookup_ip is
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
   with separate "lib/countries.inc.sp";
-  with separate "lib/reports.inc.sp";
+  with separate "lib/reports_blocking.inc.sp";
 
 -- USAGE
 --

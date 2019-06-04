@@ -15,7 +15,7 @@ procedure list_blocked is
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
   with separate "lib/countries.inc.sp";
-  with separate "lib/reports.inc.sp";
+  with separate "lib/reports_blocking.inc.sp";
 
   offender_cursor : btree_io.cursor( an_offender );
   offender_key : string;
