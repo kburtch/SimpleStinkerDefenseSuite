@@ -1,0 +1,43 @@
+<!DOCTYPE HTML>
+<html>
+<head lang="en">
+  <meta charset="utf-8">
+<title>SSDS Dashboard</title>
+<meta http-equiv="Refresh" content="3600">
+</head>
+<body>
+<h1>Simple Stinker Defense Suite Dashboard</h1>
+<table>
+<tr>
+<td valign="top">
+<h3>Threat Trend (30 days)</h3>
+<img src="threat_trend.png">
+<p>HTML (Red), SSH (Green), Mail (Blue), Spam (Yellow)</p>
+</td>
+<td valign="top">
+<h3>Daily Summary</h3>
+<!-- pre -->
+<!--#include file="daily_summary.frag" -->
+<!-- /pre -->
+</td>
+</tr>
+</table>
+<table>
+<tr>
+<td>
+<h3>All-time Top 30 Logins</h3>
+<pre>
+<!--#include file="top_logins.frag" -->
+</pre>
+</td>
+<td>
+<h3>Current Top 30 Countries</h3>
+<pre>
+<!--#include file="top_countries.frag" -->
+</pre>
+</td>
+</tr>
+</table>
+</body>
+</html>
+
