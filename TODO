@@ -4,20 +4,6 @@
 - ssh
   - progress bar on sshd blocker sometimes has a phantom newline / erases
     whatever message was there.
-- Sept 27: the following
-  Sep 27 14:19:04 pegasoft sshd[9781]: Invalid user YYYYYYYYY from 101.230.200.173 port 7799
-  Sep 27 14:19:04 pegasoft sshd[9781]: input_userauth_request: invalid user YYYYYYYYY [preauth]
-  Sep 27 14:19:04 pegasoft sshd[9781]: pam_unix(sshd:auth): check pass; user unknown
-  Sep 27 14:19:04 pegasoft sshd[9781]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=101.230.200.173
-  Sep 27 14:19:07 pegasoft sshd[9781]: Failed password for invalid user YYYYYYYYY from 101.230.200.173 port 7799 ssh2
-  resulted in
-  Wed Sep 27 14:19:04 EDT 2017:WARNING:sshd_blocker.sp: 264:saw invalid username 'YYYYYYYYY 101.230.200.173 port'
-
-  Sep 27 14:19:24 pegasoft sshd[9817]: Invalid user bwadmin from 101.230.200.173 port 13993
-  Sep 27 14:19:24 pegasoft sshd[9817]: input_userauth_request: invalid user bwadmin [preauth]
-  Sep 27 14:19:24 pegasoft sshd[9817]: pam_unix(sshd:auth): check pass; user unknown Sep 27 14:19:24 pegasoft sshd[9817]: pam_unix(sshd:auth): authentication failure; logname= uid=0 euid=0 tty=ssh ruser= rhost=101.230.200.173
-  Sep 27 14:19:27 pegasoft sshd[9817]: Failed password for invalid user bwadmin from 101.230.200. 173 port 13993 ssh2
-  Wed Sep 27 14:19:24 EDT 2017:WARNING:sshd_blocker.sp: 264:saw invalid username 'bwadmin 101.230.200.173 port'
 
 - mail
   - SpamHaus support? https://www.spamhaus.org/sbl/
@@ -27,15 +13,12 @@
 - http
   - statistic blocking on large accesses
   - time-of-day matrix (i.e. list of hours) and application
-  - unexpected exception on
-    - if strings.index( " 400 401 403 404 405 413 414 500 ", string( http_status ) ) > 0 then
 
 - wash
   - using IPSET_CMD command type instead of command name
 
 - blocking
-  - refactor reset firewall
-  - create whitelist system and levels - i.e. customers, trusted machines
+  - create whitelist levels/reasons - i.e. customers, trusted machines
   - create list of services/ports to block in firewall
   - handling test data (not blocking, washing out (optionally?))
 
@@ -77,17 +60,4 @@
   - error log summaries
   - scan for file changes / new directories
   - dan notes SNMP interface, etc. must be considered
-
-Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_sender_restricti
-ons
-Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_client_restricti
-ons
-Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_helo_restriction
-s
-Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_sender_restricti
-ons
-Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_client_restricti
-ons
-Sep  7 16:02:04 pegasoft postfix: /usr/sbin/postconf: warning: /etc/postfix/master.cf: undefined parameter: mua_helo_restriction
-s
 
