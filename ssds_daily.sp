@@ -17,7 +17,7 @@ begin
 
   cd /root/ssds;
 
-  bash "daily_report.sh" 2>&1 > "$TMP";
+  bash "report_daily.sh" 2>&1 > "$TMP";
   mail -s "SSDS Daily Report" "ken@pegasoft.ca" < "$TMP";
   rm "$TMP";
 

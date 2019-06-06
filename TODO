@@ -1,16 +1,7 @@
-- dashboard should update hourly for wash results - wash should write to dashboard
-  (and related files not be produced by daily report)
-- fix existence labelling - some identified disabled not no_existence
-
 - daemons
-  - general utility for reading configuration into Bash shell
-    - need SSHD_HOME (like JAVA_HOME variable) to locate the project_path
   - "tail: ‘/var/log/secure’ has been replaced;  following end of new file"
-  - suspend flag to update configuration
 
 - ssh
-  - hostname stub not working (need to specify hostname in config?)
-  - hostnames names may be multiple not single.
   - progress bar on sshd blocker sometimes has a phantom newline / erases
     whatever message was there.
 - Sept 27: the following

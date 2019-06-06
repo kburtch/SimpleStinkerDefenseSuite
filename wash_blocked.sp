@@ -35,6 +35,8 @@ opt_daemon  : boolean := false;   -- true of -D used
 
 wash_log_mode : logs.log_modes := log_mode.file;
 
+wash_lock_file : constant file_path := "lock/suspend.lck";
+
 -- USAGE
 --
 -- Show the help
@@ -408,6 +410,12 @@ end is_south_american_ip;
   login_cnt : natural := 0;
 
 begin
+   -- do nothing if the lock file is in place.
+
+   if files.exists( string( wash_lock_file ) ) then
+      return;
+   end if;
+
   --setupWorld( "Wash Task", "log/wash.log" );
   setupWorld( "log/blocker.log", log_mode.file );
 

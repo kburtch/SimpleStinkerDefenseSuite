@@ -4,6 +4,10 @@ configuration config is
 
 -- TODO: disabling individual blockers
 
+-- The dashboard location
+
+dashboard_path : constant file_path := "/var/www/html/pegasoft/ssds";
+
 -- The location of the project root directory.
 
 project_path : constant file_path := "/root/ssds";

@@ -30,4 +30,6 @@ if files.exists( "run/mail_daemon.pid" ) then
    kill "$TMP";
 end if;
 
+touch "lock/suspend.lck";
+
 -- vim: set ft=spar

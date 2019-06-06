@@ -14,12 +14,21 @@ begin
   put_line( "Resetting the firewall will set up the default firewall" );
   put_line( "rules." );
   new_line;
+  -- Red Hat Linux firewall should be stopped
   tmp := `ps -ef | fgrep "firewall.d" | wc -l;`;
   if tmp /= "1" then
-     put_line( "firewall.d is running.  stop this first" );
+     put_line( "firewall.d is running.  stop this service first" );
      command_line.set_exit_status( 192 );
      return;
   end if;
+  -- Our firewall should be stopped also
+  tmp := `ps -ef | fgrep "sshd_blocker" | wc -l;`;
+  if tmp = "1" then
+     put_line( "the firewall is running.  stop this first" );
+     command_line.set_exit_status( 192 );
+     return;
+  end if;
+  -- Confirm to proceed
   put_line( "Reset the firewall? (Y/N)" );
   reply := get_line;
   if reply = "y" then

@@ -12,6 +12,7 @@ procedure ssds_hourly is
 begin
   spar admin/import_bsdly.sp -D;
   spar wash_blocked.sp -D;
+  bash report_hourly.sh;
 end ssds_hourly;
 
 -- vim: ft=spar

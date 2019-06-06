@@ -11,7 +11,13 @@ DRY_RUN=
 
 # The location of the web dashboard.
 
-WEBROOT="/var/www/html/pegasoft/ssds"
+cd "utils"
+WEBROOT=`/usr/local/bin/spar export_dashboard_file_path.sp`
+if [ -z "$WEBROOT" ] ; then
+   echo "Could not lookup web dashboard location" 2>&1
+   exit 1
+fi
+cd ..
 
 # Yesterday, and just after midnight today
 
@@ -256,24 +262,11 @@ elif [ "$CURRENT_BLOCKS" -eq 0 ] ; then
    BGCOLOR="background-color: red"
 fi
 
-# TODO: this could be monitored by the hourly task
-echo >> "$DS"
-echo '<div style="background-color: whitesmoke; padding: 0 5px 0 5 px">' >> "$DS"
-echo "<p><b>Midnight Snapshot</b></p>" >> "$DS"
-echo '<table style="border: none; padding: none; border-collapse: collapse">' >> "$DS"
-echo "<tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="'"$BGCOLOR"'">'"$CURRENT_BLOCKS""</span>""</td><td>""<span>"" Actively Blocked""</span>""</td>" >> "$DS"
-echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right: 3px;">''<span>'"$TOTAL_ON_FILE""</span>""</td><td>""<span>"" Monitored""</span>""</td>" >> "$DS"
-echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right: 3px;">''<span>'"$TOTAL_LOGINS""</span>""</td><td>""<span>""Usernames Known""</span>""</td>" >> "$DS"
-echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right: 3px;">''<span>'"$DISK_USAGE""</span>""</td><td>""<span>""Used""</span>""</td>" >> "$DS"
-echo "</tr>" >> "$DS"
-echo "</table>" >> "$DS"
-echo "</div>" >> "$DS"
-
 # By Country
 
 echo "$COUNTRY_SUMMARY" > "$TC"
+
+# Hourly
+
+bash report_hourly.sh
 

@@ -21,21 +21,22 @@ pragma software_model( shell_script );
 with separate "lib/common.inc.sp";
 with separate "lib/logins.inc.sp";
 with separate "lib/blocking.inc.sp";
+with separate "lib/hostnames.inc.sp";
 
-procedure create_login_hostname_variants( base : in out string; stub : in out string ) is
-  p : natural;
-begin
-  base := "";
-  stub := "";
-  p := strings.index( HOSTNAME, '.' );
-  if p > 1 then
-     base := strings.delete( HOSTNAME, p, strings.length( HOSTNAME ) );
-     p := strings.index( HOSTNAME, "-" );
-     if p > 1 then
-        stub := strings.delete( HOSTNAME, p, strings.length( HOSTNAME ) );
-     end if;
-  end if;
-end create_login_hostname_variants;
+--procedure create_login_hostname_variants( base : in out string; stub : in out string ) is
+--  p : natural;
+--begin
+--  base := "";
+--  stub := "";
+--  p := strings.index( HOSTNAME, '.' );
+--  if p > 1 then
+--     base := strings.delete( HOSTNAME, p, strings.length( HOSTNAME ) );
+--     p := strings.index( HOSTNAME, "-" );
+--     if p > 1 then
+--        stub := strings.delete( HOSTNAME, p, strings.length( HOSTNAME ) );
+--     end if;
+--  end if;
+--end create_login_hostname_variants;
 
 -- function remove_token( str : in out string; token : string ) return boolean is
 procedure remove_token( str : in out string; token : string; result : out boolean ) is
@@ -90,8 +91,9 @@ message        : string;         -- log message
 last_day       : calendar.day_number;
 this_day       : calendar.day_number;
 
-hostname_base : string;          -- x-y of x-y.cloud.com
-hostname_stub : string;          -- x   of x-y.cloud.com
+-- hostname_base : string;          -- x-y of x-y.cloud.com
+-- hostname_stub : string;          -- x   of x-y.cloud.com
+hostname_alias : user_string;
 
 -- Command line options
 
@@ -261,7 +263,8 @@ reset_summary;
 this_run_on := get_timestamp;
 last_day := calendar.day( calendar.clock );
 r.created_on := this_run_on;
-create_login_hostname_variants( hostname_base, hostname_stub );
+register_login_hostname_variants;
+--create_login_hostname_variants( hostname_base, hostname_stub );
 
 process := false;
 while not end_of_file( f ) loop
@@ -416,13 +419,9 @@ pragma todo( team,
          r.data_type := real_data;
          r.comment := "";
          -- Virtual usernames: based on hostname or an empty string
-         -- TODO: This does not work properly and should be improved.
-         if string( r.username ) = string( HOSTNAME ) then
-            r.username := " HOSTNAME";
-         elsif string( r.username ) = hostname_base then
-            r.username := " HOSTNAME_BASE";
-         elsif string( r.username ) = hostname_stub then
-            r.username := " HOSTNAME_STUB";
+         hostname_alias := dynamic_hash_tables.get( hostname_variants, r.username );
+         if hostname_alias /= "" then
+            r.username := hostname_alias;
          elsif r.username = "" then
             r.username := " BLANK_NAME";
          end if;
