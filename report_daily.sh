@@ -216,44 +216,48 @@ fi
 TOP_LOGINS=`/usr/local/bin/spar -m list_logins.sp | sort -nr -k2 | fgrep -v "logins:" | head -n 30`
 echo "$TOP_LOGINS" > "$TL"
 
-# Daily Summary:
+# Firewall Summary:
 
-echo '<div style="background-color: whitesmoke; padding: 0 10px 0 10px">' > "$DS"
-echo "<p><b>Log Summary</b></p>" >> "$DS"
-echo '<table style="border: none; padding: none; border-collapse: collapse>"' >> "$DS"
+echo '<div class="kpi_box">' > "$DS"
+echo '<div class="kpi_header">'"<b>Yesterday's Activity</b></div>" >> "$DS"
+echo '<div style="width:100%; height: 100%">' >> "$DS"
+echo '<table style="border: none; padding: 0; border-collapse: collapse; margin: 0 auto">' >> "$DS"
 
-BGCOLOR="background-color: none"
+BGCOLOR="background-color: transparent"
 if [ $ERR_LINES -ge 60 ] ; then
    BGCOLOR="background-color: red"
 fi
 
 echo "<tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="'"$BGCOLOR"'">'"$ERR_LINES""</span>""</td><td>""<span>"" Errors""</span>""</td>" >> "$DS" 
+echo '<td class="kpi_layout"><span class="plain_data" style="'"$BGCOLOR"'">'"$ERR_LINES""</span>""</td><td>"'<span class="plain_light">'" Errors""</span>""</td>" >> "$DS" 
 echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span>'"$OK_LINES""</span>""</td><td>""<span>"" Reports (OK)""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data">'"$OK_LINES""</span>""</td><td>"'<span class="plain_light">'" Status Reports""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span>'"$LOG_LINES""</span>""</td><td>""<span>"" Lines""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data">'"$LOG_LINES""</span>""</td><td>"'<span class="plain_light">'" Lines""</span>""</td>" >> "$DS"
 echo "</tr>" >> "$DS"
 echo "</table>" >> "$DS"
+echo "</div>" >> "$DS"
 echo "</div>" >> "$DS"
 
 echo >> "$DS"
-echo '<div style="background-color: whitesmoke; padding: 0 5px 0 5 px">' >> "$DS"
-echo "<p><b>Yesterday's Blocks</b></p>" >> "$DS"
-echo '<table style="border: none; padding: none; border-collapse: collapse">' >> "$DS"
+echo '<div class="kpi_box">' >> "$DS"
+echo '<div class="kpi_header">'"<b>Yesterday's Blocks</b></div>" >> "$DS"
+echo '<div style="width:100%; height: 100%">' >> "$DS"
+echo '<table style="border: none; padding: 0; border-collapse: collapse; margin:0 auto">' >> "$DS"
 echo "<tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: red" align="right">'"$HTTP_EVENTS""</span>""</td><td>""<span>"" for Web""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data" style="color: red" text-align="right">'"$HTTP_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Web""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: green" align="right">'"$SSH_EVENTS""</span>""</td><td>""<span>"" for Login""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data" style="color: green" text-align="right">'"$SSH_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Login""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: blue" align="right">'"$MAIL_EVENTS""</span>""</td><td>""<span>"" for Mail""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data" style="color: blue" text-align="right">'"$MAIL_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Mail""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
-echo '<td style="text-align:right; min-width: 50px; padding-right:3px">''<span style="color: goldenrod" align="right">'"$SPAM_EVENTS""</span>""</td><td>""<span>"" for Spam""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data" style="color: goldenrod" text-align="right">'"$SPAM_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Spam""</span>""</td>" >> "$DS"
 echo "</tr>" >> "$DS"
 echo "</table>" >> "$DS"
 echo "</div>" >> "$DS"
+echo "</div>" >> "$DS"
 
-BGCOLOR="background-color: none"
+BGCOLOR="background-color: transparent"
 if [ "$CURRENT_BLOCKS" -gt 25000 ] ; then
    BGCOLOR="background-color: red"
 elif [ "$CURRENT_BLOCKS" -gt 12000 ] ; then

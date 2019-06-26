@@ -22,7 +22,8 @@ begin
      return;
   end if;
   -- Our firewall should be stopped also
-  tmp := `ps -ef | fgrep "sshd_blocker" | wc -l;`;
+  tmp := `ps -ef;`;
+  tmp := `echo "$tmp" | fgrep "sshd_blocker" | wc -l;`;
   if tmp = "1" then
      put_line( "the firewall is running.  stop this first" );
      command_line.set_exit_status( 192 );
