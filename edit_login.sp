@@ -40,7 +40,7 @@ begin
   put_line( " 0 privileged_login, 1 service_login, 2 dictionary_login," );
   put_line( " 3 UNUSED        , 4 unknown_login_kind, 5 role_login," );
   put_line( " 6 guest_login, 7 data_service_login, 8 calling_card" );
-  put_line( " 9 disabled loging 10 email alias" );
+  put_line( " 9 disabled login, 10 email alias" );
   put( "New Kind? " );
   s := get_line;
   s := strings.trim( @ );

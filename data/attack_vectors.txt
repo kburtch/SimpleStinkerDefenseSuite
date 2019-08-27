@@ -120,6 +120,7 @@ GET /fr/\"
 /3rdparty
 /3xp.php
 /8080
+/8jC7Fqrj
 /99billdo.php
 AAAAA
 /a HTTP
@@ -143,6 +144,7 @@ adduser.php
 /adimages
 /adm/
 /_admin
+/admin/
 admin.asp
 admin.cgi
 admin.php
@@ -189,6 +191,7 @@ attacker
 /autodiscover.xml
 /Autodiscover.svc
 /autodiscover.svc
+~bin/
 /bkup/
 /back/
 /_back/
@@ -249,10 +252,12 @@ blitz
 bokeindex.asp
 bojog.php
 /boo+
+bookfeedback.php
 BOT for JCE
 busybox
 /c/en/
 cache_file=
+/carbuyaction.php
 cd+/
 cd%20/
 cfgIncludeDirectory=
@@ -355,6 +360,8 @@ data:
 ?dgc=
 ?de=
 &de=
+/dede/
+dedecms.css
 /delete.php
 delete_comment.asp
 delete_comment.cgi
@@ -363,6 +370,7 @@ delete_comment.php
 ?dept=
 &dept=
 /detail.php
+df_dedetitle.gif
 /digg.php
 _dir=
 _DIR=
@@ -399,6 +407,7 @@ DOCUMENT_ROOT
 /_dumps/
 /DUMPS/
 /_DUMPS/
+/dzh_logo.gif
 dump_grabber.php
 Edition Campaign
 Edition Yx
@@ -580,6 +589,7 @@ INCLUDE_PAGE=
 /include
 /_include
 /Include
+/inc_catalog_base.inc
 incursion
 index.php?option=
 index.php?page=
@@ -635,6 +645,7 @@ jcmsU1.js
 JMXInvokerServlet
 /jquery.colorbox-min.js
 /json/
+/kcfinder
 /key/
 /Key/
 /_key/
@@ -825,6 +836,8 @@ phpdirectorgameedition/header.php?lang=
 /_phpMy
 /_phpmy
 /phpsysinfo
+/phpmyadmin/
+/phpMyAdmin/
 /P/M/A
 /p/m/a
 /PMA
@@ -992,6 +1005,7 @@ sqlweb
 /Super/
 /Super-Admin
 /supervise
+swfupload.asp
 /SysAdmin
 /sys/
 /sysadmin
@@ -1033,6 +1047,7 @@ ucp.php
 undocumented
 /ueditor
 /UNKNOWN
+=uploadify
 upload.asp
 upload.cgi
 upload.php
@@ -1060,6 +1075,7 @@ _URL=
 /user/
 /users/
 /value/
+vdcode.jpg
 /verify-WebTac_Notify
 /verify_user
 /version.txt
@@ -1083,6 +1099,7 @@ web-console
 webadmin
 w384DM1N
 /w6/
+/wbg.gif
 /wc/
 /webc/
 WebCalendar

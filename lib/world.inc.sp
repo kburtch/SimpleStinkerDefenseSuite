@@ -87,6 +87,14 @@ type operating_modes is (
 
 -- mode is defined in config.inc.sp
 
+------------------------------------------------------------------------------
+-- Alert Types
+------------------------------------------------------------------------------
+
+type alert_kinds is (
+  error_limit_alert
+);
+
 end world;
 
 -- vim: ft=spar

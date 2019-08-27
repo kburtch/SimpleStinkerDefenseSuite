@@ -68,13 +68,20 @@ ssh_port : constant string := "22";
 -- List of whitelisted IP numbers
 -- IP number and description in CSV format pairs
 
-ip_whitelist_config : constant array(1..6) of string :=
+ip_whitelist_config : constant array(1..8) of string :=
 ( "127.0.0.1,localhost",
   "45.56.68.190,lntxap01",
   "198.58.125.175,armitage",
-  "209.159.182.101,home",
-  "45.72.168.54,ludbrook",
-  "207.219.237.66,tier1" );
+  "209.159.182.101,vaxxine",
+  "199.102.130.202,nwic",
+  "216.154.59.131,ludbrook",
+  "207.219.237.66,tier1",
+  "207.219.237.93,tier1" );
+
+alert_thresholds : constant array(enums.first(alert_kinds)..enums.last(alert_kinds)) of integer :=
+(
+  50
+);
 
 end config;
 

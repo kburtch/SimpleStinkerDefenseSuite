@@ -56,6 +56,7 @@ begin
      --if login.count > 45 then
         put( login.username ) @ ( " " );
         put( login.count  ) @ ( " " );
+
         if login.kind = privileged_login then
            put( "privileged login " );
         elsif login.kind = service_login then
@@ -68,10 +69,14 @@ begin
            put( "role login " );
         elsif login.kind = guest_login then
            put( "guest login " );
-        elsif login.kind =data_service_login then
+        elsif login.kind = data_service_login then
            put( "data service login " );
         elsif login.kind = calling_card then
            put( "calling card login " );
+        elsif login.kind = disabled_login then
+           put( "disabled login " );
+        elsif login.kind = email_alias_login then
+           put( "email alias " );
         else
            put( "unknown kind " );
         end if;

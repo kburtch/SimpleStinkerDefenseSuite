@@ -154,6 +154,10 @@ begin
      found := strings.index( host, "crawl.baidu.com.~" ) > 0;
   end if;
   if not found then
+     -- DuckDuckGo
+     found := strings.index( host, "duckduckgo.com.~" ) > 0;
+  end if;
+  if not found then
      -- France
      found := strings.index( host, "exabot.com.~" ) > 0;
   end if;
@@ -168,6 +172,10 @@ begin
   if not found then
      -- Microsoft
      found := strings.index( host, "search.msn.com.~" ) > 0;
+  end if;
+  if not found then
+     -- SemRush.com
+     found := strings.index( host, ".semrush.com.~" ) > 0;
   end if;
   if not found then
      -- Czek Republic search engine
