@@ -15,30 +15,6 @@ type blocking_status is (
   blacklisted_blocked
 );
 
---type an_offender is record
---     source_ip       : ip_string;
---     source_name     : dns_string;
---     source_country  : country_string;
---     location        : string;
---     sshd_blocked    : blocking_status;
---     sshd_blocked_on : timestamp_string;
---     sshd_offenses   : natural;
---     smtp_blocked    : blocking_status;
---     smtp_blocked_on : timestamp_string;
---     smtp_offenses   : natural;
---     spam_blocked    : blocking_status;
---     spam_blocked_on : timestamp_string;
---     spam_offenses   : natural;
---     http_blocked    : blocking_status;
---     http_blocked_on : timestamp_string;
---     http_offenses   : natural;
---     grace           : grace_count;
---     created_on      : timestamp_string;
---     logged_on       : timestamp_string;
---     updated_on      : timestamp_string;
---     data_type       : data_types;
---end record;
-
 type an_offender is record
      source_ip       : ip_string;
      source_name     : dns_string;
@@ -70,8 +46,38 @@ offender_buffer_width : constant positive := 2048;
 offender_file : btree_io.file( an_offender );
 
 -----------------------------------------------------------------------------
+-- Exported Subprograms
+-----------------------------------------------------------------------------
+
+procedure block( offender : ip_string );
+
+procedure unblock( offender : ip_string );
+
+function clear_firewall return boolean;
+
+procedure reset_firewall;
+
+procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string; kind : login_kind );
+
+procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string );
+
+procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string );
+
+procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string );
+
+procedure foreign_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; reason : string );
+
+function number_blocked return natural;
+
+procedure startup_blocking;
+
+procedure shutdown_blocking;
+
+
+-----------------------------------------------------------------------------
 -- Firewall Functions
 -----------------------------------------------------------------------------
+
 
 -- BLOCK
 --
@@ -112,6 +118,8 @@ begin
   logs.level_end( old_log_level );
   -- Record the blocked ip
 end block;
+pragma assumption( used, block );
+
 
 -- UNBLOCK
 --
@@ -314,6 +322,7 @@ begin
 
 end reset_firewall;
 pragma assumption( used, reset_firewall );
+
 
 -----------------------------------------------------------------------------
 -- Blocking Functions
@@ -996,7 +1005,6 @@ pragma assumption( used, startup_blocking );
 --
 -- Open or create the blocked ip file.
 -----------------------------------------------------------------------------
-
 procedure shutdown_blocking is
 begin
   if btree_io.is_open( offender_file ) then

@@ -1,5 +1,22 @@
 separate;
 
+------------------------------------------------------------------------------
+-- This file helper function to make blocking reports.
+------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+-- Exported Subprograms
+-----------------------------------------------------------------------------
+
+
+procedure ip_report( the_offender : in out an_offender; the_country_name : string );
+
+
+-- IP REPORT
+--
+-- Produce a summary of an IP's activity.
+-----------------------------------------------------------------------------
+
 procedure ip_report( the_offender : in out an_offender; the_country_name : string ) is
 begin
   put_line( the_offender.source_ip )

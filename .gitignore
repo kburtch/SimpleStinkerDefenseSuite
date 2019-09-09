@@ -8,6 +8,9 @@ data/http_vectors.btree
 data/report_filter.txt
 data/sshd_logins.btree
 data/threat_trend.dat
+data/blocking_cnt.txt
+data/country_cnt.txt
+data/login_cnt.txt
 backups/
 lock/
 log/

@@ -40,9 +40,43 @@ type login_kind is (
    email_alias_login
 );
 
+
+-----------------------------------------------------------------------------
+-- Exported Subprograms
+-----------------------------------------------------------------------------
+
+
+function validate_user( user : raw_user_string ) return user_string;
+
+function validate_ip( ip : raw_ip_string ) return ip_string;
+
+function get_timezone return date_string;
+
+function get_timestamp return timestamp_string;
+
+function parse_timestamp( s : date_string ) return timestamp_string;
+
+function get_date_string( ts : timestamp_string ) return date_string;
+
+function get_ip_number( addr : dns_string ) return ip_string;
+
+function get_ip_host_name( source_ip : ip_string ) return dns_string;
+
+function index_reverse( str : string; target : character ) return natural;
+
+procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : file_path );
+
+procedure show_progress_line_no_file( start_time : timestamp_string; current_cnt : natural; estimated_cnt : natural );
+
+procedure setupWorld( the_log_path : string; the_log_mode : logs.log_modes );
+
+procedure shutdownWorld;
+
+
 ------------------------------------------------------------------------------
 -- Usernames
 ------------------------------------------------------------------------------
+
 
 -- VALIDATE_USER
 --

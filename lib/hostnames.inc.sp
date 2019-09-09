@@ -10,6 +10,18 @@ hostname_full_alias : constant user_string := " HOSTNAME ";
 hostname_host_alias : constant user_string := " HOSTNAME_HOST ";
 hostname_base_alias : constant user_string := " HOSTNAME_BASE ";
 
+-----------------------------------------------------------------------------
+-- Exported Subprograms
+-----------------------------------------------------------------------------
+
+
+procedure create_login_hostname_variants( s : string; host : in out string; base : in out string );
+
+procedure add_hostname_variants( s : in out string );
+
+procedure register_login_hostname_variants;
+
+
 -- CREATE LOGIN HOSTNAME VARIANTS
 --
 -- Given a standard www.foobar.com domain name, return

@@ -1,5 +1,22 @@
 separate;
 
+------------------------------------------------------------------------------
+-- This file contains helper function to create login reports.
+------------------------------------------------------------------------------
+
+-----------------------------------------------------------------------------
+-- Exported Subprograms
+-----------------------------------------------------------------------------
+
+
+procedure login_report( login : in out a_sshd_login );
+
+
+-- LOGIN REPORT
+--
+-- Produce a report on a login's use.
+-----------------------------------------------------------------------------
+
 procedure login_report( login : in out a_sshd_login ) is
 begin
   put_line( login.username );

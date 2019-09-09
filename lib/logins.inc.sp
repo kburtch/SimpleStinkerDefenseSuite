@@ -33,6 +33,17 @@ pragma assumption( used, sshd_logins_path );
 sshd_logins_buffer_width : constant positive := 2048;
 pragma assumption( used, sshd_logins_buffer_width );
 
+
+-----------------------------------------------------------------------------
+-- Exported Subprograms
+-----------------------------------------------------------------------------
+
+
+procedure check_known_logins;
+
+procedure init_login( login_rec : in out a_sshd_login; created_on : timestamp_string; logged_on : timestamp_string );
+
+
 ------------------------------------------------------------------------------
 -- KNOWN LOGINS
 ------------------------------------------------------------------------------

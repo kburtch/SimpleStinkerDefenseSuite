@@ -5,7 +5,7 @@ separate;
 --
 -- For our purposes, we will:
 --
--- 1. Group attack vector substrings into categories call key codes.
+-- 1. Group attack vector substrings into categories called key codes.
 -- 2. Record the key codes in the web request.
 -- 3. Finally, check the web request for the attack vectors starting with
 --   those key codes.
@@ -35,6 +35,14 @@ separate;
 -----------------------------------------------------------------------------
 
   type key_codes is new positive;
+
+
+-----------------------------------------------------------------------------
+-- Exported Subprograms
+-----------------------------------------------------------------------------
+
+
+  function to_key_code( candidate : string ) return key_codes;
 
 
 -- TO BASIC KEY CODE
