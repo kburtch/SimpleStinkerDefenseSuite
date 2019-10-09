@@ -10,6 +10,7 @@ separate;
 
 
 procedure login_report( login : in out a_sshd_login );
+pragma assumption( used, login_report );
 
 
 -- LOGIN REPORT
@@ -46,7 +47,6 @@ end login_report;
 --  when others =>
 --    put_line( "unknown" );
 --  end case;
-pragma assumption( used, login_report );
 
 -- vim: ft=spar
 

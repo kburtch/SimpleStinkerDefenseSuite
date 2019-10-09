@@ -1,5 +1,9 @@
 separate;
 
+------------------------------------------------------------------------------
+-- This file contains firewall blocking routines.
+------------------------------------------------------------------------------
+
 IPSET_CMD     : constant command := "/sbin/ipset";
 IPTABLES_CMD  : constant command := "/sbin/iptables";
 IP6TABLES_CMD : constant command := "/sbin/ip6tables";
@@ -50,28 +54,40 @@ offender_file : btree_io.file( an_offender );
 -----------------------------------------------------------------------------
 
 procedure block( offender : ip_string );
+pragma assumption( used, block );
 
 procedure unblock( offender : ip_string );
+pragma assumption( used, unblock );
 
 function clear_firewall return boolean;
+pragma assumption( used, clear_firewall );
 
 procedure reset_firewall;
+pragma assumption( used, reset_firewall );
 
 procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string; kind : login_kind );
+pragma assumption( used, sshd_record_and_block );
 
 procedure mail_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string );
+pragma assumption( used, mail_record_and_block );
 
 procedure spam_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string );
+pragma assumption( used, spam_record_and_block );
 
 procedure http_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string );
+pragma assumption( used, http_record_and_block );
 
 procedure foreign_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; reason : string );
+pragma assumption( used, foreign_record_and_block );
 
 function number_blocked return natural;
+pragma assumption( used, number_blocked );
 
 procedure startup_blocking;
+pragma assumption( used, startup_blocking );
 
 procedure shutdown_blocking;
+pragma assumption( used, shutdown_blocking );
 
 
 -----------------------------------------------------------------------------
@@ -118,7 +134,6 @@ begin
   logs.level_end( old_log_level );
   -- Record the blocked ip
 end block;
-pragma assumption( used, block );
 
 
 -- UNBLOCK
@@ -158,7 +173,6 @@ begin
   end if;
   logs.level_end( old_log_level );
 end unblock;
-pragma assumption( used, unblock );
 
 
 -- CLEAR FIREWALL
@@ -277,7 +291,6 @@ begin
   logs.info( "firewall cleared" );
   return total_clear;
 end clear_firewall;
-pragma assumption( used, clear_firewall );
 
 
 -- RESET FIREWALL
@@ -321,7 +334,6 @@ begin
   -- TODO: restore the current state of blocked offenders
 
 end reset_firewall;
-pragma assumption( used, reset_firewall );
 
 
 -----------------------------------------------------------------------------
@@ -505,7 +517,6 @@ begin
   end if;
   logs.level_end( old_log_level );
 end sshd_record_and_block;
-pragma assumption( used, sshd_record_and_block );
 
 
 -- MAIL RECORD AND BLOCK
@@ -639,7 +650,6 @@ begin
   end if;
   logs.level_end( old_log_level );
 end mail_record_and_block;
-pragma assumption( used, mail_record_and_block );
 
 
 -- SPAM RECORD AND BLOCK
@@ -773,7 +783,6 @@ begin
   end if;
   logs.level_end( old_log_level );
 end spam_record_and_block;
-pragma assumption( used, spam_record_and_block );
 
 
 -- HTTP RECORD AND BLOCK
@@ -907,7 +916,6 @@ begin
   end if;
   logs.level_end( old_log_level );
 end http_record_and_block;
-pragma assumption( used, http_record_and_block );
 
 
 -- FOREIGN RECORD AND BLOCK
@@ -952,7 +960,6 @@ begin
   end if;
   logs.level_end( old_log_level );
 end foreign_record_and_block;
-pragma assumption( used, foreign_record_and_block );
 
 
 -- NUMBER BLOCKED
@@ -978,7 +985,6 @@ begin
   end if;
   return total;
 end number_blocked;
-pragma assumption( used, number_blocked );
 
 ------------------------------------------------------------------------------
 -- Housekeeping
@@ -998,7 +1004,6 @@ begin
       btree_io.create( offender_file, string( offender_path ), offender_buffer_width, offender_buffer_width );
    end if;
 end startup_blocking;
-pragma assumption( used, startup_blocking );
 
 
 -- SHUTDOWN BLOCKING
@@ -1011,6 +1016,5 @@ begin
      btree_io.close( offender_file );
   end if;
 end shutdown_blocking;
-pragma assumption( used, shutdown_blocking );
 
 -- vim: ft=spar

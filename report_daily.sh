@@ -226,6 +226,7 @@ echo '<table style="border: none; padding: 0; border-collapse: collapse; margin:
 BGCOLOR="background-color: transparent"
 if [ $ERR_LINES -ge 60 ] ; then
    BGCOLOR="background-color: red"
+   spar error_limit.sp
 fi
 
 echo "<tr>" >> "$DS"

@@ -47,30 +47,43 @@ type login_kind is (
 
 
 function validate_user( user : raw_user_string ) return user_string;
+pragma assumption( used, validate_user );
 
 function validate_ip( ip : raw_ip_string ) return ip_string;
+pragma assumption( used, validate_ip );
 
 function get_timezone return date_string;
+pragma assumption( used, get_timezone );
 
 function get_timestamp return timestamp_string;
+pragma assumption( used, get_timestamp );
 
 function parse_timestamp( s : date_string ) return timestamp_string;
+pragma assumption( used, parse_timestamp );
 
 function get_date_string( ts : timestamp_string ) return date_string;
+pragma assumption( used, get_date_string );
 
 function get_ip_number( addr : dns_string ) return ip_string;
+pragma assumption( used, get_ip_number );
 
 function get_ip_host_name( source_ip : ip_string ) return dns_string;
+pragma assumption( used, get_ip_host_name );
 
 function index_reverse( str : string; target : character ) return natural;
+pragma assumption( used, index_reverse );
 
 procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : file_path );
+pragma assumption( used, show_progress_line );
 
 procedure show_progress_line_no_file( start_time : timestamp_string; current_cnt : natural; estimated_cnt : natural );
+pragma assumption( used, show_progress_line_no_file );
 
 procedure setupWorld( the_log_path : string; the_log_mode : logs.log_modes );
+pragma assumption( used, setupWorld );
 
 procedure shutdownWorld;
+pragma assumption( used, shutdownWorld );
 
 
 ------------------------------------------------------------------------------
@@ -98,7 +111,6 @@ begin
   end if;
   return user_string( user );
 end validate_user;
-pragma assumption( used, validate_user );
 
 
 ------------------------------------------------------------------------------
@@ -187,7 +199,6 @@ begin
   end if;
   return ip_string( ip );
 end validate_ip;
-pragma assumption( used, validate_ip );
 
 -- TIME AND TIME ZONES
 --
@@ -200,14 +211,12 @@ function get_timezone return date_string is
 begin
   return `date '+%Z';`;
 end get_timezone;
-pragma assumption( used, get_timezone );
 
 function get_timestamp return timestamp_string is
   -- Note: epoch time is unaffected by timezone
 begin
   return `date '+%s';`;
 end get_timestamp;
-pragma assumption( used, get_timestamp );
 
 function parse_timestamp( s : date_string ) return timestamp_string is
   result : timestamp_string;
@@ -221,7 +230,6 @@ begin
   close( dev_null );
   return result;
 end parse_timestamp;
-pragma assumption( used, parse_timestamp );
 
 function get_date_string( ts : timestamp_string ) return date_string is
   s : string;
@@ -230,7 +238,6 @@ begin
   s := `date "-d" "$s";`;
   return date_string( s );
 end get_date_string;
-pragma assumption( used, get_date_string );
 
 -- STATISTICS
 
@@ -314,7 +321,6 @@ begin
   end if;
   return cache_last_ip_addr_ip( 1 );
 end get_ip_number;
-pragma assumption( used, get_ip_number );
 
 
 --  GET IP HOST NAME
@@ -358,7 +364,6 @@ begin
 
   return dns_string( tmp );
 end get_ip_host_name;
-pragma assumption( used, get_ip_host_name );
 
 -- Reverse DNS example
 -- /bin/dig +noall +answer -x 127.0.0.1 # localhost | cut -f 6
@@ -383,7 +388,6 @@ begin
    end loop;
   return p;
 end index_reverse;
-pragma assumption( used, index_reverse );
 
 ------------------------------------------------------------------------------
 -- UI
@@ -461,7 +465,6 @@ begin
 exception when others =>
   put_line( "error calculating the progress line" );
 end show_progress_line;
-pragma assumption( used, show_progress_line );
 
 -- Same but no file to monitor
 
@@ -506,7 +509,6 @@ begin
 exception when others =>
   put_line( "error calculating the progress line" );
 end show_progress_line_no_file;
-pragma assumption( used, show_progress_line_no_file );
 
 ------------------------------------------------------------------------------
 -- Housekeeping
@@ -557,7 +559,6 @@ pragma todo( team,
       logs.info( "whitelisted " ) @ (ip) @( " as " ) @ (desc);
   end loop;
 end setupWorld;
-pragma assumption( used, setupWorld );
 
 -- SHUTDOWN WORLD
 --
@@ -567,6 +568,5 @@ procedure shutdownWorld is
 begin
    logs.close;
 end shutdownWorld;
-pragma assumption( used, shutdownWorld );
 
 -- vim: ft=spar

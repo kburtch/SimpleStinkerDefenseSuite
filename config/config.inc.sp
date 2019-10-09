@@ -74,13 +74,22 @@ ip_whitelist_config : constant array(1..8) of string :=
   "198.58.125.175,armitage",
   "209.159.182.101,vaxxine",
   "199.102.130.202,nwic",
-  "216.154.59.131,ludbrook",
+  "216.154.7.90,ludbrook",
   "207.219.237.66,tier1",
   "207.219.237.93,tier1" );
+
+-- Number of events to trigger an alert (by type)
 
 alert_thresholds : constant array(enums.first(alert_kinds)..enums.last(alert_kinds)) of integer :=
 (
   50
+);
+
+-- The action to take
+
+alert_actions : constant array(enums.first(alert_kinds)..enums.last(alert_kinds)) of alert_action :=
+(
+  email_action
 );
 
 end config;

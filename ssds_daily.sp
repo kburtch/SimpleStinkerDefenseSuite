@@ -1,6 +1,13 @@
 #!/usr/local/bin/spar
 
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+
 procedure ssds_daily is
+
+   with separate "lib/alerts.inc.sp";
+
    pragma annotate( summary, "ssds_daily" )
                  @( description, "Run daily tasks" )
                  @( author, "Ken O. Burtch" );
@@ -13,6 +20,9 @@ procedure ssds_daily is
 
    TMP : string;
 begin
+  startup_alerts;
+  reset_alerts;
+
   TMP := "/tmp/daily_report." & strings.trim( strings.image( $$ ) );
 
   cd /root/ssds;
@@ -24,6 +34,7 @@ begin
   -- Backup database
   spar -m "nightly_backup.sp";
 
+  shutdown_alerts;
 end ssds_daily;
 
 -- vim: ft=spar

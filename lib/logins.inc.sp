@@ -40,8 +40,10 @@ pragma assumption( used, sshd_logins_buffer_width );
 
 
 procedure check_known_logins;
+pragma assumption( used, check_known_logins );
 
 procedure init_login( login_rec : in out a_sshd_login; created_on : timestamp_string; logged_on : timestamp_string );
+pragma assumption( used, init_login );
 
 
 ------------------------------------------------------------------------------
@@ -72,7 +74,6 @@ begin
   end loop;
   close( f );
 end check_known_logins;
-pragma assumption( used, check_known_logins );
 
 
 -- INIT LOGIN
@@ -90,6 +91,5 @@ begin
   login_rec.kind := unknown_login_kind;
   login_rec.created_on := created_on;
 end init_login;
-pragma assumption( used, init_login );
 
 -- vim: ft=spar

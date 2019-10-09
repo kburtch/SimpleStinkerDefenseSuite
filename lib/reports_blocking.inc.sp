@@ -10,6 +10,7 @@ separate;
 
 
 procedure ip_report( the_offender : in out an_offender; the_country_name : string );
+pragma assumption( used, ip_report );
 
 
 -- IP REPORT
@@ -122,7 +123,6 @@ begin
      new_line;
   end if;
 end ip_report;
-pragma assumption( used, ip_report );
 
 -- vim: ft=spar
 

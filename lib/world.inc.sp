@@ -95,6 +95,11 @@ type alert_kinds is (
   error_limit_alert
 );
 
+type alert_action is (
+  email_action,
+  shutdown_action
+);
+
 end world;
 
 -- vim: ft=spar

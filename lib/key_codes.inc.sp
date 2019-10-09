@@ -34,8 +34,12 @@ separate;
 -- under one number.  The number 30 is for catch-all / ignored cases.
 -----------------------------------------------------------------------------
 
-  type key_codes is new positive;
+  key_code_constraint_error : exception;
 
+  type key_codes is new positive
+    affirm
+      raise key_code_constraint_error when key_codes not in 1..30;
+    end affirm;
 
 -----------------------------------------------------------------------------
 -- Exported Subprograms
