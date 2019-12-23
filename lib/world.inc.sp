@@ -95,8 +95,14 @@ type alert_kinds is (
   error_limit_alert
 );
 
+------------------------------------------------------------------------------
+-- Alert Actions
+------------------------------------------------------------------------------
+
 type alert_action is (
+  block_action,
   email_action,
+  evade_action,
   shutdown_action
 );
 

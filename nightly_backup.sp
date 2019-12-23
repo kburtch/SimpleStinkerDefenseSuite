@@ -65,6 +65,9 @@ begin
   -- remove simple lock file
 
   rm "$lock_file";
+exception when others =>
+  put_line( standard_error, exceptions.exception_info );
+  rm "$lock_file";
 end nightly_backup;
 
 -- vim: set ft=spar

@@ -365,10 +365,6 @@ begin
   return dns_string( tmp );
 end get_ip_host_name;
 
--- Reverse DNS example
--- /bin/dig +noall +answer -x 127.0.0.1 # localhost | cut -f 6
--- 1.0.0.127.in-addr.arpa.	10800	IN	PTR	localhost.
-
 ------------------------------------------------------------------------------
 -- Strings
 ------------------------------------------------------------------------------

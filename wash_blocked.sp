@@ -25,9 +25,10 @@ procedure wash_blocked is
   pragma assumption( applied, country_data );
   pragma assumption( applied, comment_string );
 
-  months_3 : constant natural := 60*60*24*30*3;
-  weeks_1  : constant natural := 60*60*24*7;
-  hours_1  : constant natural := 60*60;
+  months_3   : constant natural := 60*60*24*30*3;
+  weeks_1    : constant natural := 60*60*24*7;
+  hours_1    : constant natural := 60*60;
+  minutes_30 : constant natural := 30*60;
 
 -- Command line options
 
@@ -388,7 +389,6 @@ end is_south_american_ip;
     close( f );
     btree_io.close( countries_file );
   exception when others =>
-     ? "exception";
      logs.error( exceptions.exception_info );
      ? exceptions.exception_info;
      if btree_io.is_open( countries_file ) then
@@ -409,6 +409,8 @@ end is_south_american_ip;
   record_cnt_estimate : natural := 0;
   login_cnt : natural := 0;
 
+  overtime : boolean := false;
+  process_limit_in_secs : constant natural := minutes_30;
 begin
    -- do nothing if the lock file is in place.
 
@@ -490,6 +492,15 @@ begin
         end if;
      end if;
 
+     -- If we're running a long time, set the overtime flag.
+     -- This will skip the DNS resolution step.
+
+     if processing_cnt mod 100 = 0 then
+        if not overtime then
+           overtime := numerics.value( string( get_timestamp ) ) > numerics.value( string( this_run_on ) ) + process_limit_in_secs;
+        end if;
+     end if;
+
      -- Record validation
      --
      -- The data should normally be good.  Old records may have a different
@@ -565,9 +576,13 @@ begin
         end if;
      end;
 
+     -- Resolve the hostname.  If we're running overtime, skip this step.
+
      sip := source_ip.source_ip;
-     if source_ip.source_name = "" then
-        source_host := `host -W 5 "$sip";`;
+     if source_ip.source_name = "" and not overtime then
+        -- In Red Hat 7.7, host -W is not always honoured.
+        source_host := `timeout 10 host -W 5 "$sip" ;`;
+        --source_host := `host( "-W", "5", sip );`;
         -- This potentally returns muliple entries.  Just use the last one.
         pos := index_reverse( string( source_host ), ASCII.LF );
         if pos > 0 then
@@ -805,6 +820,7 @@ begin
      sshd_cursor : btree_io.cursor( a_sshd_login );
      login_key : string;
      login : a_sshd_login;
+     last_login_username : user_string;
   begin
      btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
      btree_io.open_cursor( sshd_logins_file, sshd_cursor );
@@ -834,7 +850,13 @@ begin
         exception when others =>
           logs.error( "on removing " ) @ ( login.username ) @ (" ") @ ( exceptions.exception_info );
         end;
+
+        last_login_username := login.username; -- KLUGDE
         btree_io.get_next( sshd_logins_file, sshd_cursor, login_key, login );
+        if login.username = last_login_username then
+          logs.warn( "exception not raised on finding last login " );
+          exit;
+        end if;
      end loop;
    exception when others =>
      if btree_io.is_open( sshd_logins_file ) then

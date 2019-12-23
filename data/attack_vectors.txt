@@ -157,6 +157,7 @@ administrateur
 administraci
 adminpanel
 AdoDBConnection.php
+/ajax_pluginconf.php?file=
 ?ads_file=
 &ads_file=
 /asdf
@@ -177,6 +178,7 @@ anti-sec
 /apikey/
 /api-keys/
 /apikeys/
+/api/soap/
 /application/x-ecmascript
 /application/x-shockwave-flash
 /application/x-www-form-urlencoded
@@ -187,10 +189,14 @@ ar.com.unomedios.openid
 assailer
 attacker
 /axa.php
+/axesde/
+/axis/
+/axis2/
 /Autodiscover.xml
 /autodiscover.xml
 /Autodiscover.svc
 /autodiscover.svc
+/azenv.php
 ~bin/
 /bkup/
 /back/
@@ -262,6 +268,7 @@ cd+/
 cd%20/
 cfgIncludeDirectory=
 cfg_file=
+/CFGConnectionParams.txt
 /CFIDE
 /cgi-bin/php-cgi
 /cgi-bin/php.cgi
@@ -370,6 +377,7 @@ delete_comment.php
 ?dept=
 &dept=
 /detail.php
+/ddf.xml
 df_dedetitle.gif
 /digg.php
 _dir=
@@ -388,10 +396,13 @@ djpage.php?page=
 /do.php
 document.location
 DOCUMENT_ROOT
+/dokuwiki/
 /DOMready/
 /donnees
 /dotdooessage=
+/download_file.php?file=
 /drupal
+/dswsbobje/
 /dummy
 /dump/
 /_dump/
@@ -465,6 +476,8 @@ FaTaLisTiCz_Fx
 /FCKeditor
 /fckeditor
 /jeeventcalendar
+/jk-manager
+/jk-status
 /fichier/
 /fichiers/
 /fileadmin/
@@ -482,6 +495,7 @@ _files/filelist.xml
 finance
 ph1n4nc3
 flashchat.php
+/flex2gateway/
 /focus/
 /focusin/
 /folder/
@@ -525,7 +539,8 @@ FunWebProducts
 &gotopage=
 GLOBALS
 grep+
-grep20
+grep%20
+/GulpFile.js
 /hack/
 hax0r
 hacksyou
@@ -539,6 +554,7 @@ hackzyou
 homedir=
 HOMEDIR=
 home_name=
+/host-manager
 /htdocs
 .html(
 /htmleditor
@@ -548,6 +564,8 @@ iamjustsendingthisleter
 /_id/
 /ID/
 /_ID/
+/.idea/
+/IGD.xml
 /ids/
 /_ids/
 /IDs/
@@ -557,10 +575,12 @@ iamjustsendingthisleter
 /IE7/
 /IE8/
 IFS
+/igddesc.xml
 ?ilang=
 &ilang=
 iloveyou
 /image.php?url=
+/imcws/
 /import/
 /imports/
 ?inc=
@@ -591,6 +611,7 @@ INCLUDE_PAGE=
 /Include
 /inc_catalog_base.inc
 incursion
+index.php?action=
 index.php?option=
 index.php?page=
 index.php?pagename=
@@ -612,6 +633,7 @@ invasion
 /invoker
 ipcrawl
 ipinspect
+/ipn_log.txt
 ipscan
 ipspider
 ipsweep
@@ -654,6 +676,7 @@ JMXInvokerServlet
 /Keys/
 /_keys/
 /_Keys/
+/_layouts/
 /leading/
 ?libdir=
 &libdir=
@@ -709,9 +732,13 @@ member.cgi
 member.php
 /message/
 /messagerie/
+/messagebroker/
 /manage/
+/mantis/
+/mantisbt/
 /mgiit.html
 /minidom
+/moadmin.php
 modules.php
 Morfeus
 mosConfig_live_site=
@@ -737,6 +764,8 @@ mvn:
 /mysql/
 /mysqladmin
 /mysql-admin
+/NasDevice.xml
+/nasService.xml
 /nav/mkpr
 /new.zip
 /new.tar.gz
@@ -792,6 +821,7 @@ order.asp
 order.cgi
 order.php
 /out/
+/owa/auth/logon.aspx
 ownzyou
 /ox.php
 /pages/
@@ -848,6 +878,7 @@ post.cgi
 post.php
 prefix=
 PREFIX=
+/PrintBasicDevice.xml
 printf%28
 printf%20
 printf+
@@ -861,6 +892,7 @@ profile.php
 /Providers
 /ptcmd.cgi
 /PublicJS.js
+/Public_UPNP_gatedesc.xml
 putenv%28
 putenv%20
 putenv+
@@ -886,6 +918,7 @@ registration_rules.asp
 registration-success.html
 /registration
 regsvr32
+/RELEASE_NOTES.txt
 repertorylevel=
 /Request.xml
 ?_REQUEST=
@@ -899,10 +932,13 @@ repertorylevel=
 rm+
 rm%20
 rmi:
+/rockmongo/
+/rock-mongo/
 /rom-0
 _root=
 _ROOT=
 ~root
+/rootDesc.xml
 rootdir=
 rootpath=
 root_path_admin=
@@ -933,6 +969,8 @@ sales
 SemrushBot
 /SendAlertEmail.php
 /SENDATASRVR/
+/server-info
+/server-status
 /set/
 /seti.php?ps_cfg_langfiles=
 /setter/
@@ -958,6 +996,7 @@ shopping_cart.php
 signup.asp
 signup.cgi
 signup.php
+/simplecfg.xml
 sip:
 /site.zip
 /site.tar.gz
@@ -969,6 +1008,7 @@ sitebase=
 SITE_BASE=
 site_base=
 siteurl=
+/sixcms/
 skel_null.php
 skindir=
 skype:
@@ -979,6 +1019,7 @@ smb:
 /snippet.reflect.php
 /soapCaller.bs
 /SoftwareVersionList.txt
+/solr/
 /soumettre.php
 soustab.php
 /Southidceditor
@@ -997,6 +1038,7 @@ sqlmanager
 sqlweb
 /sprawdza.php
 /staging/
+/Starter_desc.xml
 /status?
 /submit.php
 /success
@@ -1011,6 +1053,7 @@ swfupload.asp
 /sysadmin
 /system/
 /System.xml
+/tr064dev.xml
 tar+
 tar%20
 /tel:
@@ -1040,12 +1083,14 @@ tip:
 /_transfer/
 /true/
 /try/
-XMPP Tiscali Communicator
+/ts/
 /typo3
 /typecho.js
 ucp.php
-undocumented
 /ueditor
+/ultrasearch
+undocumented
+/uddiclient
 /UNKNOWN
 =uploadify
 upload.asp
@@ -1073,6 +1118,7 @@ _URL=
 %20URL=
 /URLRewrite
 /user/
+/useradmin
 /users/
 /value/
 vdcode.jpg
@@ -1099,17 +1145,20 @@ web-console
 webadmin
 w384DM1N
 /w6/
+/wba/
 /wbg.gif
 /wc/
 /webc/
 WebCalendar
 webcalendar
+webdynpro
 /webdav/
 webdb
 /webmaster
 /WebMaster
 WebFuck
 websql
+/superadmin.php
 wget+
 wget%20
 /WHMCS
@@ -1127,10 +1176,12 @@ wp-admin
 /WS_FTP
 /_www/
 /?WT.ac=
+/wu-moadmin.php
 ?xajax=SelTheme&xajaxargs
 /xampp
 /_xml/
 xmlrpc.php
+XMPP Tiscali Communicator
 /vbforum
 /vbulletin
 /vito.php
@@ -1195,6 +1246,9 @@ OR%201=1
 or 1=1
 or+1=1
 or%201=1
-SELECT %2A FROM
-SELECT+%2A+FROM
-SELECT%20%2A%20FROM
+select+
+select%20
+select %2A
+SELECT+
+SELECT%20
+SELECT %2A

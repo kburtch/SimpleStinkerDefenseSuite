@@ -6,7 +6,7 @@ separate;
 
 alert_history_path : constant file_path:= "data/alert_history.txt";
 
-type an_alert_history is array(enums.first(alert_kinds)..enums.last(alert_kinds)) of integer;
+type an_alert_history is array(error_limit_alert..error_limit_alert) of integer;
 alert_history : an_alert_history;
 
 -----------------------------------------------------------------------------
@@ -35,7 +35,8 @@ begin
   rm "$TMP";
 end send_mail;
 
--- error limit alert
+
+-- do error limit alert
 
 procedure do_error_limit_alert is
    action : constant alert_action := alert_actions( error_limit_alert );
@@ -43,9 +44,13 @@ begin
    return when alert_history( error_limit_alert ) = 1;
 
    case action is
+   when block_action =>
+      null;
    when email_action =>
       send_mail( "SSDS Error Limit exceeded",
                  "SSDS Daily Error Threshold exceeded" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
       logs.warning( "Shutdown not yet implemented" );
    when others =>
