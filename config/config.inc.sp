@@ -2,6 +2,19 @@ separate;
 
 configuration config is
 
+-- Constant Specifications
+
+dashboard_path : constant file_path;
+project_path : constant file_path;
+operating_mode : constant operating_modes;
+firewall_kind : constant firewall_kinds;
+default_grace : constant grace_count;
+mail_grace    : constant grace_count;
+alert_email   : constant email_string;
+report_email  : constant email_string;
+ssh_ping_user : constant string;
+ssh_port : constant string;
+
 -- TODO: disabling individual blockers
 
 -- The dashboard location
