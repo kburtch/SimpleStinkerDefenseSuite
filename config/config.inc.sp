@@ -76,32 +76,32 @@ report_email  : constant email_string := "ken@pegasoft.ca";
 -- The ssh account to test SSH
 
 ssh_ping_user : constant string := "ken@localhost";
-ssh_port : constant string := "22";
+--ssh_port : constant string := "22";
+ssh_port : constant string := "8001";
 
 -- List of whitelisted IP numbers
 -- IP number and description in CSV format pairs
 
-ip_whitelist_config : constant array(1..8) of string :=
+ip_whitelist_config : constant array(1..5) of string :=
 ( "127.0.0.1,localhost",
   "45.56.68.190,lntxap01",
   "198.58.125.175,armitage",
-  "209.159.182.101,vaxxine",
-  "199.102.130.202,nwic",
-  "45.72.210.93,ludbrook",
-  "207.219.237.66,tier1",
-  "207.219.237.93,tier1" );
+  "199.102.130.236,nwic",
+  "97.107.227.199,lawyer" );
 
 -- Number of events to trigger an alert (by type)
 
-alert_thresholds : constant array(error_limit_alert..error_limit_alert) of integer :=
+alert_thresholds : constant array(error_limit_alert..spam_limit_alert) of integer :=
 (
-  50
+  50,
+  100
 );
 
 -- The action to take
 
-alert_actions : constant array(error_limit_alert..error_limit_alert) of alert_action :=
+alert_actions : constant array(error_limit_alert..spam_limit_alert) of alert_action :=
 (
+  email_action,
   email_action
 );
 

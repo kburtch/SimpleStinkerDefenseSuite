@@ -377,6 +377,7 @@ begin
      -- starting at the end of the log line.
      --
      -- TODO: this should probably be a function.
+     -- TODO: probably some improvement here
 
      if strings.length( http_status ) /= 3 then
         declare
@@ -386,14 +387,32 @@ begin
           inQuote : boolean := false;
           ch      : character;
         begin
+           -- searching from the end of the web server log line
            while p > 0 loop
               ch := strings.element( log_line, p );
-              if ch = ' ' and not inQuote then
-                 f := @-1;
-                 exit when f = 0;
-                 last_p := p-1;
-              elsif ch = '"' then
-                 inQuote := not inQuote;
+              if ch = '"' then
+                 if p = strings.length( log_line ) then
+                    inQuote := not inQuote;
+                 else
+                    -- kludge: quote is only legitimate if there's an adjacent space
+                    ch := strings.element( log_line, p+1 );
+                    if ch = ' ' then
+                       inQuote := not inQuote;
+                    end if;
+                    if p > 1 then
+                       ch := strings.element( log_line, p-1 );
+                       -- kludge: quote is only legitimate if there's an adjacent space
+                       if ch = ' ' then
+                          inQuote := not inQuote;
+                       end if;
+                    end if;
+                 end if;
+              elsif ch = ' ' and not inQuote then
+                 if p /= strings.length( log_line ) then --and ch = '"' then
+                    f := @-1;
+                    exit when f = 0;
+                    last_p := p-1;
+                 end if;
               end if;
               p := @-1;
            end loop;
@@ -408,23 +427,25 @@ begin
      -- It is still possible for both of these operations above to fail
      -- to get the http status.  In that case, it's assigned code 999
      -- and treated as a failure.
+     --
+     -- When using the tail command to examine the logs, perhaps due to
+     -- volume, tail can choke and will only return the end of a log line.
 
      if http_status = "" then
         http_status := "999";
-        logs.error( "http_status is blank on log line " ) @ (log_line);
+        logs.warning( "http_status is blank on log line " ) @ (log_line);
      elsif http_status = "-" then
         http_status := "999";
      elsif strings.length( http_status ) /= 3 then
         http_status := "999";
-        logs.error( "http_status is not length 3 on log line " ) @ (log_line);
+        logs.warning( "http_status is not length 3 on log line " ) @ (log_line);
      elsif not strings.is_digit( http_status ) then
         http_status := "999";
-        logs.error( "http_status is not numeric on log line " ) @ (log_line);
+        logs.warning( "http_status is not numeric on log line " ) @ (log_line);
      end if;
 
-     --if strings.index( " 200 ", string( http_status ) ) > 0 then
-     --   null; --statisitcal
-     if strings.index( " 400 401 403 404 405 413 414 500 999 ", string( http_status ) ) > 0 then
+     -- ignoring 999 because tail command may have corrupted the line
+     if strings.index( " 400 401 403 404 405 413 414 500 ", string( http_status ) ) > 0 then
         request := strings.field( log_line, 2, '"' ) & strings.field( log_line, 6, '"' );
         -- Check the IP number.  If it's whitelisted, ignore the rest of the processing
         -- because it is somewhat expensive.
@@ -520,8 +541,8 @@ begin
                  end if; -- not search engine
               end if; -- not suspicious
            end if; -- not whitelisted
-        end if; -- not 4xx status
-     end if; -- not valid ip
+        end if; -- not valid ip
+     end if; -- not 4xx status
 
    -- periodically check for a new day and display the summary of activity
    -- on a new day

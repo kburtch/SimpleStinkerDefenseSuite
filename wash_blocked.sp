@@ -854,7 +854,7 @@ begin
         last_login_username := login.username; -- KLUGDE
         btree_io.get_next( sshd_logins_file, sshd_cursor, login_key, login );
         if login.username = last_login_username then
-          logs.warn( "exception not raised on finding last login " );
+          logs.warning( "exception not raised on finding last login " );
           exit;
         end if;
      end loop;

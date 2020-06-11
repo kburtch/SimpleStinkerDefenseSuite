@@ -224,7 +224,7 @@ echo '<div style="width:100%; height: 100%">' >> "$DS"
 echo '<table style="border: none; padding: 0; border-collapse: collapse; margin: 0 auto">' >> "$DS"
 
 BGCOLOR="background-color: transparent"
-if [ $ERR_LINES -ge 60 ] ; then
+if [ $ERR_LINES -ge 60 ] ; then # TODO: this threshold is configured in sparforte
    BGCOLOR="background-color: red"
    /usr/local/bin/spar error_limit.sp
 fi
@@ -252,7 +252,14 @@ echo '<td class="kpi_layout"><span class="plain_data" style="color: green" text-
 echo "</tr><tr>" >> "$DS"
 echo '<td class="kpi_layout"><span class="plain_data" style="color: blue" text-align="right">'"$MAIL_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Mail""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
-echo '<td class="kpi_layout"><span class="plain_data" style="color: goldenrod" text-align="right">'"$SPAM_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Spam""</span>""</td>" >> "$DS"
+
+BGCOLOR="background-color: transparent"
+if [ $SPAM_EVENTS -ge 50 ] ; then  # TODO: this threshold is configured in sparforte
+   BGCOLOR="background-color: red"
+   /usr/local/bin/spar spam_limit.sp
+fi
+
+echo '<td class="kpi_layout"><span class="plain_data" style="color: goldenrod; '"$BGCOLOR"'" text-align="right">'"$SPAM_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Spam""</span>""</td>" >> "$DS"
 echo "</tr>" >> "$DS"
 echo "</table>" >> "$DS"
 echo "</div>" >> "$DS"

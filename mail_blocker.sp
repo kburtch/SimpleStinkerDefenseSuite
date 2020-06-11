@@ -379,17 +379,20 @@ pragma todo( team,
 --           attack_cnt := @+1;
 --        end if;
 
+   -- Unfortunately, many computers may send an email without a name.
+   -- This is a warning.
+
    if strings.index( log_line, "Name or service not known" ) > 0 then
       tmp := strings.field( log_line, 5, ':' );
       p := index_reverse( tmp, ' ' );
       if p > 0 then
          raw_source_ip := raw_ip_string( strings.slice( tmp, p+1, strings.length( tmp ) ) );
-         source_ip := validate_ip( raw_source_ip );
-         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
+         --logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
 --? "Name or service unknown: " & raw_source_ip & "/" & source_ip;
-         attack_cnt := @+1;
+         -- attack_cnt := @+1;
       end if;
-      message := " has no DNS entry";
+      logs.warning( raw_source_ip & " has no DNS entry" );
+      --message := " has no DNS entry";
    end if;
 
    if source_ip /= "" then

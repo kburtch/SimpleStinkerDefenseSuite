@@ -6,7 +6,7 @@ separate;
 
 alert_history_path : constant file_path:= "data/alert_history.txt";
 
-type an_alert_history is array(error_limit_alert..error_limit_alert) of integer;
+type an_alert_history is array(error_limit_alert..spam_limit_alert) of integer;
 alert_history : an_alert_history;
 
 -----------------------------------------------------------------------------
@@ -15,6 +15,9 @@ alert_history : an_alert_history;
 
 procedure do_error_limit_alert;
 pragma assumption( used, do_error_limit_alert );
+
+procedure do_spam_limit_alert;
+pragma assumption( used, do_spam_limit_alert );
 
 procedure reset_alerts;
 pragma assumption( used, reset_alerts );
@@ -59,6 +62,31 @@ begin
 
    alert_history( error_limit_alert ) := 1;
 end do_error_limit_alert;
+
+
+-- do spam limit alert
+
+procedure do_spam_limit_alert is
+   action : constant alert_action := alert_actions( spam_limit_alert );
+begin
+   return when alert_history( spam_limit_alert ) = 1;
+
+   case action is
+   when block_action =>
+      null;
+   when email_action =>
+      send_mail( "SSDS Spam Limit exceeded",
+                 "SSDS Daily Spam Threshold exceeded" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
+   when shutdown_action =>
+      logs.warning( "Shutdown not yet implemented" );
+   when others =>
+      logs.error( "Alert action is unknown" );
+   end case;
+
+   alert_history( spam_limit_alert ) := 1;
+end do_spam_limit_alert;
 
 
 -- Treat all alerts as unsent
