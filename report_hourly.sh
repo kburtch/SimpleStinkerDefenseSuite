@@ -47,11 +47,20 @@ elif [ "$CURRENT_BLOCKS" -eq 0 ] ; then
    BGCOLOR="background-color: red"
 fi
 
+
 echo > "$HS"
 echo '<div class="kpi_box">' >> "$HS"
 echo '<div class="kpi_header">'"<b>Last Hour</b></div>" >> "$HS"
 echo '<div style="width:100%; height: 100%">' >> "$HS"
 echo '<table style="border: none; padding: 0; border-collapse: collapse; margin:0 auto">' >> "$HS"
+
+BLOCKS_LIMIT=`/usr/local/bin/spar utils/export_blocks_limit.sp`
+BGCOLOR="background-color: transparent"
+if [ $CURRENT_BLOCKS -ge "$BLOCKS_LIMIT" ] ; then
+   BGCOLOR="background-color: red"
+   /usr/local/bin/spar utils/blocks_limit.sp
+fi
+
 echo "<tr>" >> "$HS"
 echo '<td class="kpi_layout"><span class="plain_data" style="'"$BGCOLOR"'">'"$CURRENT_BLOCKS""</span>""</td><td>"'<span class="plain_light">'" Actively Blocked""</span>""</td>" >> "$HS"
 echo "</tr><tr>" >> "$HS"
@@ -59,7 +68,16 @@ echo '<td class="kpi_layout"><span class="plain_data">'"$TOTAL_ON_FILE""</span>"
 echo "</tr><tr>" >> "$HS"
 echo '<td style="text-align:right; min-width: 50px; padding-right: 3px;">''<span class="plain_data">'"$TOTAL_LOGINS""</span>""</td><td>""<span class="plain_light">""Usernames""</span>""</td>" >> "$HS"
 echo "</tr><tr>" >> "$HS"
-echo '<td class="kpi_layout">''<span class="plain_data">'"$DISK_USAGE""</span>""</td><td>"'<span class="plain_light">'"Used""</span>""</td>" >> "$HS"
+
+SPACE_LIMIT=`/usr/local/bin/spar utils/export_space_limit.sp`
+BGCOLOR="background-color: transparent"
+TMP="${DISK_USAGE%M}" # Strip units (M) from amount
+if [ $TMP -ge "$SPACE_LIMIT" ] ; then
+   BGCOLOR="background-color: red"
+   /usr/local/bin/spar utils/space_limit.sp
+fi
+
+echo '<td class="kpi_layout">''<span class="plain_data" style="'"$BGCOLOR"'">'"$DISK_USAGE""</span>""</td><td>"'<span class="plain_light">'"Used""</span>""</td>" >> "$HS"
 echo "</tr>" >> "$HS"
 echo "</table>" >> "$HS"
 echo "</div>" >> "$HS"

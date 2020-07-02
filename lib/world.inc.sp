@@ -93,6 +93,11 @@ type operating_modes is (
 
 type alert_kinds is (
   error_limit_alert,
+  space_limit_alert,
+  blocks_limit_alert,
+  http_limit_alert,
+  mail_limit_alert,
+  sshd_limit_alert,
   spam_limit_alert
 );
 

@@ -16,6 +16,21 @@ alert_history : an_alert_history;
 procedure do_error_limit_alert;
 pragma assumption( used, do_error_limit_alert );
 
+procedure do_space_limit_alert;
+pragma assumption( used, do_space_limit_alert );
+
+procedure do_blocks_limit_alert;
+pragma assumption( used, do_blocks_limit_alert );
+
+procedure do_http_limit_alert;
+pragma assumption( used, do_http_limit_alert );
+
+procedure do_mail_limit_alert;
+pragma assumption( used, do_mail_limit_alert );
+
+procedure do_sshd_limit_alert;
+pragma assumption( used, do_sshd_limit_alert );
+
 procedure do_spam_limit_alert;
 pragma assumption( used, do_spam_limit_alert );
 
@@ -64,6 +79,131 @@ begin
 end do_error_limit_alert;
 
 
+-- do space limit alert
+
+procedure do_space_limit_alert is
+   action : constant alert_action := alert_actions( space_limit_alert );
+begin
+   return when alert_history( space_limit_alert ) = 1;
+
+   case action is
+   when block_action =>
+      null;
+   when email_action =>
+      send_mail( "SSDS Space Limit exceeded",
+                 "SSDS Space Threshold exceeded" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
+   when shutdown_action =>
+      logs.warning( "Shutdown not yet implemented" );
+   when others =>
+      logs.error( "Alert action is unknown" );
+   end case;
+
+   alert_history( space_limit_alert ) := 1;
+end do_space_limit_alert;
+
+
+-- do blocks limit alert
+
+procedure do_blocks_limit_alert is
+   action : constant alert_action := alert_actions( blocks_limit_alert );
+begin
+   return when alert_history( blocks_limit_alert ) = 1;
+
+   case action is
+   when block_action =>
+      null;
+   when email_action =>
+      send_mail( "SSDS Blocks Limit exceeded",
+                 "SSDS Blocks Threshold exceeded" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
+   when shutdown_action =>
+      logs.warning( "Shutdown not yet implemented" );
+   when others =>
+      logs.error( "Alert action is unknown" );
+   end case;
+
+   alert_history( blocks_limit_alert ) := 1;
+end do_blocks_limit_alert;
+
+
+-- do http limit alert
+
+procedure do_http_limit_alert is
+   action : constant alert_action := alert_actions( http_limit_alert );
+begin
+   return when alert_history( http_limit_alert ) = 1;
+
+   case action is
+   when block_action =>
+      null;
+   when email_action =>
+      send_mail( "SSDS Web Threat Limit exceeded",
+                 "SSDS HTTP Daily Threat Threshold exceeded" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
+   when shutdown_action =>
+      logs.warning( "Shutdown not yet implemented" );
+   when others =>
+      logs.error( "Alert action is unknown" );
+   end case;
+
+   alert_history( http_limit_alert ) := 1;
+end do_http_limit_alert;
+
+
+-- do mail limit alert
+
+procedure do_mail_limit_alert is
+   action : constant alert_action := alert_actions( mail_limit_alert );
+begin
+   return when alert_history( mail_limit_alert ) = 1;
+
+   case action is
+   when block_action =>
+      null;
+   when email_action =>
+      send_mail( "SSDS Mail Limit exceeded",
+                 "SSDS Daily Mail Threat Threshold exceeded" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
+   when shutdown_action =>
+      logs.warning( "Shutdown not yet implemented" );
+   when others =>
+      logs.error( "Alert action is unknown" );
+   end case;
+
+   alert_history( mail_limit_alert ) := 1;
+end do_mail_limit_alert;
+
+
+-- do sshd limit alert
+
+procedure do_sshd_limit_alert is
+   action : constant alert_action := alert_actions( sshd_limit_alert );
+begin
+   return when alert_history( sshd_limit_alert ) = 1;
+
+   case action is
+   when block_action =>
+      null;
+   when email_action =>
+      send_mail( "SSDS Login Limit exceeded",
+                 "SSDS SSH Login Threat Threshold exceeded" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
+   when shutdown_action =>
+      logs.warning( "Shutdown not yet implemented" );
+   when others =>
+      logs.error( "Alert action is unknown" );
+   end case;
+
+   alert_history( sshd_limit_alert ) := 1;
+end do_sshd_limit_alert;
+
+
 -- do spam limit alert
 
 procedure do_spam_limit_alert is
@@ -76,7 +216,7 @@ begin
       null;
    when email_action =>
       send_mail( "SSDS Spam Limit exceeded",
-                 "SSDS Daily Spam Threshold exceeded" );
+                 "SSDS Daily Spam Threat Threshold exceeded" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>

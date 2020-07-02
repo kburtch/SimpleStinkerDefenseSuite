@@ -213,7 +213,7 @@ fi
 
 # Dump the logins.
 
-TOP_LOGINS=`/usr/local/bin/spar -m list_logins.sp | sort -nr -k2 | fgrep -v "logins:" | head -n 30`
+TOP_LOGINS=`/usr/local/bin/spar -m list_logins.sp | sort -nr -k1 | fgrep -v "logins:" | head -n 30`
 echo "$TOP_LOGINS" > "$TL"
 
 # Firewall Summary:
@@ -223,10 +223,11 @@ echo '<div class="kpi_header">'"<b>Yesterday's Activity</b></div>" >> "$DS"
 echo '<div style="width:100%; height: 100%">' >> "$DS"
 echo '<table style="border: none; padding: 0; border-collapse: collapse; margin: 0 auto">' >> "$DS"
 
+ERROR_LIMIT=`/usr/local/bin/spar utils/export_error_limit.sp`
 BGCOLOR="background-color: transparent"
-if [ $ERR_LINES -ge 60 ] ; then # TODO: this threshold is configured in sparforte
+if [ $ERR_LINES -ge "$ERROR_LIMIT" ] ; then
    BGCOLOR="background-color: red"
-   /usr/local/bin/spar error_limit.sp
+   /usr/local/bin/spar utils/error_limit.sp
 fi
 
 echo "<tr>" >> "$DS"
@@ -245,18 +246,42 @@ echo '<div class="kpi_box">' >> "$DS"
 echo '<div class="kpi_header">'"<b>Yesterday's Blocks</b></div>" >> "$DS"
 echo '<div style="width:100%; height: 100%">' >> "$DS"
 echo '<table style="border: none; padding: 0; border-collapse: collapse; margin:0 auto">' >> "$DS"
+
+HTTP_LIMIT=`/usr/local/bin/spar utils/export_http_limit.sp`
+BGCOLOR="background-color: transparent"
+if [ "$HTTP_EVENTS" -ge "$HTTP_LIMIT" ] ; then
+   BGCOLOR="background-color: darkred"
+   /usr/local/bin/spar utils/http_limit.sp
+fi
+
 echo "<tr>" >> "$DS"
-echo '<td class="kpi_layout"><span class="plain_data" style="color: red" text-align="right">'"$HTTP_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Web""</span>""</td>" >> "$DS"
-echo "</tr><tr>" >> "$DS"
-echo '<td class="kpi_layout"><span class="plain_data" style="color: green" text-align="right">'"$SSH_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Login""</span>""</td>" >> "$DS"
-echo "</tr><tr>" >> "$DS"
-echo '<td class="kpi_layout"><span class="plain_data" style="color: blue" text-align="right">'"$MAIL_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Mail""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data" style="color: red; '"$BGCOLOR"'" text-align="right">'"$HTTP_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Web""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
 
+SSHD_LIMIT=`/usr/local/bin/spar utils/export_sshd_limit.sp`
 BGCOLOR="background-color: transparent"
-if [ $SPAM_EVENTS -ge 50 ] ; then  # TODO: this threshold is configured in sparforte
+if [ $SSH_EVENTS -ge "$SSHD_LIMIT" ] ; then
    BGCOLOR="background-color: red"
-   /usr/local/bin/spar spam_limit.sp
+   /usr/local/bin/spar utils/sshd_limit.sp
+fi
+
+echo '<td class="kpi_layout"><span class="plain_data" style="color: green; '"$BGCOLOR"'" text-align="right">'"$SSH_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Login""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+
+MAIL_LIMIT=`/usr/local/bin/spar utils/export_mail_limit.sp`
+BGCOLOR="background-color: transparent"
+if [ "$MAIL_EVENTS" -ge "$MAIL_LIMIT" ] ; then
+   BGCOLOR="background-color: red"
+   /usr/local/bin/spar utils/mail_limit.sp
+fi
+echo '<td class="kpi_layout"><span class="plain_data" style="color: blue; '"$BGCOLOR"'" text-align="right">'"$MAIL_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Mail""</span>""</td>" >> "$DS"
+echo "</tr><tr>" >> "$DS"
+
+SPAM_LIMIT=`/usr/local/bin/spar utils/export_spam_limit.sp`
+BGCOLOR="background-color: transparent"
+if [ $SPAM_EVENTS -ge "$SPAM_LIMIT" ] ; then
+   BGCOLOR="background-color: red"
+   /usr/local/bin/spar utils/spam_limit.sp
 fi
 
 echo '<td class="kpi_layout"><span class="plain_data" style="color: goldenrod; '"$BGCOLOR"'" text-align="right">'"$SPAM_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Spam""</span>""</td>" >> "$DS"

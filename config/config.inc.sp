@@ -93,16 +93,26 @@ ip_whitelist_config : constant array(1..5) of string :=
 
 alert_thresholds : constant array(error_limit_alert..spam_limit_alert) of integer :=
 (
-  50,
-  100
+  50,  -- error event maximum limit
+  250, -- space event maximum limit (megabytes)
+  50000, -- ip blocks maximum limit
+  150, -- http event maximum limit
+  150, -- mail event maximum limit
+  150, -- sshd event maximum limit
+  300  -- spam event maximum limit
 );
 
 -- The action to take
 
 alert_actions : constant array(error_limit_alert..spam_limit_alert) of alert_action :=
 (
-  email_action,
-  email_action
+  email_action, -- error alert action
+  email_action, -- space alert action
+  email_action, -- ip blocks alert action
+  email_action, -- http alert action
+  email_action, -- mail alert action
+  email_action, -- sshd alert action
+  email_action  -- spam alert action
 );
 
 end config;

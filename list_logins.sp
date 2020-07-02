@@ -27,8 +27,8 @@ begin
   btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
   btree_io.open_cursor( sshd_logins_file, sshd_cursor );
   btree_io.get_first( sshd_logins_file, sshd_cursor, login_key, login );
-  put( login.username ) @ ( " " );
-  put( login.count  ) @ ( " " );
+  put( login.count, "ZZZZZ9" ) @ ( " " );
+  put( login.username ) @ ( ": " );
   if login.kind = privileged_login then
      put( "privileged login " );
   elsif login.kind = service_login then
@@ -54,8 +54,8 @@ begin
      cnt := @ + 1;
      btree_io.get_next( sshd_logins_file, sshd_cursor, login_key, login );
      --if login.count > 45 then
-        put( login.username ) @ ( " " );
-        put( login.count  ) @ ( " " );
+        put( login.count, "ZZZZZ9"  ) @ ( " " );
+        put( login.username ) @ ( ": " );
 
         if login.kind = privileged_login then
            put( "privileged login " );

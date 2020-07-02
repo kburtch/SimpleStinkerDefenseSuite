@@ -1,6 +1,7 @@
 data/__db.001
 data/__db.002
 data/__db.003
+data/alert_history.txt
 data/blocked_ip.btree
 data/countries.btree
 data/error_list.txt
