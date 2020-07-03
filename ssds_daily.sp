@@ -28,7 +28,7 @@ begin
   cd /root/ssds;
 
   bash "report_daily.sh" 2>&1 > "$TMP";
-  mail -s "SSDS Daily Report" "ken@pegasoft.ca" < "$TMP";
+  mail -s "$HOSTNAME: SSDS Daily Report" "$report_email" < "$TMP";
   rm "$TMP";
 
   -- Backup database
