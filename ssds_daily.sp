@@ -6,6 +6,7 @@ with separate "config/config.inc.sp";
 
 procedure ssds_daily is
 
+   with separate "lib/common.inc.sp";
    with separate "lib/alerts.inc.sp";
 
    pragma annotate( summary, "ssds_daily" )
@@ -20,6 +21,7 @@ procedure ssds_daily is
 
    TMP : string;
 begin
+  setupWorld( "log/blocker.log", log_mode.file );
   startup_alerts;
   reset_alerts;
 
@@ -28,13 +30,14 @@ begin
   cd /root/ssds;
 
   bash "report_daily.sh" 2>&1 > "$TMP";
-  mail -s "$HOSTNAME: SSDS Daily Report" "$report_email" < "$TMP";
+  mail -s "SSDS Daily Report: $HOSTNAME" "$report_email" < "$TMP";
   rm "$TMP";
 
   -- Backup database
   spar -m "nightly_backup.sp";
 
   shutdown_alerts;
+  shutdownWorld;
 end ssds_daily;
 
 -- vim: ft=spar

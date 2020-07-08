@@ -65,7 +65,7 @@ begin
    when block_action =>
       null;
    when email_action =>
-      send_mail( HOSTNAME & ": SSDS Error Limit exceeded",
+      send_mail( "SSDS Error Limit exceeded: " & string( HOSTNAME ),
                  "More than " &
                  strings.image( alert_thresholds( error_limit_alert ) ) &
                  "  errors occurred" );
@@ -92,7 +92,7 @@ begin
    when block_action =>
       null;
    when email_action =>
-      send_mail( HOSTNAME & ": SSDS Space Limit exceeded",
+      send_mail( "SSDS Space Limit exceeded: " & string( HOSTNAME ),
                  "More than " &
                  strings.image( alert_thresholds( space_limit_alert ) ) &
                  "  M space used" );
@@ -119,7 +119,7 @@ begin
    when block_action =>
       null;
    when email_action =>
-      send_mail( HOSTNAME & ": SSDS Blocks Limit exceeded",
+      send_mail( "SSDS Blocks Limit exceeded: " & string( HOSTNAME ),
                  "More than " &
                  strings.image( alert_thresholds( blocks_limit_alert ) ) &
                  "  IP blocks occurred" );
@@ -146,7 +146,7 @@ begin
    when block_action =>
       null;
    when email_action =>
-      send_mail( HOSTNAME & ": SSDS Web Threat Limit exceeded",
+      send_mail( "SSDS Web Threat Limit exceeded: " & string( HOSTNAME ),
                  "More than " &
                  strings.image( alert_thresholds( http_limit_alert ) ) &
                  "  HTTP threats occurred" );
@@ -173,7 +173,7 @@ begin
    when block_action =>
       null;
    when email_action =>
-      send_mail( HOSTNAME & ": SSDS Mail Limit exceeded",
+      send_mail( "SSDS Mail Limit exceeded: " & string( HOSTNAME ),
                  "More than " &
                  strings.image( alert_thresholds( mail_limit_alert ) ) &
                  "  mail login threats occurred" );
@@ -200,7 +200,7 @@ begin
    when block_action =>
       null;
    when email_action =>
-      send_mail( HOSTNAME & ": SSDS Login Limit exceeded",
+      send_mail( "SSDS Login Limit exceeded: " & string( HOSTNAME ),
                  "More than " &
                  strings.image( alert_thresholds( sshd_limit_alert ) ) &
                  "  SSH login threats occurred" );
@@ -227,7 +227,7 @@ begin
    when block_action =>
       null;
    when email_action =>
-      send_mail( HOSTNAME & ": SSDS Spam Limit exceeded",
+      send_mail( "SSDS Spam Limit exceeded: " & string( HOSTNAME ),
                  "More than " &
                  strings.image( alert_thresholds( spam_limit_alert ) ) &
                  "  spam events occurred" );
