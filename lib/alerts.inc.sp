@@ -149,7 +149,7 @@ begin
       send_mail( "SSDS Web Threat Limit exceeded: " & string( HOSTNAME ),
                  "More than" &
                  strings.image( alert_thresholds( http_limit_alert ) ) &
-                 "  HTTP threats occurred" );
+                 " HTTP threats occurred" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
@@ -176,7 +176,7 @@ begin
       send_mail( "SSDS Mail Limit exceeded: " & string( HOSTNAME ),
                  "More than" &
                  strings.image( alert_thresholds( mail_limit_alert ) ) &
-                 "  mail login threats occurred" );
+                 " mail login threats occurred" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
@@ -203,7 +203,7 @@ begin
       send_mail( "SSDS Login Limit exceeded: " & string( HOSTNAME ),
                  "More than" &
                  strings.image( alert_thresholds( sshd_limit_alert ) ) &
-                 "  SSH login threats occurred" );
+                 " SSH login threats occurred" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
@@ -230,7 +230,7 @@ begin
       send_mail( "SSDS Spam Limit exceeded: " & string( HOSTNAME ),
                  "More than" &
                  strings.image( alert_thresholds( spam_limit_alert ) ) &
-                 "  spam events occurred" );
+                 " spam events occurred" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
