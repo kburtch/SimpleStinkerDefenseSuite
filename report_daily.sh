@@ -218,6 +218,16 @@ echo "$TOP_LOGINS" > "$TL"
 
 # Firewall Summary:
 
+# Determine time running.
+
+START_TIME=`stat run/sshd_pipe | fgrep Change | cut -d: -f2-3`
+START_TIME=`date '+%s' --date="$START_TIME"`
+CURRENT_TIME=`date '+%s'`
+let UPTIME_SECS=CURRENT_TIME-START_TIME
+let UPTIME_DAYS=UPTIME_SECS/60 # Minutes
+let UPTIME_DAYS=UPTIME_DAYS/60 # Hours
+let UPTIME_DAYS=UPTIME_DAYS/24 # Days
+
 echo '<div class="kpi_box">' > "$DS"
 echo '<div class="kpi_header">'"<b>Yesterday's Activity</b></div>" >> "$DS"
 echo '<div style="width:100%; height: 100%">' >> "$DS"
@@ -236,6 +246,7 @@ echo "</tr><tr>" >> "$DS"
 echo '<td class="kpi_layout"><span class="plain_data">'"$OK_LINES""</span>""</td><td>"'<span class="plain_light">'" Status Reports""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
 echo '<td class="kpi_layout"><span class="plain_data">'"$LOG_LINES""</span>""</td><td>"'<span class="plain_light">'" Lines""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data">'"$UPTIME_DAYS""</span>""</td><td>"'<span class="plain_light">'" Days Up""</span>""</td>" >> "$DS"
 echo "</tr>" >> "$DS"
 echo "</table>" >> "$DS"
 echo "</div>" >> "$DS"
