@@ -77,7 +77,7 @@ if [ $TMP -ge "$SPACE_LIMIT" ] ; then
    /usr/local/bin/spar utils/space_limit.sp
 fi
 
-echo '<td class="kpi_layout">''<span class="plain_data" style="'"$BGCOLOR"'">'"$DISK_USAGE""</span>""</td><td>"'<span class="plain_light">'"Used""</span>""</td>" >> "$HS"
+echo '<td class="kpi_layout">''<span class="plain_data" style="'"$BGCOLOR"'">'"$DISK_USAGE""</span>""</td><td>"'<span class="plain_light">'"Storage""</span>""</td>" >> "$HS"
 echo "</tr>" >> "$HS"
 echo "</table>" >> "$HS"
 echo "</div>" >> "$HS"
