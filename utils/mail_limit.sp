@@ -13,7 +13,13 @@ with separate "lib/alerts.inc.sp";
 begin
   setupWorld( "log/blocker.log", log_mode.file );
   startup_alerts;
-  do_mail_limit_alert;
+ declare
+    actual : natural := numerics.value( command_line.argument( 1 ) );
+  begin
+     do_mail_limit_alert( actual );
+  exception when others =>
+     logs.error( exceptions.exception_info );
+  end;
   shutdown_alerts;
   shutdownWorld;
 end mail_limit;

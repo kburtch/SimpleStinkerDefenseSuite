@@ -40,10 +40,9 @@ smtp_violations_file_path : file_path := "/var/log/maillog";
 -- website on this server.
 -- The default is the first path in the list.
 
-http_violations_file_paths : array( 1..3 ) of file_path := (
+http_violations_file_paths : array( 1..2 ) of file_path := (
   "/var/log/httpd/pegasoft-access_log",
-  "/var/log/httpd/sparforte-access_log",
-  "/var/log/httpd/willow-access_log"
+  "/var/log/httpd/sparforte-access_log"
 );
 
 -- The mode the blocker is operating in.  For example, is the

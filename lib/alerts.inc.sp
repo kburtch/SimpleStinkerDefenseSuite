@@ -22,16 +22,16 @@ pragma assumption( used, do_space_limit_alert );
 procedure do_blocks_limit_alert;
 pragma assumption( used, do_blocks_limit_alert );
 
-procedure do_http_limit_alert;
+procedure do_http_limit_alert( actual : natural );
 pragma assumption( used, do_http_limit_alert );
 
-procedure do_mail_limit_alert;
+procedure do_mail_limit_alert( actual : natural );
 pragma assumption( used, do_mail_limit_alert );
 
-procedure do_sshd_limit_alert;
+procedure do_sshd_limit_alert( actual : natural );
 pragma assumption( used, do_sshd_limit_alert );
 
-procedure do_spam_limit_alert;
+procedure do_spam_limit_alert( actual : natural );
 pragma assumption( used, do_spam_limit_alert );
 
 procedure reset_alerts;
@@ -137,7 +137,7 @@ end do_blocks_limit_alert;
 
 -- do http limit alert
 
-procedure do_http_limit_alert is
+procedure do_http_limit_alert( actual : natural ) is
    action : constant alert_action := alert_actions( http_limit_alert );
 begin
    return when alert_history( http_limit_alert ) = 1;
@@ -147,9 +147,10 @@ begin
       null;
    when email_action =>
       send_mail( "SSDS Web Threat Limit exceeded: " & string( HOSTNAME ),
+                 strings.image( actual ) &
+                 " HTTP threats occurred (" &
                  "More than" &
-                 strings.image( alert_thresholds( http_limit_alert ) ) &
-                 " HTTP threats occurred" );
+                 strings.image( alert_thresholds( http_limit_alert ) ) & ")");
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
@@ -164,7 +165,7 @@ end do_http_limit_alert;
 
 -- do mail limit alert
 
-procedure do_mail_limit_alert is
+procedure do_mail_limit_alert( actual : natural ) is
    action : constant alert_action := alert_actions( mail_limit_alert );
 begin
    return when alert_history( mail_limit_alert ) = 1;
@@ -174,9 +175,10 @@ begin
       null;
    when email_action =>
       send_mail( "SSDS Mail Limit exceeded: " & string( HOSTNAME ),
+                 strings.image( actual ) &
+                 " mail login threats occurred (" &
                  "More than" &
-                 strings.image( alert_thresholds( mail_limit_alert ) ) &
-                 " mail login threats occurred" );
+                 strings.image( alert_thresholds( mail_limit_alert ) ) & ")" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
@@ -191,7 +193,7 @@ end do_mail_limit_alert;
 
 -- do sshd limit alert
 
-procedure do_sshd_limit_alert is
+procedure do_sshd_limit_alert( actual : natural ) is
    action : constant alert_action := alert_actions( sshd_limit_alert );
 begin
    return when alert_history( sshd_limit_alert ) = 1;
@@ -201,9 +203,10 @@ begin
       null;
    when email_action =>
       send_mail( "SSDS Login Limit exceeded: " & string( HOSTNAME ),
+                 strings.image( actual ) &
+                 " SSH login threats occurred (" &
                  "More than" &
-                 strings.image( alert_thresholds( sshd_limit_alert ) ) &
-                 " SSH login threats occurred" );
+                 strings.image( alert_thresholds( sshd_limit_alert ) ) & ")" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>
@@ -218,7 +221,7 @@ end do_sshd_limit_alert;
 
 -- do spam limit alert
 
-procedure do_spam_limit_alert is
+procedure do_spam_limit_alert( actual : natural ) is
    action : constant alert_action := alert_actions( spam_limit_alert );
 begin
    return when alert_history( spam_limit_alert ) = 1;
@@ -228,9 +231,10 @@ begin
       null;
    when email_action =>
       send_mail( "SSDS Spam Limit exceeded: " & string( HOSTNAME ),
+                 strings.image( actual ) &
+                 " spam events occurred (" &
                  "More than" &
-                 strings.image( alert_thresholds( spam_limit_alert ) ) &
-                 " spam events occurred" );
+                 strings.image( alert_thresholds( spam_limit_alert ) ) & ")" );
    when evade_action =>
       logs.warning( "Evade not yet implemented" );
    when shutdown_action =>

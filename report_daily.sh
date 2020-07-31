@@ -263,7 +263,7 @@ HTTP_LIMIT=`/usr/local/bin/spar utils/export_http_limit.sp`
 BGCOLOR="background-color: transparent"
 if [ "$HTTP_EVENTS" -ge "$HTTP_LIMIT" ] ; then
    BGCOLOR="background-color: darkred"
-   /usr/local/bin/spar utils/http_limit.sp
+   /usr/local/bin/spar utils/http_limit.sp "$HTTP_EVENTS"
 fi
 
 echo "<tr>" >> "$DS"
@@ -274,7 +274,7 @@ SSHD_LIMIT=`/usr/local/bin/spar utils/export_sshd_limit.sp`
 BGCOLOR="background-color: transparent"
 if [ $SSH_EVENTS -ge "$SSHD_LIMIT" ] ; then
    BGCOLOR="background-color: red"
-   /usr/local/bin/spar utils/sshd_limit.sp
+   /usr/local/bin/spar utils/sshd_limit.sp "$SSH_EVENTS"
 fi
 
 echo '<td class="kpi_layout"><span class="plain_data" style="color: green; '"$BGCOLOR"'" text-align="right">'"$SSH_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Login""</span>""</td>" >> "$DS"
@@ -284,7 +284,7 @@ MAIL_LIMIT=`/usr/local/bin/spar utils/export_mail_limit.sp`
 BGCOLOR="background-color: transparent"
 if [ "$MAIL_EVENTS" -ge "$MAIL_LIMIT" ] ; then
    BGCOLOR="background-color: red"
-   /usr/local/bin/spar utils/mail_limit.sp
+   /usr/local/bin/spar utils/mail_limit.sp "$MAIL_EVENTS"
 fi
 echo '<td class="kpi_layout"><span class="plain_data" style="color: blue; '"$BGCOLOR"'" text-align="right">'"$MAIL_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Mail""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
@@ -293,7 +293,7 @@ SPAM_LIMIT=`/usr/local/bin/spar utils/export_spam_limit.sp`
 BGCOLOR="background-color: transparent"
 if [ $SPAM_EVENTS -ge "$SPAM_LIMIT" ] ; then
    BGCOLOR="background-color: red"
-   /usr/local/bin/spar utils/spam_limit.sp
+   /usr/local/bin/spar utils/spam_limit.sp "$SPAM_EVENTS"
 fi
 
 echo '<td class="kpi_layout"><span class="plain_data" style="color: goldenrod; '"$BGCOLOR"'" text-align="right">'"$SPAM_EVENTS""</span>""</td><td>"'<span class="plain_light">'" for Spam""</span>""</td>" >> "$DS"
