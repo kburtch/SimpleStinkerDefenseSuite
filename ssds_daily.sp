@@ -30,7 +30,9 @@ begin
   cd /root/ssds;
 
   bash "report_daily.sh" 2>&1 > "$TMP";
-  mail -s "SSDS Daily Report: $HOSTNAME" "$report_email" < "$TMP";
+  if report_email /= "" then
+     mail -s "SSDS Daily Report: $HOSTNAME" "$report_email" < "$TMP";
+  end if;
   rm "$TMP";
 
   -- Backup database

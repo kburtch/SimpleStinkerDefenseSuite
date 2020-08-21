@@ -68,9 +68,10 @@ default_grace : constant grace_count := 1;
 mail_grace    : constant grace_count := 4;
 
 -- The email address to receive alerts.
+-- A blank report email will not send a daily report.
 
 alert_email   : constant email_string := "ken@pegasoft.ca";
-report_email  : constant email_string := "ken@pegasoft.ca";
+report_email  : constant email_string := "";
 
 -- The ssh account to test SSH
 
