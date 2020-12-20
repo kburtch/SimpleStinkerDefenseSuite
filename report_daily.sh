@@ -245,7 +245,7 @@ echo '<td class="kpi_layout"><span class="plain_data" style="'"$BGCOLOR"'">'"$ER
 echo "</tr><tr>" >> "$DS"
 echo '<td class="kpi_layout"><span class="plain_data">'"$OK_LINES""</span>""</td><td>"'<span class="plain_light">'" Status Reports""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
-echo '<td class="kpi_layout"><span class="plain_data">'"$LOG_LINES""</span>""</td><td>"'<span class="plain_light">'" Log Lines""</span>""</td>" >> "$DS"
+echo '<td class="kpi_layout"><span class="plain_data">'"$LOG_LINES""</span>""</td><td>"'<span class="plain_light">'" SSDS Log Lines""</span>""</td>" >> "$DS"
 echo "</tr><tr>" >> "$DS"
 echo '<td class="kpi_layout"><span class="plain_data">'"$UPTIME_DAYS""</span>""</td><td>"'<span class="plain_light">'" Days Up""</span>""</td>" >> "$DS"
 echo "</tr>" >> "$DS"

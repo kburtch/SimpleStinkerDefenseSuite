@@ -37,7 +37,7 @@ CURRENT_BLOCKS=`/sbin/ipset -L blocklist  | wc -l`
 let "CURRENT_BLOCKS=CURRENT_BLOCKS-8"
 TOTAL_ON_FILE=`cat /root/ssds/data/blocking_cnt.txt`
 TOTAL_LOGINS=`cat /root/ssds/data/login_cnt.txt`
-DISK_USAGE=`du -sh data | cut -f1`
+DISK_USAGE=`du -sh /root/ssds/data | cut -f1`
 
 if [ "$CURRENT_BLOCKS" -gt 25000 ] ; then
    BGCOLOR="background-color: red"
@@ -62,7 +62,7 @@ if [ $CURRENT_BLOCKS -ge "$BLOCKS_LIMIT" ] ; then
 fi
 
 echo "<tr>" >> "$HS"
-echo '<td class="kpi_layout"><span class="plain_data" style="'"$BGCOLOR"'">'"$CURRENT_BLOCKS""</span>""</td><td>"'<span class="plain_light">'" Actively Blocked""</span>""</td>" >> "$HS"
+echo '<td class="kpi_layout"><span class="plain_data" style="'"$BGCOLOR"'">'"$CURRENT_BLOCKS""</span>""</td><td>"'<span class="plain_light">'" Currently Blocked""</span>""</td>" >> "$HS"
 echo "</tr><tr>" >> "$HS"
 echo '<td class="kpi_layout"><span class="plain_data">'"$TOTAL_ON_FILE""</span>""</td><td>"'<span class="plain_light">'" Monitored""</span>""</td>" >> "$HS"
 echo "</tr><tr>" >> "$HS"
@@ -71,13 +71,14 @@ echo "</tr><tr>" >> "$HS"
 
 SPACE_LIMIT=`/usr/local/bin/spar utils/export_space_limit.sp`
 BGCOLOR="background-color: transparent"
+DISK_USAGE=`echo "$DISK_USAGE" | cut -d. -f1` # number could be float
 TMP="${DISK_USAGE%M}" # Strip units (M) from amount
 if [ $TMP -ge "$SPACE_LIMIT" ] ; then
    BGCOLOR="background-color: red"
    /usr/local/bin/spar utils/space_limit.sp
 fi
 
-echo '<td class="kpi_layout">''<span class="plain_data" style="'"$BGCOLOR"'">'"$DISK_USAGE""</span>""</td><td>"'<span class="plain_light">'"Storage""</span>""</td>" >> "$HS"
+echo '<td class="kpi_layout">''<span class="plain_data" style="'"$BGCOLOR"'">'"$DISK_USAGE""</span>""</td><td>"'<span class="plain_light">'"Storage Used""</span>""</td>" >> "$HS"
 echo "</tr>" >> "$HS"
 echo "</table>" >> "$HS"
 echo "</div>" >> "$HS"

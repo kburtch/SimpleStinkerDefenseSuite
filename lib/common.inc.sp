@@ -70,7 +70,7 @@ pragma assumption( used, get_ip_number );
 function get_ip_host_name( source_ip : ip_string ) return dns_string;
 pragma assumption( used, get_ip_host_name );
 
-function index_reverse( str : string; target : character ) return natural;
+function index_reverse( original_str : string; target : character ) return natural;
 pragma assumption( used, index_reverse );
 
 procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : file_path );
@@ -374,12 +374,12 @@ end get_ip_host_name;
 -- Like strings.index, but start from the end of the string.
 ------------------------------------------------------------------------------
 
-function index_reverse( str : string; target : character ) return natural is
+function index_reverse( original_str : string; target : character ) return natural is
   p : natural;
 begin
-  p := strings.length( str );
+  p := strings.length( original_str );
   while p > 0 loop
-     exit when strings.element( str, p ) = target;
+     exit when strings.element( original_str, p ) = target;
      p := @-1;
    end loop;
   return p;

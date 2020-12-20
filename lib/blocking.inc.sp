@@ -59,11 +59,11 @@ pragma assumption( used, block );
 procedure unblock( offender : ip_string );
 pragma assumption( used, unblock );
 
-function clear_firewall return boolean;
-pragma assumption( used, clear_firewall );
+function clear_firewall_to_baseline return boolean;
+pragma assumption( used, clear_firewall_to_baseline );
 
-procedure reset_firewall;
-pragma assumption( used, reset_firewall );
+procedure reset_firewall_to_defaults;
+pragma assumption( used, reset_firewall_to_defaults );
 
 procedure sshd_record_and_block( source_ip : ip_string; logged_on : timestamp_string; ts : timestamp_string; is_daemon : boolean; reason : string; kind : login_kind );
 pragma assumption( used, sshd_record_and_block );
@@ -179,7 +179,7 @@ end unblock;
 --
 -----------------------------------------------------------------------------
 
-function clear_firewall return boolean is
+function clear_firewall_to_baseline return boolean is
 
   procedure reset_iptables is
     -- Return the firewall to its default state
@@ -290,7 +290,7 @@ begin
   --TODO: process_blacklist;
   logs.info( "firewall cleared" );
   return total_clear;
-end clear_firewall;
+end clear_firewall_to_baseline;
 
 
 -- RESET FIREWALL
@@ -298,10 +298,10 @@ end clear_firewall;
 -- Clear the firewall rules and restore the current state.
 -----------------------------------------------------------------------------
 
-procedure reset_firewall is
+procedure reset_firewall_to_defaults is
   needs_rules : boolean;
 begin
-  needs_rules := clear_firewall;
+  needs_rules := clear_firewall_to_baseline;
 
   -- Block services
   if needs_rules then
@@ -319,8 +319,7 @@ begin
         IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "587", "-j", "ACCEPT" );
         IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "993", "-j", "ACCEPT" );
         IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "995", "-j", "ACCEPT" );
-        -- Port 8001 is for testing
-        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "8001", "-j", "ACCEPT" );
+        IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", ssh_port, "-j", "ACCEPT" );
         IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "8080", "-j", "ACCEPT" );
 
         --IPTABLES_CMD( "-A", "INPUT", "-p", "tcp", "--destination-port", "11212", "-j", "REJECT" );
@@ -333,7 +332,7 @@ begin
 
   -- TODO: restore the current state of blocked offenders
 
-end reset_firewall;
+end reset_firewall_to_defaults;
 
 
 -----------------------------------------------------------------------------

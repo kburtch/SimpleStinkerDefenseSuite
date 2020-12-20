@@ -45,8 +45,8 @@ begin
      else
         put_line( "Note: ipset not currently set up.  It will be on reset." );
      end if;
-     reset_firewall;
-     if files.exists( "admin/import_blocked.sp" ) then
+     reset_firewall_to_defaults;
+     if files.exists( "admin/import_offenders.sp" ) then
         put_line( "Import data from last backup? (Y/N)" );
         reply := get_line;
         if reply = "y" then
@@ -62,7 +62,7 @@ begin
               spar -C init_http_vectors.sp;
               cd .. ;
               put_line( "Importing blocked ip list" );
-              gzip -c -d backups/offenders.gz | spar admin/import_blocked.sp ;
+              gzip -c -d backups/offenders.gz | spar admin/import_offenders.sp ;
               put_line( "Importing logins list" );
               gzip -c -d backups/logins.gz | admin/import_logins.sp ;
            else

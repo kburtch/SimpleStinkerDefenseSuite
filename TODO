@@ -1,3 +1,17 @@
+- need a way to easily change the sshd_port.
+  - currently must be set manually.  reset firewall does not redo the
+  - default open rules.  they are skipped if blocklist exists.
+-http crashes
+
+  10/15 08:21:28:19376:http_blocker:INFO:http_blocker.sp:535:                :110.229.217.69 caus
+ed a HTTP threat event
+10/15 08:21:28:19376:http_blocker:INFO:blocking.inc.sp:807:                  :110.229.217.69 ma
+de a suspicious web request 'GET /ueditor/net/controller.ashx HTTP/1.1python-requests/2.24.0' w
+ith '/ueditor'
+10/15 08:21:28:19376:http_blocker:INFO:blocking.inc.sp:842:                  :110.229.217.69 ha
+s grace
+... no further output from http blocker, no fatal exceptions
+
 -alerts
 
 DShield

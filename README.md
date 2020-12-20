@@ -27,7 +27,7 @@ unauthorized servers can be blacklisted.
 ## Requirements
 
 SSDS is written in the SparForte, a high-integrity language.
-It requires SparForte 2.2.1.
+It requires SparForte 2.3.0.
 It requires the Berkeley DB library.
 It also requires a Bourne Compatible shell (e.g. bash).
 The new dashboard web page requires xfvb (to render the graph) and imagemagik (to convert the graph to a web-friendly format).

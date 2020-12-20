@@ -24,6 +24,7 @@ procedure import_logins is
   json_file : file_type;
   json_path : string;
   rec_cnt : natural := 1;
+  s : string;
 begin
   if command_line.argument_count > 1 then
      put_line( standard_error, "expected an json file path argument" );
@@ -44,11 +45,12 @@ begin
 
   loop
      if json_path = "" then
-        exit when end_of_file( current_input );
+        exit when end_of_file( current_input ); -- failing
         -- by explicitly choosing current input, it suppresses echoing
         -- to the terminal.
         begin
-           j := json_string( get_line( current_input ) );
+           s := get_line( current_input );
+           j := json_string( s );
         exception when others =>
            -- this will be file not open when input is exhausted
            exit;
