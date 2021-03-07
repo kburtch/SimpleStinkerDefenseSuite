@@ -34,7 +34,7 @@ pragma assumption( used, do_sshd_limit_alert );
 procedure do_spam_limit_alert( actual : natural );
 pragma assumption( used, do_spam_limit_alert );
 
-procedure do_outgoing_email_limit_alert( actual : natural );
+procedure do_outgoing_email_limit_alert( account : string; actual : natural );
 pragma assumption( used, do_outgoing_email_limit_alert );
 
 procedure reset_alerts;

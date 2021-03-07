@@ -103,7 +103,7 @@ alert_thresholds : constant array(error_limit_alert..outgoing_email_limit_alert)
   150, -- mail event maximum limit
   150, -- sshd event maximum limit
   300, -- spam event maximum limit
-  25   -- outgoing email limit alert
+  30   -- outgoing email limit alert
 );
 
 -- The action to take
