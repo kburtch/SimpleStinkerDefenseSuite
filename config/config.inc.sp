@@ -74,9 +74,13 @@ alert_email   : constant email_string := "ken@pegasoft.ca";
 report_email  : constant email_string := "";
 
 -- The ssh account to test SSH
+--
+-- If you change this, you will have to restart the computer.
 
 ssh_ping_user : constant string := "ken@localhost";
-ssh_port : constant string := "22";
+--ssh_port : constant string := "22";
+--ssh_port : constant string := "8001";
+ssh_port : constant string := "12021";
 
 -- List of whitelisted IP numbers
 -- IP number and description in CSV format pairs
@@ -90,7 +94,7 @@ ip_whitelist_config : constant array(1..5) of string :=
 
 -- Number of events to trigger an alert (by type)
 
-alert_thresholds : constant array(error_limit_alert..spam_limit_alert) of integer :=
+alert_thresholds : constant array(error_limit_alert..outgoing_email_limit_alert) of integer :=
 (
   50,  -- error event maximum limit
   250, -- space event maximum limit (megabytes)
@@ -98,20 +102,21 @@ alert_thresholds : constant array(error_limit_alert..spam_limit_alert) of intege
   150, -- http event maximum limit
   150, -- mail event maximum limit
   150, -- sshd event maximum limit
-  300  -- spam event maximum limit
+  300, -- spam event maximum limit
+  25   -- outgoing email limit alert
 );
 
 -- The action to take
 
-alert_actions : constant array(error_limit_alert..spam_limit_alert) of alert_action :=
-(
+alert_actions : constant array(error_limit_alert..outgoing_email_limit_alert) of alert_action := (
   email_action, -- error alert action
   email_action, -- space alert action
   email_action, -- ip blocks alert action
   email_action, -- http alert action
   email_action, -- mail alert action
   email_action, -- sshd alert action
-  email_action  -- spam alert action
+  email_action, -- spam alert action
+  email_action  -- outgoing email alert action
 );
 
 end ssds_config;

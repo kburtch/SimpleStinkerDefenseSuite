@@ -98,7 +98,8 @@ type alert_kinds is (
   http_limit_alert,
   mail_limit_alert,
   sshd_limit_alert,
-  spam_limit_alert
+  spam_limit_alert,
+  outgoing_email_limit_alert
 );
 
 ------------------------------------------------------------------------------

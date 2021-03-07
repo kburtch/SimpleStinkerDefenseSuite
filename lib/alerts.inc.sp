@@ -6,7 +6,7 @@ separate;
 
 alert_history_path : constant file_path:= "data/alert_history.txt";
 
-type an_alert_history is array(error_limit_alert..spam_limit_alert) of integer;
+type an_alert_history is array(error_limit_alert..outgoing_email_limit_alert) of integer;
 alert_history : an_alert_history;
 
 -----------------------------------------------------------------------------
@@ -33,6 +33,9 @@ pragma assumption( used, do_sshd_limit_alert );
 
 procedure do_spam_limit_alert( actual : natural );
 pragma assumption( used, do_spam_limit_alert );
+
+procedure do_outgoing_email_limit_alert( actual : natural );
+pragma assumption( used, do_outgoing_email_limit_alert );
 
 procedure reset_alerts;
 pragma assumption( used, reset_alerts );
@@ -245,6 +248,35 @@ begin
 
    alert_history( spam_limit_alert ) := 1;
 end do_spam_limit_alert;
+
+
+-- do outgoing email limit alert
+
+procedure do_outgoing_email_limit_alert( account : string; actual : natural ) is
+   action : constant alert_action := alert_actions( outgoing_email_limit_alert );
+begin
+   return when alert_history( outgoing_email_limit_alert ) = 1;
+
+   case action is
+   when block_action =>
+      null;
+   when email_action =>
+      send_mail( "SSDS Outgoing Limit exceeded: " & string( HOSTNAME ),
+                 strings.image( actual ) &
+                 " outgoing emails occurred " &
+                 "from " & strings.to_escaped( account ) & " (" &
+                 "More than" &
+                 strings.image( alert_thresholds( outgoing_email_limit_alert ) ) & ")" );
+   when evade_action =>
+      logs.warning( "Evade not yet implemented" );
+   when shutdown_action =>
+      logs.warning( "Shutdown not yet implemented" );
+   when others =>
+      logs.error( "Alert action is unknown" );
+   end case;
+
+   alert_history( outgoing_email_limit_alert ) := 1;
+end do_outgoing_email_limit_alert;
 
 
 -- Treat all alerts as unsent

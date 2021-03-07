@@ -394,6 +394,7 @@ djpage.php?page=
 ?do=
 &do=
 /do.php
+/doc/RELEASE
 document.location
 DOCUMENT_ROOT
 /dokuwiki/
@@ -432,6 +433,7 @@ Edition Yx
 /emails/
 emi.php
 .empty(
+/.env
 /en/assets/
 /en/feature/assets/
 /en/feature/en/
@@ -441,6 +443,7 @@ emi.php
 /Error/
 /errors.php?error=
 /etc/
+/eval-stin.php
 /-event.detail
 /event.wheelDelta
 /eWebEditor
@@ -697,6 +700,7 @@ login.asp
 login.cgi
 login.php
 login.jsp
+Login.jsp
 login_form.php
 ?lol=
 &lol=
@@ -901,6 +905,7 @@ qwerty
 \"quit\"
 /racrew.php
 raider
+/rainloop
 /rcp.xml
 /README
 redirect.php?url=
@@ -1140,6 +1145,7 @@ wazhere
 web-console
 /Web_Editor
 /webedit
+/webfig
 /webmail
 /w38M41l
 webadmin

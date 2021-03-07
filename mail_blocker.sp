@@ -142,6 +142,12 @@ end reset_summary;
   sshd_logins_file : btree_io.file( a_sshd_login );
   login_rec : a_sshd_login;
   is_old_login : boolean;
+
+  outgoing_table : dynamic_hash_tables.table( integer );
+  outgoing_address : string;
+  outgoing_start   : natural;
+  outgoing_end     : positive;
+  outgoing_count   : natural;
 begin
   -- Check for file existence
   if not files.exists( string( smtp_violations_file_path ) ) then
@@ -191,6 +197,28 @@ begin
       end if;
    end if;
 
+   -- Outgoing mail.  Too much email from a single user will result in an
+   -- error.
+
+   if strings.index( log_line, "from=<" ) > 0 then
+      begin
+         outgoing_start := strings.index( log_line, "<" )+1;
+         outgoing_end   := strings.index( log_line, ">" )-1;
+         outgoing_address := strings.slice( log_line, outgoing_start, outgoing_end );
+         if not dynamic_hash_tables.has_element( outgoing_table, outgoing_address ) then
+            dynamic_hash_tables.set( outgoing_table, outgoing_address, 1 );
+         else
+            outgoing_count := dynamic_hash_tables.get( outgoing_table, outgoing_address );
+            if outgoing_count > alert_thresholds( outgoing_email_limit_alert ) then
+               do_outgoing_email_limit_alert( outgoing_address, outgoing_count );
+            else
+               dynamic_hash_tables.increment( outgoing_table, outgoing_address );
+            end if;
+         end if;
+     exception when others =>
+        logs.error( exceptions.exception_info );
+     end;
+   end if;
      -- Dovecot POP3 Login Failures
      --
      --Jul 31 20:05:49 pegasoft dovecot: pop3-login: Login failed: Plaintext authentication disabled: user=<>, rip=151.1.221.25, lip=45.56.68.190, session=<Wm/26KVVVwCXAd0Z>
@@ -421,6 +449,7 @@ pragma todo( team,
          last_day := this_day;
          show_summary;
          reset_summary;
+         dynamic_hash_tables.reset( outgoing_table );
       end if;
    end if;
 
