@@ -21,6 +21,7 @@ pragma software_model( shell_script );
 with separate "lib/common.inc.sp";
 with separate "lib/blocking.inc.sp";
 with separate "lib/logins.inc.sp";
+with separate "lib/alerts.inc.sp";
 
 -- This type is used in several places but not here.  As a workaround,
 -- mark it used.  Until this is sorted out.
@@ -155,6 +156,7 @@ begin
   end if;
 
   setupWorld( "log/blocker.log", mail_log_mode );
+  startup_alerts;
 
   -- Process command options
 
@@ -211,6 +213,7 @@ begin
             outgoing_count := dynamic_hash_tables.get( outgoing_table, outgoing_address );
             if outgoing_count > alert_thresholds( outgoing_email_limit_alert ) then
                do_outgoing_email_limit_alert( outgoing_address, outgoing_count );
+               logs.error( outgoing_address & " has exceeded outgoing mail threshold" );
             else
                dynamic_hash_tables.increment( outgoing_table, outgoing_address );
             end if;
@@ -468,6 +471,7 @@ pragma todo( team,
 
   -- TODO: not seeing end message in log?
   shutdown_blocking;
+  shutdown_alerts;
   shutdownWorld;
 
 exception when others =>
@@ -479,6 +483,7 @@ exception when others =>
      close( f );
   end if;
   shutdown_blocking;
+  shutdown_alerts;
   shutdownWorld;
   raise;
 end mail_blocker;
