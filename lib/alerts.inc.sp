@@ -50,6 +50,7 @@ procedure shutdown_alerts;
 procedure send_mail( subject : string; msg : string ) is
   TMP : string;
 begin
+  logs.warning( "Alert: " & subject );
   TMP := "/tmp/alert." & strings.trim( strings.image( $$ ) );
   echo "$msg" > "$TMP";
   mail -s "$subject" "$alert_email" < "$TMP";

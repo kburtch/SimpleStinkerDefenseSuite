@@ -12,8 +12,6 @@ ith '/ueditor'
 s grace
 ... no further output from http blocker, no fatal exceptions
 
--alerts
-
 DShield
 
 https://isc.sans.edu/api/ip/70.91.145.10/handler?json
