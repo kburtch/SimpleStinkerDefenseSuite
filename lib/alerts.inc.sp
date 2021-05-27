@@ -1,13 +1,20 @@
 separate;
 
 ------------------------------------------------------------------------------
--- This file contains definitions for geolocation
+-- This file remembers if an alert has been recently sent to avoid excessive
+-- messages.
 ------------------------------------------------------------------------------
 
 alert_history_path : constant file_path:= "data/alert_history.txt";
 
 type an_alert_history is array(error_limit_alert..outgoing_email_limit_alert) of integer;
 alert_history : an_alert_history;
+
+------------------------------------------------------------------------------
+-- This file records alerts for later review.
+------------------------------------------------------------------------------
+
+alert_log_path : constant file_path:= "data/alert_log.txt";
 
 -----------------------------------------------------------------------------
 -- Exported Subprograms
@@ -45,12 +52,35 @@ procedure startup_alerts;
 procedure shutdown_alerts;
 
 
+-- LOG ALERT
+--
+-- Simple procedure to write the alert message to a file.
+
+procedure log_alert( msg : string ) is
+  log : file_type;
+begin
+  if files.exists( string( alert_log_path ) ) then
+     open( log, append_file, alert_log_path );
+  else
+     create( log, out_file, alert_log_path );
+  end if;
+  -- TODO: not the best time stamp
+  put( log, `date` );
+  put( log, ":" );
+  put_line( log, msg );
+  close( log );
+end log_alert;
+
+
 -- SEND MAIL
+--
+-- Send an email, logging the alert in the main log and in the alert log.
 
 procedure send_mail( subject : string; msg : string ) is
   TMP : string;
 begin
   logs.warning( "Alert: " & subject );
+  log_alert( msg );
   TMP := "/tmp/alert." & strings.trim( strings.image( $$ ) );
   echo "$msg" > "$TMP";
   mail -s "$subject" "$alert_email" < "$TMP";
