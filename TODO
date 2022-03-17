@@ -1,3 +1,5 @@
+- my pal archive may have some files that appear suspicious
+
 - need a way to easily change the sshd_port.
   - currently must be set manually.  reset firewall does not redo the
   - default open rules.  they are skipped if blocklist exists.

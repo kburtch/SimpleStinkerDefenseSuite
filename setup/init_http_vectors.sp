@@ -28,12 +28,12 @@ with separate "../lib/urls.inc.sp";
   begin
      key_code := to_key_code( string( v.vector ) );
      key_code_string := strings.image( key_code );
-     if btree_io.has_element( vectors_file, key_code_string ) then
-        btree_io.get( vectors_file, key_code_string, old_v );
+     if btree_io.has_element( avectors_file, key_code_string ) then
+        btree_io.get( avectors_file, key_code_string, old_v );
         old_v.vector := @ & ASCII.LF & v.vector;
-        btree_io.set( vectors_file, key_code_string, old_v );
+        btree_io.set( avectors_file, key_code_string, old_v );
      else
-        btree_io.set( vectors_file, key_code_string, v );
+        btree_io.set( avectors_file, key_code_string, v );
      end if;
   end set_attack_vector;
 
@@ -43,7 +43,7 @@ s : attack_vector_string;
 
 begin
 
-  btree_io.create( vectors_file, "../" & string( vectors_path ), vectors_width, vectors_width );
+  btree_io.create( avectors_file, "../" & string( avectors_path ), avectors_width, avectors_width );
   open( f, in_file, "../data/attack_vectors.txt" );
   while not end_of_file( f ) loop
      s := get_line( f );
@@ -53,7 +53,7 @@ begin
      v.comment := "";
      set_attack_vector( v );
   end loop;
-  btree_io.close( vectors_file );
+  btree_io.close( avectors_file );
 
 end init_http_vectors;
 

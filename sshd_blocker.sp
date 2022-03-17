@@ -39,7 +39,7 @@ with separate "lib/hostnames.inc.sp";
 --end create_login_hostname_variants;
 
 -- function remove_token( str : in out string; token : string ) return boolean is
-procedure remove_token( str : in out string; token : string; result : out boolean ) is
+procedure remove_token( log_str : in out string; token : string; result : out boolean ) is
   p : natural;
 begin
   if strings.length( token ) = 0 then
@@ -47,21 +47,21 @@ begin
     result := false;
     return;
   end if;
-  p := strings.index( str, token );
+  p := strings.index( log_str, token );
   if p > 0 then
-     str := strings.delete( @, p, p + strings.length( token )-1 );
-     str := strings.insert( @, p, " " );
+     log_str := strings.delete( @, p, p + strings.length( token )-1 );
+     log_str := strings.insert( @, p, " " );
   end if;
   result := p > 0;
 end remove_token;
 
-procedure fix( str : in out string ) is
+procedure fix( log_str : in out string ) is
   p : natural;
 begin
   loop
-    p := strings.index( str, "  " );
+    p := strings.index( log_str, "  " );
   exit when p = 0;
-    str := strings.delete( str, p, p );
+    log_str := strings.delete( log_str, p, p );
   end loop;
 end fix;
 

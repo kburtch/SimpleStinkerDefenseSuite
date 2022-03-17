@@ -14,7 +14,7 @@ alert_history : an_alert_history;
 -- This file records alerts for later review.
 ------------------------------------------------------------------------------
 
-alert_log_path : constant file_path:= "data/alert_log.txt";
+alert_log_path : constant file_path:= "log/alert.log";
 
 -----------------------------------------------------------------------------
 -- Exported Subprograms
@@ -91,7 +91,7 @@ end send_mail;
 -- do error limit alert
 
 procedure do_error_limit_alert is
-   action : constant alert_action := alert_actions( error_limit_alert );
+   action : limited alert_action := alert_actions( error_limit_alert );
 begin
    return when alert_history( error_limit_alert ) = 1;
 
@@ -117,7 +117,7 @@ end do_error_limit_alert;
 -- do space limit alert
 
 procedure do_space_limit_alert is
-   action : constant alert_action := alert_actions( space_limit_alert );
+   action : limited alert_action := alert_actions( space_limit_alert );
 begin
    return when alert_history( space_limit_alert ) = 1;
 
@@ -143,7 +143,7 @@ end do_space_limit_alert;
 -- do blocks limit alert
 
 procedure do_blocks_limit_alert is
-   action : constant alert_action := alert_actions( blocks_limit_alert );
+   action : limited alert_action := alert_actions( blocks_limit_alert );
 begin
    return when alert_history( blocks_limit_alert ) = 1;
 
@@ -169,7 +169,7 @@ end do_blocks_limit_alert;
 -- do http limit alert
 
 procedure do_http_limit_alert( actual : natural ) is
-   action : constant alert_action := alert_actions( http_limit_alert );
+   action : limited alert_action := alert_actions( http_limit_alert );
 begin
    return when alert_history( http_limit_alert ) = 1;
 
@@ -196,7 +196,7 @@ end do_http_limit_alert;
 -- do mail limit alert
 
 procedure do_mail_limit_alert( actual : natural ) is
-   action : constant alert_action := alert_actions( mail_limit_alert );
+   action : limited alert_action := alert_actions( mail_limit_alert );
 begin
    return when alert_history( mail_limit_alert ) = 1;
 
@@ -223,7 +223,7 @@ end do_mail_limit_alert;
 -- do sshd limit alert
 
 procedure do_sshd_limit_alert( actual : natural ) is
-   action : constant alert_action := alert_actions( sshd_limit_alert );
+   action : limited alert_action := alert_actions( sshd_limit_alert );
 begin
    return when alert_history( sshd_limit_alert ) = 1;
 
@@ -250,12 +250,14 @@ end do_sshd_limit_alert;
 -- do spam limit alert
 
 procedure do_spam_limit_alert( actual : natural ) is
-   action : constant alert_action := alert_actions( spam_limit_alert );
+   action : limited alert_action := alert_actions( spam_limit_alert );
 begin
+   log.warning( alert_history( spam_limit_alert ) ); -- DEBUG
    return when alert_history( spam_limit_alert ) = 1;
 
    case action is
    when block_action =>
+      log.warning( "block action" ); -- DEBUG
       null;
    when email_action =>
       send_mail( "SSDS Spam Limit exceeded: " & string( HOSTNAME ),
@@ -277,7 +279,7 @@ end do_spam_limit_alert;
 -- do outgoing email limit alert
 
 procedure do_outgoing_email_limit_alert( account : string; actual : natural ) is
-   action : constant alert_action := alert_actions( outgoing_email_limit_alert );
+   action : limited alert_action := alert_actions( outgoing_email_limit_alert );
 begin
    return when alert_history( outgoing_email_limit_alert ) = 1;
 

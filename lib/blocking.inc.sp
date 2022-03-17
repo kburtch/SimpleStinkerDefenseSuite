@@ -4,10 +4,13 @@ separate;
 -- This file contains firewall blocking routines.
 ------------------------------------------------------------------------------
 
-IPSET_CMD     : constant command := "/sbin/ipset";
-IPTABLES_CMD  : constant command := "/sbin/iptables";
-IP6TABLES_CMD : constant command := "/sbin/ip6tables";
-FIREWALL_CMD  : constant command := "/bin/firewall-cmd";
+-- Mandatory commands
+
+IPSET_CMD     : limited command := "/sbin/ipset";
+IPTABLES_CMD  : limited command := "/sbin/iptables";
+IP6TABLES_CMD : limited command := "/sbin/ip6tables";
+
+-- This does not exist on Ubuntu
 
 banned_threshhold : constant natural := 3;
 
@@ -118,7 +121,7 @@ begin
        IPTABLES_CMD( "-I", "INPUT",  "1", "-s", offender, "-j", "DROP" );
        IPTABLES_CMD( "-I", "OUTPUT", "1", "-d", offender, "-j", "REJECT" );
      when firewalld_firewall =>
-       FIREWALL_CMD( "--zone=public", "--add-rich-rule=" & ASCII.Quotation & "rule family='ipv4' source address='$offender'" & ASCII.Quotation & " drop" );
+       "/bin/firewall-cmd"( "--zone=public", "--add-rich-rule=" & ASCII.Quotation & "rule family='ipv4' source address='$offender'" & ASCII.Quotation & " drop" );
      when suse_firewall =>
         put_line( standard_error, "error - not implemented yet" );
      when others =>

@@ -98,8 +98,8 @@ opt_daemon  : boolean := false;   -- true of -D used
     key_code : key_codes;
     eof : boolean;
     key_code_string : string;
-    vectors : an_attack_vector;
-    vector : string;
+    avectors : an_attack_vector;
+    avector : string;
     v : natural;
     found : boolean := false;
   begin
@@ -108,20 +108,20 @@ opt_daemon  : boolean := false;   -- true of -D used
          --if key_code /= 30 then
          if key_code /= 300 then
             key_code_string := strings.image( key_code );
-            if btree_io.has_element( vectors_file, key_code_string ) then
-               btree_io.get( vectors_file, key_code_string, vectors);
+            if btree_io.has_element( avectors_file, key_code_string ) then
+               btree_io.get( avectors_file, key_code_string, avectors);
                v := 1;
                loop
-                  vector := strings.field( vectors.vector, v, ASCII.LF );
-                  exit when vector = "";
-                  if strings.index( request, vector ) > 0 then
+                  avector := strings.field( avectors.vector, v, ASCII.LF );
+                  exit when avector = "";
+                  if strings.index( request, avector ) > 0 then
                      -- The IP is added to the message elsewhere...not sure
                      -- where but it isn't needed here.
                      -- message := string( source_ip ) &
                      message := " made a suspicious web request '" &
                         strings.to_escaped( request ) &
                         "' with '" &
-                        strings.to_escaped( vector ) & "'";
+                        strings.to_escaped( avector ) & "'";
                      found;
                      exit;
                   end if;
@@ -315,8 +315,8 @@ begin
   http_violations_file_path := http_violations_file_paths( 1 );
 
   -- Check for file existence
-  if not files.exists( string( vectors_path ) ) then
-     raise configuration_error with "vectors file does not exist";
+  if not files.exists( string( avectors_path ) ) then
+     raise configuration_error with "attack vectors file does not exist";
   end if;
   if not files.exists( string( http_violations_file_path ) ) then
      raise configuration_error with "http violations file does not exist";
@@ -339,7 +339,7 @@ begin
      put_line( "Scanning records..." ); -- this will be overwritten
   end if;
 
-  btree_io.open( vectors_file, string( vectors_path ), vectors_width, vectors_width );
+  btree_io.open( avectors_file, string( avectors_path ), avectors_width, avectors_width );
 
   this_run_on := get_timestamp;
   last_day := calendar.day( calendar.clock );
@@ -567,7 +567,7 @@ begin
   show_summary;
 
   close( f );
-  btree_io.close( vectors_file );
+  btree_io.close( avectors_file );
   shutdown_blocking;
   shutdownWorld;
 
@@ -577,8 +577,8 @@ exception when others =>
    else
       put_line( standard_error, exceptions.exception_info );
    end if;
-  if btree_io.is_open( vectors_file ) then
-     btree_io.close( vectors_file );
+  if btree_io.is_open( avectors_file ) then
+     btree_io.close( avectors_file );
   end if;
   if is_open( f ) then
      close( f );

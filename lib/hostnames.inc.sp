@@ -17,7 +17,7 @@ hostname_base_alias : constant user_string := " HOSTNAME_BASE ";
 
 procedure create_login_hostname_variants( s : string; host : in out string; base : in out string );
 
-procedure add_hostname_variants( s : in out string );
+procedure add_hostname_variants( s : string );
 
 procedure register_login_hostname_variants;
 
@@ -51,7 +51,7 @@ end create_login_hostname_variants;
 -- to the hostname_variants lookup table.
 ------------------------------------------------------------------------------
 
-procedure add_hostname_variants( s : in out string ) is
+procedure add_hostname_variants( s : string ) is
   host : string;
   base : string;
 begin

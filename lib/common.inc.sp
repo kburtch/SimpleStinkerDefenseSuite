@@ -4,6 +4,7 @@ separate;
 
 opt_verbose : boolean := false;   -- true of -v used
 pragma assumption( used, opt_verbose );
+pragma assumption( written, opt_verbose );
 
 --PING_CMD    : constant command := "/bin/ping";
 
@@ -149,7 +150,7 @@ function validate_ip( ip : raw_ip_string ) return ip_string is
     period : boolean;
   begin
     declare
-      this_p : integer copies p;
+      this_p : constant integer copies p;
     begin
       if this_p > strings.length( ip ) then
          result := false;
@@ -562,7 +563,9 @@ end setupWorld;
 
 procedure shutdownWorld is
 begin
-   logs.close;
+   if logs.is_open then
+      logs.close;
+   end if;
 end shutdownWorld;
 
 -- vim: ft=spar

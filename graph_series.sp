@@ -30,7 +30,7 @@ procedure graph is
   canvas : pen.canvas_id;
 
   -- For Y-axis scale, 1 = 0..100, 2 = 0..200, etc.
-  base_y_axis_scale : constant float := 3;
+  base_y_axis_scale : constant float := 8; -- was 3
   y_axis_scale : float := base_y_axis_scale;
   candidate_scale : float;
 

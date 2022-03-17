@@ -27,7 +27,7 @@ unauthorized servers can be blacklisted.
 ## Requirements
 
 SSDS is written in the SparForte, a high-integrity language.
-It requires SparForte 2.3.0.
+It requires SparForte 2.5.0.
 It requires the Berkeley DB library.
 It also requires a Bourne Compatible shell (e.g. bash).
 The new dashboard web page requires xfvb (to render the graph) and imagemagik (to convert the graph to a web-friendly format).
@@ -38,12 +38,19 @@ The current version has been tested on CENTOS 7/Red Hat 7.
 
 Run the check security config script to check your server setup.
 
+Install MaxMind Geo IP.  On Ubuntu, apt install geoip-bin.
+
 Edit the file config/config.inc.sp and customize the settings
 to your system.
 
 Select monitor\_mode if you want to test the software first.
 
+Setup up your ping user account ssh keys.  Ensure that the root user has ssh
+access to ping user.
+
 Turn off your firewall, if you have one.
+Run the initialization scripts in the setup directory (if you are not recovering
+from backups).
 Run reset\_firewall to initialize the firewall.  Type "N" to recover from backups.
 Run the start\_ssds.sp script to start the sshd, mail and http daemons.  (Or run start\_ssds.sp on boot.)
 Run the stop\_ssds.sp script to stop the sshd, mail and http daemons.
@@ -53,9 +60,16 @@ Install the hourly and daily tasks in your crontab.  For example:
 00      *      *      *      *     cd /path-to-ssds; nice /usr/local/bin/spar ssds\_hourly.sp
 50      00     *      *      *     cd /path-to-ssds; nice /usr/local/bin/spar ssds\_daily.sp
 
-Configure your log rotation software to rotate the log file.
+Configure your log rotation software to rotate the log file and the alert log.
 
 /path-to-ssds/log/blocker.log {
+    missingok
+    notifempty
+    create 0600 root root
+    size 1M
+    rotate 9
+}
+/path-to-ssds/log/alert.log {
     missingok
     notifempty
     create 0600 root root
@@ -72,18 +86,4 @@ The admin directory contains management commands, like backup and restore.
 Setup
 
 The setup directory contains commands related to first-time setup.
-
-## Recoverying From a Locked State
-
-The SparForte language doesn't provide the Berkeley BSD commands to rollback
-an unfinished transaction.  This may be provided in the future.  Your databases
-may become locked when shutting down your server while the wash\_blocked task
-is running, for example.
-
-If this happens, you may see multiple wash\_blocked tasks running on your
-server.  They are likely blocked because of an open database transaction.
-
-To recover, delete the data/\_\_db and .btree files in the data directory.
-Run the reset\_firewall.sp script, and type "Y" to recover from backups.
-Then start restart the firewall with start\_ssds.sp.
 

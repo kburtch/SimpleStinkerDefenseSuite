@@ -28,12 +28,14 @@ project_path : constant file_path := "/root/ssds";
 -- The location of the sshd log file (default)
 -- This is the log containing remote login violations.
 
-sshd_violations_file_path : file_path := "/var/log/secure";
+--sshd_violations_file_path : file_path := "/var/log/secure";
+sshd_violations_file_path : file_path := "/var/log/auth.log";
 
 -- The location of the Postfix/Amavis log file (default)
 -- This is the log containing mail violations.
 
-smtp_violations_file_path : file_path := "/var/log/maillog";
+--smtp_violations_file_path : file_path := "/var/log/maillog";
+smtp_violations_file_path : file_path := "/var/log/mail.log";
 
 -- The locations of the Apache web server access log files
 -- to check for violations.  Typically, this entry is one per
@@ -41,8 +43,8 @@ smtp_violations_file_path : file_path := "/var/log/maillog";
 -- The default is the first path in the list.
 
 http_violations_file_paths : array( 1..2 ) of file_path := (
-  "/var/log/httpd/pegasoft-access_log",
-  "/var/log/httpd/sparforte-access_log"
+  "/var/log/apache2/pegasoft-access_log",
+  "/var/log/apache2/sparforte-access_log"
 );
 
 -- The mode the blocker is operating in.  For example, is the
@@ -78,18 +80,18 @@ report_email  : constant email_string := "";
 -- If you change this, you will have to restart the computer.
 
 ssh_ping_user : constant string := "ken@localhost";
---ssh_port : constant string := "22";
+ssh_port : constant string := "22";
 --ssh_port : constant string := "8001";
-ssh_port : constant string := "12021";
+--ssh_port : constant string := "12021";
 
 -- List of whitelisted IP numbers
 -- IP number and description in CSV format pairs
 
 ip_whitelist_config : constant array(1..5) of string :=
 ( "127.0.0.1,localhost",
-  "45.56.68.190,lntxap01",
+  "52.60.112.179,amtoap01",
   "198.58.125.175,armitage",
-  "199.102.130.97,nwic",
+  "199.102.130.59,nwic",
   "97.107.227.199,lawyer" );
 
 -- Number of events to trigger an alert (by type)

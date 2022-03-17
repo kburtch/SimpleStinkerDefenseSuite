@@ -21,8 +21,8 @@ type an_attack_vector is record
   comment  : comment_string;
 end record;
 
-vectors_file  : btree_io.file( an_attack_vector );
-vectors_path  : file_path := "data/http_vectors.btree";
-vectors_width : natural := 2048;
+avectors_file  : btree_io.file( an_attack_vector );
+avectors_path  : constant file_path := "data/http_vectors.btree";
+avectors_width : constant natural := 2048;
 
 -- vim: ft=spar

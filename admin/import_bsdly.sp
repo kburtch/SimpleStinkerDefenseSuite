@@ -61,7 +61,7 @@ end handle_command_options;
 
   wget : limited command := "/bin/wget";
 
-  traplist_filename : string := "bsdly.net.traplist";
+  traplist_filename : constant string := "bsdly.net.traplist";
   traplist_file : file_type;
   traplist_offender : ip_string;
   traplist_message : constant string := "bsdly.net traplist spammer";

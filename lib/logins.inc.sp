@@ -30,8 +30,10 @@ pragma assumption( applied, a_sshd_login );
 
 sshd_logins_path : constant file_path := "data/sshd_logins.btree";
 pragma assumption( used, sshd_logins_path );
+pragma assumption( factor, sshd_logins_path );
 sshd_logins_buffer_width : constant positive := 2048;
 pragma assumption( used, sshd_logins_buffer_width );
+pragma assumption( factor, sshd_logins_buffer_width );
 
 
 -----------------------------------------------------------------------------
