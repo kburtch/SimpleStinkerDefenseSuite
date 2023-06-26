@@ -50,15 +50,118 @@ type grace_count is new natural;
 -- long usernames).
 ------------------------------------------------------------------------------
 
-type user_string is new string;
 type raw_user_string is new string;
+type user_string is new string
+affirm
+  if not strings.is_graphic( user_string ) then
+     user_string := "";
+  end if;
+  -- Spaces are considered graphic...but aren't allowed in a username
+  if strings.index( user_string, " " ) > 0 then
+     user_string := "";
+  end if;
+  -- Implementation dependent.  Linux allows up to 32 characters.
+  if strings.length( user_string ) > 32 then
+     user_string := "";
+  end if;
+  -- as a precaution, strip dollar signs
+  if strings.index( user_string, "$" ) > 0 then
+     user_string := strings.replace_all( user_string, "$", "_" );
+  end if;
+end affirm;
+
 
 ------------------------------------------------------------------------------
 -- IP Numbers
 ------------------------------------------------------------------------------
 
-type ip_string is new string;
-type raw_ip_string is new ip_string;
+type raw_ip_string is new string;
+
+function validate_ip( ip : raw_ip_string ) return raw_ip_string is
+  p : positive := 1;
+
+  procedure expect_byte( result : out boolean ) is
+    byte : string;
+    ch   : character;
+  begin
+    loop
+      exit when p > strings.length( ip );
+      ch := strings.element( string( ip ), p );
+      exit when not strings.is_digit( ch );
+      byte := @ & ch;
+      p := @ + 1;
+    end loop;
+    if byte /= "" then
+       if numerics.value( byte ) > 255 then
+          byte := "";
+       end if;
+    end if;
+    result := byte /= "";
+  end expect_byte;
+
+  procedure expect_period( result : out boolean ) is
+    period : boolean;
+  begin
+    declare
+      this_p : constant integer copies p;
+    begin
+      if this_p > strings.length( ip ) then
+         result := false;
+         return;
+      end if;
+    end;
+    period := strings.element( string( ip ), p ) = '.';
+    p := @ + 1;
+    result := period;
+  end expect_period;
+
+  result : boolean;
+begin
+ if ip = "" then
+     return "";
+  end if;
+  expect_byte( result );
+  if not result then
+     return "";
+  end if;
+  expect_period( result );
+  if not result then
+     return "";
+  end if;
+  expect_byte( result );
+  if not result then
+     return "";
+  end if;
+  expect_period( result );
+  if not result then
+     return "";
+  end if;
+  expect_byte( result );
+  if not result then
+     return "";
+  end if;
+  expect_period( result );
+  if not result then
+     return "";
+  end if;
+  expect_byte( result );
+  if not result then
+     return "";
+  end if;
+  if p <= strings.length( ip ) then
+     return "";
+  end if;
+  return ip;
+end validate_ip;
+
+type ip_string is new string
+affirm
+  if ip_string /= "" then
+     if validate_ip( raw_ip_string( ip_string ) ) = "" then
+        ip_string := "";
+     end if;
+  end if;
+end affirm;
 
 ------------------------------------------------------------------------------
 -- Firewall Type

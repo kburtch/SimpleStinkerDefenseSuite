@@ -129,6 +129,8 @@ begin
   end if;
 
   logs.ok( "Processed" ) @ ( strings.image( process_cnt ) ) @ ( " IP numbers" );
+  shutdown_blocking;
+  shutdownWorld;
 
 exception when others =>
   logs.error( exceptions.exception_info );

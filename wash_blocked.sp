@@ -418,6 +418,7 @@ begin
       return;
    end if;
 
+   -- do nothing if the lock file is in place.
   --setupWorld( "Wash Task", "log/wash.log" );
   setupWorld( "log/blocker.log", log_mode.file );
 
@@ -427,7 +428,7 @@ begin
      command_line.set_exit_status( 1 );
      return;
   end if;
-  opt_verbose := true; --hard-coded
+  --opt_verbose := true; --hard-coded
 
   this_run_on := get_timestamp;
 
@@ -773,7 +774,13 @@ begin
           );
           -- TODO: might be better if this was pre-calculated
           if this_run_on > proposed_blocked_until then
-             btree_io.remove( offender_file, key );
+             begin
+                btree_io.remove( offender_file, key );
+                logs.info( sip & " removed" );
+             exception when others =>
+                logs.error( "failed to remove '" & key & " for " &
+                    sip & "': " & exceptions.exception_info );
+             end;
              logs.info( sip & " removed" );
           end if;
      else -- needs updating
@@ -878,7 +885,7 @@ begin
      ( "; Login Accounts =" ) @ ( strings.image( login_cnt ) );
   shutdownWorld;
 exception when others =>
-  logs.error( exceptions.exception_info );
+  logs.error( "caught fatal exception " & exceptions.exception_info );
   if btree_io.is_open( offender_file ) then
      btree_io.close_cursor( offender_file, abtc );
      btree_io.close( offender_file );

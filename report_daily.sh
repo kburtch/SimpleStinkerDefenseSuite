@@ -39,6 +39,9 @@ LOG_LINES=0
 ERR_LINES=0
 OK_LINES=0
 
+SPAR_CMD="/usr/local/bin/spar"
+XVFB_RUN_CMD="/usr/bin/xvfb-run"
+
 # Look at the last two log files.  Assemble entries for today or yesterday
 # only.  Add up the number of errors.  This assumes the report runs close
 # to midnight so there are few entries for today.
@@ -208,7 +211,21 @@ DISK_USAGE=`du -sh data | cut -f1`
 # Chart the trend.
 
 if [ -z "$DRY_RUN" ] ; then
-   bash graph_series.sh "threat_trend" $HTTP_EVENTS $SSH_EVENTS $MAIL_EVENTS $SPAM_EVENTS
+   # These variables are required for xvfb-run
+   if [ -z "$TMPDIR" ] ; then
+      export TMPDIR="/tmp"
+   fi
+   if [ -z "$COLUMNS" ] ; then
+      export COLUMNS=80
+   fi
+   # TODO: should not be hard-coded path.  here for debugging
+   # TODO: crashing on Red Hat
+   #"$XVFB_RUN_CMD" -s "-screen 0 1024x768x16" "$SPAR_CMD" -x graph_series.sp "threat_trend" $HTTP_EVENTS $SSH_EVENTS $MAIL_EVENTS $SPAM_EVENTS >> /root/ssds/nohup.out 2>&1
+  #STATUS=$?
+  #if [ $STATUS -ne 0 ] ; then
+  #   echo "xvfb-run returned status code $STATUS" >> /root/ssds/nohup.out
+  #fi
+   #bash graph_series.sh "threat_trend" $HTTP_EVENTS $SSH_EVENTS $MAIL_EVENTS $SPAM_EVENTS
 fi
 
 # Dump the logins.

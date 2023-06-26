@@ -90,6 +90,7 @@ begin
   return quit;
 end handle_command_options;
 
+
 -----------------------------------------------------------------------------
 
 attack_cnt : natural; -- number of smtp attackers
@@ -230,7 +231,7 @@ begin
      if strings.index( log_line, "pop3-login: Login failed:" ) > 0 then
         raw_source_ip := raw_ip_string( strings.field( log_line, 3, '=' ) );
         raw_source_ip := raw_ip_string( strings.field( @, 1, ',' ) );
-        source_ip := validate_ip( raw_source_ip );
+        source_ip := ip_string( raw_source_ip );
 --? "pop3 failed " & raw_source_ip & "/" & source_ip;
         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
         attack_cnt := @+1;
@@ -242,7 +243,7 @@ begin
      if strings.index( log_line, "pop3-login: Aborted login" ) > 0 then
         raw_source_ip := raw_ip_string( strings.field( log_line, 3, '=' ) );
         raw_source_ip := raw_ip_string( strings.field( @, 1, ',' ) );
-        source_ip := validate_ip( raw_source_ip );
+        source_ip := ip_string( raw_source_ip );
 --? "pop3 abort " & raw_source_ip & "/" & source_ip;
         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
         attack_cnt := @+1;
@@ -256,7 +257,7 @@ begin
      if strings.index( log_line, "imap-login: Aborted" ) > 0 then
         raw_source_ip := raw_ip_string( strings.field( log_line, 3, '[' ) );
         raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
-        source_ip := validate_ip( raw_source_ip );
+        source_ip := ip_string( raw_source_ip );
 --? "imap " & raw_source_ip & "/" & source_ip;
         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
         attack_cnt := @+1;
@@ -269,7 +270,7 @@ begin
      if strings.index( log_line, "SASL PLAIN authentication failed" ) > 0 then
         raw_source_ip := raw_ip_string( strings.field( log_line, 3, '[' ) );
         raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
-        source_ip := validate_ip( raw_source_ip );
+        source_ip := ip_string( raw_source_ip );
         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
         attack_cnt := @+1;
         message := " has a SMTP-PLAIN login failure";
@@ -283,7 +284,7 @@ begin
      if strings.index( log_line, "SASL LOGIN authentication failed" ) > 0 then
         raw_source_ip := raw_ip_string( strings.field( log_line, 3, '[' ) );
         raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
-        source_ip := validate_ip( raw_source_ip );
+        source_ip := ip_string( raw_source_ip );
 --? "sasl " & raw_source_ip & "/" & source_ip;
         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
         attack_cnt := @+1;
@@ -297,7 +298,7 @@ begin
      if strings.index( log_line, ": lost connection after" ) > 0 then
         raw_source_ip := raw_ip_string( strings.field( log_line, 3, '[' ) );
         raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
-        source_ip := validate_ip( raw_source_ip );
+        source_ip := ip_string( raw_source_ip );
 --? "lost " & raw_source_ip & "/" & source_ip;
         logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
         attack_cnt := @+1;
@@ -311,7 +312,7 @@ begin
    if strings.index( log_line, "Blocked SPAM" ) > 0 then
       raw_source_ip := raw_ip_string( strings.field( log_line, 4, '[' ) );
       raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
-      source_ip := validate_ip( raw_source_ip );
+      source_ip := ip_string( raw_source_ip );
       logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
 --? "spam " & raw_source_ip & "/" & source_ip;
       spam_cnt := @+1;
@@ -326,10 +327,11 @@ begin
    if strings.index( log_line, "User unknown in local recipient table" ) > 0 then
       raw_source_ip := raw_ip_string( strings.field( log_line, 3, '[' ) );
       raw_source_ip := raw_ip_string( strings.field( @, 1, ']' ) );
-      source_ip := validate_ip( raw_source_ip );
+      source_ip := ip_string( raw_source_ip );
       logged_on := parse_timestamp( date_string( strings.slice( log_line, 1, 15 ) ) );
 
       -- Get the username of the email
+      -- as a precaution, replace dollar sign with underscores
 
       tmp := strings.field( log_line, 2, "<" );
       tmp := strings.field( @, 1, ">" );
@@ -345,29 +347,31 @@ begin
       --    login_rec.username := " HOSTNAME_BASE";
       -- elsif string( login_rec.username ) = hostname_stub then
       --    login_rec.username := " HOSTNAME_STUB";
-      elsif login_rec.username = "" then
-         login_rec.username := " BLANK_NAME";
+      elsif is_random_name( login_rec.username ) then
+         login_rec.username := " RANDOM";
       end if;
 
+      if login_rec.username /= "" then -- ie. is valid
       if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then
-         -- Reasonable defaults for the login record
-         is_old_login := false;
-         if btree_io.has_element( sshd_logins_file, string( login_rec.username ) ) then
-            -- Get the existing record
-            -- TODO: other gets should probably use an exception handler also
-            begin
-               btree_io.get( sshd_logins_file, string( login_rec.username ), login_rec );
-               is_old_login := true;
-            exception when others =>
-               logs.error( "failed to read login record: " & exceptions.exception_info );
-            end;
-         else
-            -- Create a new one using login_rec
-            if dynamic_hash_tables.has_element( known_logins, login_rec.username ) then
-               login_rec.kind := existing_login;
+
+            -- Reasonable defaults for the login record
+            is_old_login := false;
+            if btree_io.has_element( sshd_logins_file, string( login_rec.username ) ) then
+               -- Get the existing record
+               -- TODO: other gets should probably use an exception handler also
+               begin
+                  btree_io.get( sshd_logins_file, string( login_rec.username ), login_rec );
+                  is_old_login := true;
+               exception when others =>
+                  logs.error( "failed to read login record: " & exceptions.exception_info );
+               end;
+            else
+               -- Create a new one using login_rec
+               if dynamic_hash_tables.has_element( known_logins, login_rec.username ) then
+                  login_rec.kind := existing_login;
+               end if;
+               login_rec.created_on := this_run_on;
             end if;
-            login_rec.created_on := this_run_on;
-         end if;
          if is_old_login then
 pragma todo( team,
   "skipping old violations could be improved.  there could be multiple attacks " &
@@ -395,6 +399,7 @@ pragma todo( team,
          spam_cnt := @+1;
          message := " email to unknown user " & string( login_rec.username );
       end if; -- not whitelisted
+      end if; -- is valid
    end if;
 
 -- Aug  3 21:05:34 pegasoft postfix/smtpd[6517]: connect from unknown[216.16.85.53]

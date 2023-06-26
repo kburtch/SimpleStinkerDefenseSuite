@@ -150,6 +150,7 @@ trap 'cleanup;exit' SIGHUP SIGINT SIGTERM
 # Start the HTTP blocker, reading from the pipe
 
 nice spar -m http_blocker.sp -D $OPT_VERBOSE -f "$HTTP_PIPE" &
+#nice /home/ken/ada/SparForte/src/spar -m http_blocker.sp -D $OPT_VERBOSE -f "$HTTP_PIPE" &
 if [ $? -ne 0 ] ; then
    echo `date`": $SCRIPT: $LINENO: ERROR: http_blocker failed - status $?" >&2
    cleanup

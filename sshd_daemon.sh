@@ -150,6 +150,7 @@ trap 'cleanup;exit' SIGHUP SIGINT SIGTERM
 # Start the SSHD blocker, reading from the pipe
 
 nice spar -m sshd_blocker.sp -D $OPT_VERBOSE -f "$SSHD_PIPE" &
+#nice /home/ken/ada/SparForte/src/spar -m sshd_blocker.sp -D $OPT_VERBOSE -f "$SSHD_PIPE" &
 if [ $? -ne 0 ] ; then
    echo `date`": $SCRIPT: $LINENO: ERROR: sshd_blocker failed - status $?" >&2
    cleanup

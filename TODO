@@ -1,3 +1,10 @@
+- after move to Ubuntu, the dashboard graph no longer runs from cron
+  (but runs manually without problems).  The error is apparently from
+  libSDL:
+  - graph_series.sp: 252: 49: begin block in graph
+    pen.new_window_canvas(512, 512, 32, canvas );
+                                                ^ an unexpected exception was raised
+
 - my pal archive may have some files that appear suspicious
 
 - need a way to easily change the sshd_port.

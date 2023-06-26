@@ -450,7 +450,7 @@ begin
         -- Check the IP number.  If it's whitelisted, ignore the rest of the processing
         -- because it is somewhat expensive.
         raw_source_ip := raw_ip_string( strings.field( log_line, 1, ' ' ) );
-        source_ip := validate_ip( raw_source_ip );
+        source_ip := ip_string( raw_source_ip );
         if source_ip = "" then
            logs.error( " - unable to validate IP '" )
                   @ ( raw_source_ip )

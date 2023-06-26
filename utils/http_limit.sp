@@ -14,7 +14,7 @@ begin
   setupWorld( "log/blocker.log", log_mode.file );
   startup_alerts;
  declare
-    actual : natural := numerics.value( command_line.argument( 1 ) );
+    actual : constant natural := numerics.value( command_line.argument( 1 ) );
   begin
      do_http_limit_alert( actual );
   exception when others =>

@@ -20,6 +20,9 @@ ssh_port : constant string;
 -- The dashboard location
 
 dashboard_path : constant file_path := "/var/www/html/pegasoft/ssds";
+dashboard_file_owner : constant string := "webdata";
+dashboard_file_group : constant string := "www-data";
+
 
 -- The location of the project root directory.
 

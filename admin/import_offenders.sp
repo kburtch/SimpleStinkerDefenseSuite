@@ -22,12 +22,13 @@ procedure import_blocked is
   json_file : file_type;
   json_path : string;
   rec_cnt : natural := 1;
+  ts : timestamp_string;
 begin
   if command_line.argument_count > 1 then
      put_line( standard_error, "expected an json file path argument" );
      command_line.set_exit_status( 192 );
      return;
-  elsif command_line.argument_count > 1 then
+  elsif command_line.argument_count = 1 then
      json_path := command_line.argument( 1 );
   end if;
 
@@ -39,10 +40,8 @@ begin
   if json_path /= "" then
      open( json_file, in_file, json_path );
   end if;
-  if json_path /= "" then
-     open( json_file, in_file, json_path );
-  end if;
 
+  ts := get_timestamp;
   loop
      if json_path = "" then
         exit when end_of_file( current_input );
@@ -63,6 +62,7 @@ begin
         j := strings.delete( j, 1, 1 );
      end if;
      begin
+        offender.updated_on := ts;
         records.to_record( offender, j );
      exception when others =>
         put_line( standard_error, "Error in JSON record" &

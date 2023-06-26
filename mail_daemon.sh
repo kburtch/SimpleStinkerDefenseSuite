@@ -150,6 +150,7 @@ trap 'cleanup;exit' SIGHUP SIGINT SIGTERM
 # Start the MAIL blocker, reading from the pipe
 
 nice spar -m mail_blocker.sp -D $OPT_VERBOSE -f "$MAIL_PIPE" &
+#nice /home/ken/ada/SparForte/src/spar  -m mail_blocker.sp -D $OPT_VERBOSE -f "$MAIL_PIPE" &
 if [ $? -ne 0 ] ; then
    echo `date`": $SCRIPT: $LINENO: ERROR: mail_blocker failed - status $?" >&2
    cleanup

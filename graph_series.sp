@@ -13,7 +13,12 @@ pragma annotate( summary, "graph_series.sp" )
 pragma license( unrestricted );
 pragma software_model( shell_script );
 
+with separate "config/contributors.inc.sp";
+with separate "lib/world.inc.sp";
+with separate "config/config.inc.sp";
+
 procedure graph is
+
   graph_name : string;
   num_series : natural;
 
@@ -33,6 +38,8 @@ procedure graph is
   base_y_axis_scale : constant float := 8; -- was 3
   y_axis_scale : float := base_y_axis_scale;
   candidate_scale : float;
+
+  convert : limited command := "/usr/bin/convert";
 
   --  TO X
   --
@@ -245,7 +252,7 @@ begin
     pen.new_window_canvas(512, 512, 32, canvas );
   exception when others =>
     put_line( "Failed to create new canvas" );
-    return;
+    raise; -- return;
   end;
 
   -- Draw the graph
@@ -270,9 +277,9 @@ begin
   -- This depends on imagemagick convert being installed
 
   convert( graph_name & ".bmp", graph_name & ".png" );
-  mv( graph_name & ".png", "/var/www/html/pegasoft/ssds/" );
-  chown( "webadmin:apache", "/var/www/html/pegasoft/ssds/" & graph_name & ".png" );
-  chmod( "750", "/var/www/html/pegasoft/ssds/" & graph_name & ".png" );
+  mv( graph_name & ".png", string( dashboard_path ) & "/" );
+  chown( dashboard_file_owner & ":" & dashboard_file_group, string( dashboard_path ) & "/" & graph_name & ".png" );
+  chmod( "750", string( dashboard_path ) & "/" & graph_name & ".png" );
   rm( graph_name & ".bmp" );
 
   -- Save the history data

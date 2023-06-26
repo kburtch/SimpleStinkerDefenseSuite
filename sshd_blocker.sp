@@ -301,7 +301,7 @@ pragma todo( team,
          fix( s );
          --log_info( source_info.source_location ) @ ("raw string is '" & strings.to_escaped( s )& "'" ); -- DEBUG
          get_raw_username_and_ip_number( 4 ); -- was 2
-         r.username := validate_user( raw_username );
+         r.username := user_string( raw_username );
          if validate_ip( raw_ip_string( raw_username ) ) /= "" then
             logs.warning("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
          else
@@ -309,7 +309,7 @@ pragma todo( team,
                logs.warning("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
             end if;
          end if;
-         source_ip := validate_ip( raw_source_ip );
+         source_ip := ip_string( raw_source_ip );
          if source_ip /= "" then
             message := " no such user account";
             process;
@@ -342,7 +342,7 @@ pragma todo( team,
                source_ip := get_ip_number( source_addr );
             else
                raw_username := raw_user_string( strings.field( s, 6, ' ' ) );
-               r.username := validate_user( raw_username );
+               r.username := user_string( raw_username );
                if validate_ip( raw_ip_string( raw_username ) ) /= "" then
                   logs.warning("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
                else
@@ -388,7 +388,7 @@ pragma todo( team,
          r.existence := no_existence;
          fix( s );
          get_raw_username_and_ip_number( 5 );
-         r.username := validate_user( raw_username );
+         r.username := user_string( raw_username );
          if validate_ip( raw_ip_string( raw_username ) ) /= "" then
             logs.warning("username is an ip number '" & strings.to_escaped( raw_username ) & "' in " & s_original );
          else
@@ -396,7 +396,7 @@ pragma todo( team,
                logs.warning("saw invalid username '" & strings.to_escaped( raw_username ) & "'" );
             end if;
          end if;
-         source_ip := validate_ip( raw_source_ip );
+         source_ip := ip_string( raw_source_ip );
          if source_ip /= "" then
             message := " login failed";
             process;

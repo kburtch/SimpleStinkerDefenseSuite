@@ -28,7 +28,7 @@ unauthorized servers can be blacklisted.
 
 SSDS is written in the SparForte, a high-integrity language.
 It requires SparForte 2.5.0.
-It requires the Berkeley DB library.
+It requires the Berkeley DB library, XVFB, and MaxMind GeoIP.
 It also requires a Bourne Compatible shell (e.g. bash).
 The new dashboard web page requires xfvb (to render the graph) and imagemagik (to convert the graph to a web-friendly format).
 
@@ -38,6 +38,8 @@ The current version has been tested on CENTOS 7/Red Hat 7.
 
 Run the check security config script to check your server setup.
 
+Install Berkeley DB, if not already on your system.
+Install X Virtual frame buffer.  On Ubuntu, apt install xvfb.
 Install MaxMind Geo IP.  On Ubuntu, apt install geoip-bin.
 
 Edit the file config/config.inc.sp and customize the settings
