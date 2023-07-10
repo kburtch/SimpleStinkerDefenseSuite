@@ -53,20 +53,22 @@ type grace_count is new natural;
 type raw_user_string is new string;
 type user_string is new string
 affirm
-  if not strings.is_graphic( user_string ) then
-     user_string := "";
-  end if;
-  -- Spaces are considered graphic...but aren't allowed in a username
-  if strings.index( user_string, " " ) > 0 then
-     user_string := "";
-  end if;
-  -- Implementation dependent.  Linux allows up to 32 characters.
-  if strings.length( user_string ) > 32 then
-     user_string := "";
-  end if;
-  -- as a precaution, strip dollar signs
-  if strings.index( user_string, "$" ) > 0 then
-     user_string := strings.replace_all( user_string, "$", "_" );
+  if user_string /= "" then
+     if not strings.is_graphic( user_string ) then
+        user_string := "";
+     end if;
+     -- Spaces are considered graphic...but aren't allowed in a username
+     if strings.index( user_string, " " ) > 0 then
+        user_string := "";
+     end if;
+     -- Implementation dependent.  Linux allows up to 32 characters.
+     if strings.length( user_string ) > 32 then
+        user_string := "";
+     end if;
+     -- as a precaution, strip dollar signs
+     if strings.index( user_string, "$" ) > 0 then
+        user_string := strings.replace_all( user_string, "$", "_" );
+     end if;
   end if;
 end affirm;
 

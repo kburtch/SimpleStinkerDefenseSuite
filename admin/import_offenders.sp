@@ -15,8 +15,6 @@ procedure import_blocked is
   with separate "lib/common.inc.sp";
   with separate "lib/blocking.inc.sp";
 
-  pragma restriction( no_external_commands );
-
   offender : an_offender;
   j : json_string;
   json_file : file_type;
