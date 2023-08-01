@@ -9,6 +9,7 @@ with separate "lib/blocking.inc.sp";
 
   reply : string;
   tmp : string;
+  reblock_count : natural := 0;
 begin
   setupWorld( "log/blocker.log", log_mode.echo );
   put_line( "Resetting the firewall will set up the default firewall" );
@@ -30,7 +31,7 @@ begin
      return;
   end if;
   -- Confirm to proceed
-  put_line( "Reset the firewall? (Y/N)" );
+  put_line( "Are you sure you want to reset the firewall? (Y/N)" );
   reply := get_line;
   if reply = "y" then
      ipset list -terse blocklist > "/dev/null";
@@ -47,6 +48,7 @@ begin
      end if;
      reset_firewall_to_defaults;
      if files.exists( "admin/import_offenders.sp" ) then
+        new_line;
         put_line( "Import data from last backup? (Y/N)" );
         reply := get_line;
         if reply = "y" then
@@ -73,6 +75,21 @@ begin
         end if;
      else
         put_line( "Note: no backups exist...skipping recovery from backups" );
+     end if;
+     new_line;
+     put_line( "Start firewall now? (Y/N)" );
+     reply := get_line;
+     if reply = "y" then
+        spar start_ssds.sp;
+     end if;
+     -- a brief delay because of "nohup" warnings
+     delay 3;
+     new_line;
+     put_line( "Reblock previously blocked ip addresses? May take several minutes (Y/N)" );
+     reply := get_line;
+     if reply = "y" then
+        reblock_count := reblock_all;
+        put_line( "reblocked" & strings.image( reblock_count ) );
      end if;
   else
      put_line( "Cancelled" );

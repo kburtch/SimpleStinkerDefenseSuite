@@ -47,15 +47,6 @@ type login_kind is (
 -----------------------------------------------------------------------------
 
 
-function is_random_name( test_name : user_string ) return boolean;
-pragma assumption( used, is_random_name );
-
---function validate_user( user : raw_user_string ) return user_string;
---pragma assumption( used, validate_user );
-
---function validate_ip( ip : raw_ip_string ) return ip_string;
---pragma assumption( used, validate_ip );
-
 function get_timezone return date_string;
 pragma assumption( used, get_timezone );
 
@@ -77,6 +68,9 @@ pragma assumption( used, get_ip_host_name );
 function index_reverse( original_str : string; target : character ) return natural;
 pragma assumption( used, index_reverse );
 
+procedure fix( log_str : in out string );
+pragma assumption( used, fix );
+
 procedure show_progress_line( start_time : timestamp_string; current_cnt : natural; violations_file : file_path );
 pragma assumption( used, show_progress_line );
 
@@ -94,170 +88,6 @@ pragma assumption( used, shutdownWorld );
 -- Usernames
 ------------------------------------------------------------------------------
 
-
---  IS RANDOM NAME
---
--- A really simplistic attempt to identify random user names.
------------------------------------------------------------------------------
-
-function is_random_name( test_name : user_string ) return boolean is
-  digit_count : natural := 0;
-  vowel_count : natural := 0;
-  vowel_density : natural := 0;
-  found_random_name : boolean := false;
-  ch : character;
-begin
-  if strings.length( test_name ) >= 14 then
-     found_random_name;
-  else
-     for i in 1..strings.length( test_name ) loop
-         ch := strings.to_lower(strings.element(test_name,i));
-         if strings.is_digit(ch) then
-            digit_count := @ + 1;
-         end if;
-         if ch = "a" or ch = "e" or ch = "i" or ch = "o"
-            or ch = "u" then
-            vowel_count := @ + 1;
-         end if;
-     end loop;
-     if digit_count not in 0..2 then
-        found_random_name;
-     end if;
-     if vowel_count = 0 then
-        found_random_name;
-     else
-        vowel_density := strings.length( test_name ) / vowel_count;
-        if vowel_density not in 0..7 then
-           found_random_name;
-        end if;
-     end if;
-  end if;
-  if found_random_name then
-     logs.info( test_name & " seems really random for a username" );
-  end if;
-  return found_random_name;
-end is_random_name;
-
--- VALIDATE_USER
---
--- Return an empty string if not a valid username, otherwise return the name.
-------------------------------------------------------------------------------
-
---function validate_user( user : raw_user_string ) return user_string is
---  tmp : raw_user_string;
---begin
---  if not strings.is_graphic( user ) then
---     return "";
---  end if;
---  -- Spaces are considered graphic...but aren't allowed in a username
---  if strings.index( user, " " ) > 0 then
---     return "";
---  end if;
---  -- Implementation dependent.  Linux allows up to 32 characters.
---  if strings.length( user ) > 32 then
---     return "";
---  end if;
---  -- as a precaution, strip dollar signs
---  if strings.index( user, "$" ) > 0 then
---     tmp := strings.replace_all( user, "$", "_" );
---  end if;
---  return tmp;
---end validate_user;
-
-
-------------------------------------------------------------------------------
--- IP Numbers
-------------------------------------------------------------------------------
-
--- VALIDATE_IP
---
--- Return an empty string if the string is not a IPv4 IP number, otherwise
--- return the number.
-------------------------------------------------------------------------------
-
--- function validate_ip( ip : raw_ip_string ) return ip_string is
---   p : positive := 1;
---
---   procedure expect_byte( result : out boolean ) is
---     byte : string;
---     ch   : character;
---   begin
---     loop
---       exit when p > strings.length( ip );
---       ch := strings.element( string( ip ), p );
---       exit when not strings.is_digit( ch );
---       byte := @ & ch;
---       p := @ + 1;
---     end loop;
---     if byte /= "" then
---        if numerics.value( byte ) > 255 then
---           byte := "";
---        end if;
---     end if;
---     result := byte /= "";
---   end expect_byte;
---
---   procedure expect_period( result : out boolean ) is
---     period : boolean;
---   begin
---     declare
---       this_p : constant integer copies p;
---     begin
---       if this_p > strings.length( ip ) then
---          result := false;
---          return;
---       end if;
---     end;
---     period := strings.element( string( ip ), p ) = '.';
---     p := @ + 1;
---     result := period;
---   end expect_period;
---
---   result : boolean;
--- begin
---   if ip = "" then
---      return "";
---   end if;
---   expect_byte( result );
---   if not result then
---      return "";
---   end if;
---   expect_period( result );
---   if not result then
---      return "";
---   end if;
---   expect_byte( result );
---   if not result then
---      return "";
---   end if;
---   expect_period( result );
---   if not result then
---      return "";
---   end if;
---   expect_byte( result );
---   if not result then
---      return "";
---   end if;
---   expect_period( result );
---   if not result then
---      return "";
---   end if;
---   expect_byte( result );
---   if not result then
---      return "";
---   end if;
---   if p <= strings.length( ip ) then
---      return "";
---   end if;
---   return ip_string( ip );
--- end validate_ip;
-
--- TIME AND TIME ZONES
---
--- The calendar package doesn't support timezones.
--- The date command is affected by TZ:
---TZ : string;
---pragma export( shell, TZ );
 
 function get_timezone return date_string is
 begin
@@ -314,7 +144,7 @@ pragma todo( team,
 
 -- IP WHITELIST
 
-ip_whitelist : dynamic_hash_tables.table( ip_string );
+ip_whitelist : dynamic_hash_tables.table( string );
 
 
 -- GET IP NUMBER
@@ -417,9 +247,11 @@ begin
   return dns_string( tmp );
 end get_ip_host_name;
 
+
 ------------------------------------------------------------------------------
 -- Strings
 ------------------------------------------------------------------------------
+
 
 -- INDEX REVERSE
 --
@@ -436,6 +268,24 @@ begin
    end loop;
   return p;
 end index_reverse;
+
+
+-- FIX
+--
+-- Remove extra spaces from a string.  When two adjacent spaces are found,
+-- remove one until only single spaces remain in the string..
+------------------------------------------------------------------------------
+
+procedure fix( log_str : in out string ) is
+  p : natural;
+begin
+  loop
+    p := strings.index( log_str, "  " );
+  exit when p = 0;
+    log_str := strings.delete( log_str, p, p );
+  end loop;
+end fix;
+
 
 ------------------------------------------------------------------------------
 -- UI
@@ -573,7 +423,7 @@ procedure setupWorld( the_log_path : string;
   the_log_mode : logs.log_modes ) is
   min_version : constant string := "2.1";
   ip : ip_string;
-  desc : ip_string; -- not really
+  desc : string;
 begin
   logs.open( the_log_path, the_log_mode, 75 );
 

@@ -73,6 +73,8 @@ end handle_command_options;
   this_run_on : timestamp_string;
 
   import_log_mode : logs.log_modes := log_mode.echo;
+
+  import_lock_file : constant file_path := "lock/import.lck";
 begin
   this_run_on := get_timestamp;
 
@@ -89,6 +91,13 @@ begin
      import_log_mode := log_mode.file;
   end if;
 
+  -- Minor race condition
+  if files.exists( string( import_lock_file ) ) then
+     logs.warning( "importing bsdly.net list already running" );
+     return;
+  end if;
+  touch( import_lock_file );
+
   setupWorld( "log/blocker.log", import_log_mode );
   startup_blocking;
 
@@ -99,7 +108,7 @@ begin
   -- Download the latest traplist
 
   logs.info( "downloading bsdly.net list" );
-  wget -q "https://www.bsdly.net/~peter/bsdly.net.traplist";
+  wget -q -T30 "https://www.bsdly.net/~peter/bsdly.net.traplist";
   status := $?;
   if status /= 0 then
      logs.error( "download failed with status " & strings.image( status ) );
@@ -131,6 +140,9 @@ begin
   logs.ok( "Processed" ) @ ( strings.image( process_cnt ) ) @ ( " IP numbers" );
   shutdown_blocking;
   shutdownWorld;
+  if files.exists( string( import_lock_file ) ) then
+     rm( import_lock_file );
+  end if;
 
 exception when others =>
   logs.error( exceptions.exception_info );
@@ -139,6 +151,9 @@ exception when others =>
   end if;
   shutdown_blocking;
   shutdownWorld;
+  if files.exists( string( import_lock_file ) ) then
+     rm( import_lock_file );
+  end if;
   raise;
 end import_bsdly;
 

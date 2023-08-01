@@ -50,10 +50,49 @@ type grace_count is new natural;
 -- long usernames).
 ------------------------------------------------------------------------------
 
+user_name_random : constant universal_string := " RANDOM";
+user_name_host   : constant universal_string := " HOSTNAME";
+
 type raw_user_string is new string;
+
+function is_random_name( test_name : raw_user_string ) return boolean is
+  digit_count : natural := 0;
+  vowel_count : natural := 0;
+  vowel_density : natural := 0;
+  found_random_name : boolean := false;
+  ch : character;
+begin
+  if strings.length( test_name ) >= 14 then
+     found_random_name;
+  else
+     for i in 1..strings.length( test_name ) loop
+         ch := strings.to_lower(strings.element(test_name,i));
+         if strings.is_digit(ch) then
+            digit_count := @ + 1;
+         end if;
+         if ch = "a" or ch = "e" or ch = "i" or ch = "o"
+            or ch = "u" then
+            vowel_count := @ + 1;
+         end if;
+     end loop;
+     if digit_count not in 0..2 then
+        found_random_name;
+     end if;
+     if vowel_count = 0 then
+        found_random_name;
+     else
+        vowel_density := strings.length( test_name ) / vowel_count;
+        if vowel_density not in 0..7 then
+           found_random_name;
+        end if;
+     end if;
+  end if;
+  return found_random_name;
+end is_random_name;
+
 type user_string is new string
 affirm
-  if user_string /= "" then
+  if user_string /= "" and user_string /= user_name_random and user_string /= user_name_host then
      if not strings.is_graphic( user_string ) then
         user_string := "";
      end if;
@@ -68,6 +107,12 @@ affirm
      -- as a precaution, strip dollar signs
      if strings.index( user_string, "$" ) > 0 then
         user_string := strings.replace_all( user_string, "$", "_" );
+     end if;
+     if is_random_name( raw_user_string( user_string ) ) then
+        user_string := user_name_random;
+     end if;
+     if string( user_string ) = string( HOSTNAME ) then
+         user_string := user_name_host;
      end if;
   end if;
 end affirm;

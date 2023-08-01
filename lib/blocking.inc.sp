@@ -86,6 +86,9 @@ pragma assumption( used, foreign_record_and_block );
 function number_blocked return natural;
 pragma assumption( used, number_blocked );
 
+function reblock_all return natural;
+pragma assumption( used, reblock_all );
+
 procedure startup_blocking;
 pragma assumption( used, startup_blocking );
 
@@ -971,14 +974,18 @@ end foreign_record_and_block;
 
 function number_blocked return natural is
   total_str : string;
-  tmp_total : natural;
+  tmp_total : natural := 999999;
   total : natural := 999999;
 begin
   total_str := `/sbin/ipset -L blocklist | wc -l;`;
   if $? /= 0 then
      logs.error( "ipset did not run" );
   elsif total_str /= "" then
-     tmp_total := numerics.value( total_str );
+     begin
+        tmp_total := numerics.value( total_str );
+     exception when others =>
+        null;
+     end;
      if tmp_total < 7 then
         logs.error("ipset results unexpectedly short: " & strings.to_escaped( total_str ) );
      else
@@ -987,6 +994,47 @@ begin
   end if;
   return total;
 end number_blocked;
+
+
+-- REBLOCK ALL
+--
+-- Go through the blocking history and reblock all IP's that should be
+-- blocked already.  That is, anything that is long-term or permanently
+-- blocked.  Does not automatically block imported blocks from other systems.
+-- This is used when resetting the firewall.
+-----------------------------------------------------------------------------
+
+function reblock_all return natural is
+  offender_cursor : btree_io.cursor( an_offender );
+  offender_key : string;
+  offender : an_offender;
+  offender_json : json_string;
+  block_count : natural := 0;
+begin
+  btree_io.open( offender_file, string( offender_path ), offender_buffer_width, offender_buffer_width );
+  btree_io.open_cursor( offender_file, offender_cursor );
+  btree_io.get_first( offender_file, offender_cursor, offender_key, offender );
+  loop
+     records.to_json( offender_json, offender );
+     if (offender.sshd_blocked > short_blocked or
+        offender.mail_blocked > short_blocked or
+        offender.http_blocked > short_blocked or
+        offender.spam_blocked > short_blocked) and
+        offender.sourced_from = "" then
+        block( offender.source_ip );
+        block_count := @ + 1;
+     end if;
+     btree_io.get_next( offender_file, offender_cursor, offender_key, offender );
+  end loop;
+  return block_count;
+exception when others =>
+  put_line( "blocked " & strings.image( block_count ) );
+  if btree_io.is_open( offender_file ) then
+     btree_io.close_cursor( offender_file, offender_cursor );
+     btree_io.close( offender_file );
+  end if;
+  return block_count;
+end reblock_all;
 
 ------------------------------------------------------------------------------
 -- Housekeeping

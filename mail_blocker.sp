@@ -338,18 +338,6 @@ begin
       tmp := strings.field( @, 1, "@" );
       login_rec.username := user_string( tmp );
       -- Virtual usernames: based on hostname or an empty string
-      -- TODO: This does not work properly and should be improved.
-      -- TODO: refactor out
-      if string( login_rec.username ) = string( HOSTNAME ) then
-         login_rec.username := " HOSTNAME";
-      -- these only in sshd blocker
-      -- elsif string( login_rec.username ) = hostname_base then
-      --    login_rec.username := " HOSTNAME_BASE";
-      -- elsif string( login_rec.username ) = hostname_stub then
-      --    login_rec.username := " HOSTNAME_STUB";
-      elsif is_random_name( login_rec.username ) then
-         login_rec.username := " RANDOM";
-      end if;
 
       if login_rec.username /= "" then -- ie. is valid
       if not dynamic_hash_tables.has_element( ip_whitelist, source_ip ) then

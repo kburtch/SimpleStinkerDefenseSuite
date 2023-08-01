@@ -55,16 +55,6 @@ begin
   result := p > 0;
 end remove_token;
 
-procedure fix( log_str : in out string ) is
-  p : natural;
-begin
-  loop
-    p := strings.index( log_str, "  " );
-  exit when p = 0;
-    log_str := strings.delete( log_str, p, p );
-  end loop;
-end fix;
-
 j : limited json_string;
 f : file_type;
 s : string;

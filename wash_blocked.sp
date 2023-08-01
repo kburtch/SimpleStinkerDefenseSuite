@@ -412,15 +412,6 @@ end is_south_american_ip;
   overtime : boolean := false;
   process_limit_in_secs : constant natural := minutes_30;
 begin
-   -- do nothing if the lock file is in place.
-
-   if files.exists( string( wash_lock_file ) ) then
-      return;
-   end if;
-
-   -- do nothing if the lock file is in place.
-  --setupWorld( "Wash Task", "log/wash.log" );
-  setupWorld( "log/blocker.log", log_mode.file );
 
   -- Process command options
 
@@ -429,6 +420,18 @@ begin
      return;
   end if;
   --opt_verbose := true; --hard-coded
+
+  --setupWorld( "Wash Task", "log/wash.log" );
+  setupWorld( "log/blocker.log", log_mode.file );
+
+  -- do nothing if the lock file is in place.
+
+  if files.exists( string( wash_lock_file ) ) then
+     logs.warning( "exiting -- previous wash is still running" );
+     shutdownWorld;
+     return;
+  end if;
+  logs.info( "preparing to wash" );
 
   this_run_on := get_timestamp;
 
@@ -469,345 +472,375 @@ begin
   btree_io.open_cursor( offender_file, abtc );
   btree_io.get_first( offender_file, abtc, key, source_ip );
   loop
-     declare
-       ctr : country_table_rec;
-       j : json_string;
-     begin
-       ctr.cname := source_ip.source_country;
-       ctr.total := 1;
-       j := dynamic_hash_tables.get( country_table, source_ip.source_country );
-       if j /= "" then
-          records.to_record( ctr, j );
-          ctr.total := @ + 1;
-       end if;
-       records.to_json( j, ctr );
-       dynamic_hash_tables.set( country_table, source_ip.source_country, j );
-     end;
-
-     -- show progress line
-
-     processing_cnt := @+1;
-     if not opt_daemon and not opt_verbose then
-        if processing_cnt mod 250 = 0 then
-           show_progress_line_no_file( this_run_on, processing_cnt, record_cnt_estimate );
-        end if;
-     end if;
-
-     -- If we're running a long time, set the overtime flag.
-     -- This will skip the DNS resolution step.
-
-     if processing_cnt mod 100 = 0 then
-        if not overtime then
-           overtime := numerics.value( string( get_timestamp ) ) > numerics.value( string( this_run_on ) ) + process_limit_in_secs;
-        end if;
-     end if;
-
-     -- Record validation
-     --
-     -- The data should normally be good.  Old records may have a different
-     -- format and throw exceptions so we provide reasonable defaults here
-     -- and update the old record.  We err on the side of blocking.
-
-     declare
-        modified_record : boolean := false;
-     begin
-        if universal_typeless( source_ip.sshd_blocked_on ) = "" then
-           source_ip.sshd_blocked_on := get_timestamp;
-           logs.error( "for " ) @ (sip)
-                   @( "sshd_blocked_on timestamp was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.sshd_offences ) = "" then
-           source_ip.sshd_offences := 1;
-           logs.error( "for " ) @ (sip)
-                   @( "sshd_offences was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.mail_blocked_on ) = "" then
-           source_ip.mail_blocked_on := get_timestamp;
-           logs.error( "for " ) @ (sip)
-                   @( "mail_blocked_on timestamp was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.mail_offences ) = "" then
-           source_ip.mail_offences := 1;
-           logs.error( "for " ) @ (sip)
-                   @( "mail_offences was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.spam_blocked_on ) = "" then
-           source_ip.spam_blocked_on := get_timestamp;
-           logs.error( "for " ) @ (sip)
-                   @( "spam_blocked_on timestamp was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.spam_offences ) = "" then
-           source_ip.spam_offences := 1;
-           logs.error( "for " ) @ (sip)
-                   @( "spam_offences was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.http_blocked_on ) = "" then
-           source_ip.http_blocked_on := get_timestamp;
-           logs.error( "for " ) @ (sip)
-                   @( "html_blocked_on timestamp was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.http_offences ) = "" then
-           source_ip.http_offences := 1;
-           logs.error( "for " ) @ (sip)
-                   @( "http_offences was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.grace ) = "" then
-           source_ip.grace := default_grace + 1;
-           logs.error( "for " ) @ (sip)
-                   @( "grace was blank" );
-           modified_record;
-        end if;
-        if universal_typeless( source_ip.updated_on ) = "" then
-           -- this will get set on write
-           modified_record;
-        end if;
-        if modified_record then
-           source_ip.updated_on := get_timestamp;
-           btree_io.replace( offender_file, key, source_ip );
-           logs.warning( "ip " ) @ (sip)
-                   @( "has been updated" );
-        end if;
-     end;
-
-     -- Resolve the hostname.  If we're running overtime, skip this step.
-
      sip := source_ip.source_ip;
-     if source_ip.source_name = "" and not overtime then
-        -- In Red Hat 7.7, host -W is not always honoured.
-        source_host := `timeout 10 host -W 5 "$sip" ;`;
-        --source_host := `host( "-W", "5", sip );`;
-        -- This potentally returns muliple entries.  Just use the last one.
-        pos := index_reverse( string( source_host ), ASCII.LF );
-        if pos > 0 then
-           source_host := dns_string( strings.tail( string( source_host ),
-              strings.length( source_host ) - pos ) );
-        end if;
-        if strings.index( source_host, "not found" ) > 0 then
-           source_host := "";
-        elsif strings.index( source_host, "timed out" ) > 0 then
-           source_host := "";
-        elsif source_host = "." or source_host = "no-data." then
-           source_host := "";
-        else
-           -- TODO: strings.field
-           source_host := `echo "$source_host" | cut -d' ' -f 5 ;`;
-        end if;
-        if source_host = "" then
-           source_host := "unknown";
-        end if;
-        -- search_ipinfo( sip, source_country, source_location );
-        search_geoip( sip, source_country, source_location );
-        source_ip.source_name := source_host;
-        source_ip.source_country := source_country;
-        source_ip.location := source_location;
-        logs.info( sip & " updated for dns and geo location" );
-        needs_updating;
+     if sip = "" then
+        logs.warning( "source ip " & strings.to_escaped( source_ip.source_ip ) & " is invalid" );
      end if;
 
-     blocked_until := "";
-     case source_ip.sshd_blocked is
-     when banned_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                    weeks_1 * source_ip.sshd_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.sshd_blocked := probation_blocked;
-             needs_updating;
+     if sip /= "" then
+        -- logs.info( "wash is reading the country table for " & source_ip.source_ip); -- DEBUG
+        declare
+          ctr : country_table_rec;
+          j : json_string;
+        begin
+          ctr.cname := source_ip.source_country;
+          ctr.total := 1;
+          j := dynamic_hash_tables.get( country_table, source_ip.source_country );
+          if j /= "" then
+             records.to_record( ctr, j );
+             ctr.total := @ + 1;
           end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when short_blocked =>
+          records.to_json( j, ctr );
+          dynamic_hash_tables.set( country_table, source_ip.source_country, j );
+        end;
+
+        -- show progress line
+
+        processing_cnt := @+1;
+        if not opt_daemon and not opt_verbose then
+           if processing_cnt mod 250 = 0 then
+              show_progress_line_no_file( this_run_on, processing_cnt, record_cnt_estimate );
+           end if;
+        end if;
+
+        -- If we're running a long time, set the overtime flag.
+        -- This will skip the DNS resolution step, which is time consuming,
+        -- for the remaining ip addresses.  When running manually, always
+        -- do DNS resolution on everything.
+
+        if opt_daemon then
+           if processing_cnt mod 100 = 0 then
+              if not overtime then
+                 overtime := numerics.value( string( get_timestamp ) ) > numerics.value( string( this_run_on ) ) + process_limit_in_secs;
+                 if overtime then
+                    logs.warning( "skipping dns and geo location starting at " & source_ip.source_ip & " - running late" );
+                 end if;
+              end if;
+            end if;
+        end if;
+
+        -- Record validation
+        --
+        -- The data should normally be good.  Old records may have a different
+        -- format and throw exceptions so we provide reasonable defaults here
+        -- and update the old record.  We err on the side of blocking.
+
+        --logs.info( "wash validating the record for " & source_ip.source_ip); -- DEBUG
+        declare
+           modified_record : boolean := false;
+        begin
+           if universal_typeless( source_ip.sshd_blocked_on ) = "" then
+              source_ip.sshd_blocked_on := get_timestamp;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "sshd_blocked_on timestamp was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.sshd_offences ) = "" then
+              source_ip.sshd_offences := 1;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "sshd_offences was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.mail_blocked_on ) = "" then
+              source_ip.mail_blocked_on := get_timestamp;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "mail_blocked_on timestamp was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.mail_offences ) = "" then
+              source_ip.mail_offences := 1;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "mail_offences was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.spam_blocked_on ) = "" then
+              source_ip.spam_blocked_on := get_timestamp;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "spam_blocked_on timestamp was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.spam_offences ) = "" then
+              source_ip.spam_offences := 1;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "spam_offences was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.http_blocked_on ) = "" then
+              source_ip.http_blocked_on := get_timestamp;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "html_blocked_on timestamp was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.http_offences ) = "" then
+              source_ip.http_offences := 1;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "http_offences was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.grace ) = "" then
+              source_ip.grace := default_grace + 1;
+              logs.error( "for " ) @ (source_ip.source_ip)
+                      @( "grace was blank" );
+              modified_record;
+           end if;
+           if universal_typeless( source_ip.updated_on ) = "" then
+              -- this will get set on write
+              modified_record;
+           end if;
+           if modified_record then
+              source_ip.updated_on := get_timestamp;
+              btree_io.replace( offender_file, key, source_ip );
+              logs.warning( "ip " ) @ (source_ip.source_ip)
+                      @( "has been updated" );
+           end if;
+        end;
+
+        -- Resolve the hostname.  If we're running overtime, skip this step.
+
+        -- logs.info( "wash resolving the hostname for " & source_ip.source_ip); -- DEBUG
+
+        if source_ip.source_name = "" and not overtime then
+           -- In Red Hat 7.7, host -W is not always honoured.
+           source_host := `timeout 10 host -W 5 "$sip" ;`;
+           --source_host := `host( "-W", "5", sip );`;
+           -- This potentally returns muliple entries.  Just use the last one.
+           pos := index_reverse( string( source_host ), ASCII.LF );
+           if pos > 0 then
+              source_host := dns_string( strings.tail( string( source_host ),
+                 strings.length( source_host ) - pos ) );
+           end if;
+           if strings.index( source_host, "not found" ) > 0 then
+              source_host := "";
+           elsif strings.index( source_host, "timed out" ) > 0 then
+              source_host := "";
+           elsif source_host = "." or source_host = "no-data." then
+              source_host := "";
+           else
+              -- TODO: strings.field
+              source_host := `echo "$source_host" | cut -d' ' -f 5 ;`;
+           end if;
+           if source_host = "" then
+              source_host := "unknown";
+           end if;
+           -- search_ipinfo( sip, source_country, source_location );
+           search_geoip( sip, source_country, source_location );
+           source_ip.source_name := source_host;
+           source_ip.source_country := source_country;
+           source_ip.location := source_location;
+           logs.info( sip & " updated for dns and geo location" );
+           needs_updating;
+        end if;
+
+        -- logs.info( "wash is updating the blocking for " & source_ip.source_ip); -- DEBUG
+        blocked_until := "";
+        case source_ip.sshd_blocked is
+        when banned_blocked =>
              proposed_blocked_until :=
                timestamp_string(
                  strings.trim(
                    strings.image(
-                      integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
-                       hours_1 * source_ip.sshd_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.sshd_blocked := probation_blocked;
-             needs_updating;
-          end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when probation_blocked => null;
-     when others => null;
-     end case;
+                     integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
+                       weeks_1 * source_ip.sshd_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.sshd_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when short_blocked =>
+                proposed_blocked_until :=
+                  timestamp_string(
+                    strings.trim(
+                      strings.image(
+                         integer( numerics.value( string( source_ip.sshd_blocked_on ) ) ) +
+                          hours_1 * source_ip.sshd_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.sshd_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when probation_blocked => null;
+        when others => null;
+        end case;
 
-     case source_ip.mail_blocked is
-     when banned_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.mail_blocked_on ) ) ) +
-                    weeks_1 * source_ip.mail_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.mail_blocked := probation_blocked;
-             needs_updating;
-          end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when short_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.mail_blocked_on ) ) ) +
-                    hours_1 * source_ip.mail_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.mail_blocked := probation_blocked;
-             needs_updating;
-          end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when probation_blocked => null;
-     when others => null;
-     end case;
+        case source_ip.mail_blocked is
+        when banned_blocked =>
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                     integer( numerics.value( string( source_ip.mail_blocked_on ) ) ) +
+                       weeks_1 * source_ip.mail_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.mail_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when short_blocked =>
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                     integer( numerics.value( string( source_ip.mail_blocked_on ) ) ) +
+                       hours_1 * source_ip.mail_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.mail_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when probation_blocked => null;
+        when others => null;
+        end case;
 
-     case source_ip.spam_blocked is
-     when banned_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
-                    weeks_1 * source_ip.spam_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.spam_blocked := probation_blocked;
-             needs_updating;
-          end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when short_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
-                    hours_1 * source_ip.spam_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.spam_blocked := probation_blocked;
-             needs_updating;
-          end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when probation_blocked => null;
-     when others => null;
-     end case;
+        case source_ip.spam_blocked is
+        when banned_blocked =>
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                     integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
+                       weeks_1 * source_ip.spam_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.spam_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when short_blocked =>
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                     integer( numerics.value( string( source_ip.spam_blocked_on ) ) ) +
+                       hours_1 * source_ip.spam_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.spam_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when probation_blocked => null;
+        when others => null;
+        end case;
 
-     case source_ip.http_blocked is
-     when banned_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    weeks_1 * source_ip.http_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.http_blocked := probation_blocked;
-             needs_updating;
-          end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when short_blocked =>
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
-                    hours_1 * source_ip.http_offences )
-             )
-          );
-          if this_run_on > proposed_blocked_until then
-             source_ip.http_blocked := probation_blocked;
-             needs_updating;
-          end if;
-          if proposed_blocked_until > blocked_until then
-             blocked_until := proposed_blocked_until;
-          end if;
-     when probation_blocked => null;
-     when others => null;
-     end case;
+        case source_ip.http_blocked is
+        when banned_blocked =>
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                     integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
+                       weeks_1 * source_ip.http_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.http_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when short_blocked =>
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                     integer( numerics.value( string( source_ip.http_blocked_on ) ) ) +
+                       hours_1 * source_ip.http_offences )
+                )
+             );
+             if this_run_on > proposed_blocked_until then
+                source_ip.http_blocked := probation_blocked;
+                needs_updating;
+             end if;
+             if proposed_blocked_until > blocked_until then
+                blocked_until := proposed_blocked_until;
+             end if;
+        when probation_blocked => null;
+        when others => null;
+        end case;
 
-     -- Check and remove old records
+        -- Check and remove old records
 
-     if not needs_updating then
-          proposed_blocked_until :=
-            timestamp_string(
-              strings.trim(
-                strings.image(
-                  integer( numerics.value( string( source_ip.updated_on ) ) ) +
-                    months_3 )
-             )
-          );
-          -- TODO: might be better if this was pre-calculated
-          if this_run_on > proposed_blocked_until then
-             begin
-                btree_io.remove( offender_file, key );
+        -- logs.info( "wash is cleaning old records" ); -- DEBUG
+        if not needs_updating then
+             proposed_blocked_until :=
+               timestamp_string(
+                 strings.trim(
+                   strings.image(
+                     integer( numerics.value( string( source_ip.updated_on ) ) ) +
+                       months_3 )
+                )
+             );
+             -- TODO: might be better if this was pre-calculated
+             if this_run_on > proposed_blocked_until then
+                begin
+                   btree_io.remove( offender_file, key );
+                   logs.info( sip & " removed" );
+                exception when others =>
+                   logs.error( "failed to remove '" & key & " for " &
+                       sip & "': " & exceptions.exception_info );
+                end;
                 logs.info( sip & " removed" );
-             exception when others =>
-                logs.error( "failed to remove '" & key & " for " &
-                    sip & "': " & exceptions.exception_info );
-             end;
-             logs.info( sip & " removed" );
-          end if;
-     else -- needs updating
-        -- If some aspect has gone probationary and if the worst block
-        -- has expired, then mark the IP number as probationary.
-        if blocked_until /= "" then
-           if this_run_on > blocked_until then
-              logs.info( sip & " on probation" );
-              unblock( sip );
+             end if;
+        else -- needs updating
+           -- If some aspect has gone probationary and if the worst block
+           -- has expired, then mark the IP number as probationary.
+           if blocked_until /= "" then
+              if this_run_on > blocked_until then
+                 logs.info( sip & " on probation" );
+                 unblock( sip );
+              end if;
            end if;
-        end if;
 
-        updating_cnt := @+1;
-        needs_updating := false;
-        source_ip.updated_on := this_run_on;
+           updating_cnt := @+1;
+           needs_updating := false;
+           source_ip.updated_on := this_run_on;
+           begin
+              btree_io.set( offender_file, key, source_ip );
+           exception when others =>
+              logs.error( exceptions.exception_info );
+           end;
+           -- TODO: do I need this next line?
+           btree_io.get( offender_file, key, source_ip );
+        end if;
+        btree_io.raise_exceptions( offender_file, false );
+        btree_io.get_next( offender_file, abtc, key, source_ip );
+        exit when btree_io.last_error( offender_file ) = bdb.DB_NOTFOUND;
+        btree_io.raise_exceptions( offender_file, true );
+    elsif source_ip.source_ip /= "" then
+        -- sip is blank or an invalid source ip was given to sip
+        -- delete the invalid entry
         begin
-           btree_io.set( offender_file, key, source_ip );
+           btree_io.remove( offender_file, key );
+           logs.info( source_ip.source_ip & " removed" );
         exception when others =>
-           logs.error( exceptions.exception_info );
+           logs.error( "failed to remove '" & key & " for " &
+               source_ip.source_ip & "': " & exceptions.exception_info );
         end;
-        -- TODO: do I need this next line?
-        btree_io.get( offender_file, key, source_ip );
-     end if;
-     btree_io.raise_exceptions( offender_file, false );
-     btree_io.get_next( offender_file, abtc, key, source_ip );
-     exit when btree_io.last_error( offender_file ) = bdb.DB_NOTFOUND;
-     btree_io.raise_exceptions( offender_file, true );
+        logs.info( source_ip.source_ip & " removed" );
+    end if;
   end loop;
 
   -- Complete progress line
@@ -817,6 +850,7 @@ begin
      new_line;
   end if;
 
+  logs.info( "wash done with ip addresses" ); -- DEBUG
   btree_io.close_cursor( offender_file, abtc );
 
   shutdown_blocking;
@@ -827,7 +861,7 @@ begin
      sshd_cursor : btree_io.cursor( a_sshd_login );
      login_key : string;
      login : a_sshd_login;
-     last_login_username : user_string;
+     last_login_username : user_string := "";
   begin
      btree_io.open( sshd_logins_file, string( sshd_logins_path ), sshd_logins_buffer_width, sshd_logins_buffer_width );
      btree_io.open_cursor( sshd_logins_file, sshd_cursor );
