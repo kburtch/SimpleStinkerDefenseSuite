@@ -9,7 +9,7 @@ procedure nightly_backup is
 
   type import_string is new string;
 
-  LOGNAME : import_string;
+  LOGNAME : constant import_string := "";
   pragma import( shell, LOGNAME );
 
   type file_path is new string;
@@ -43,7 +43,7 @@ begin
 
   spar "admin/export_logins.sp" | gzip > "backups/logins.tmp.gz";
   status := $?;
-  spar "admin/export_blocked.sp" | gzip > "backups/offenders.tmp.gz";
+  spar "admin/export_offenders.sp" | gzip > "backups/offenders.tmp.gz";
   status := numerics.max( @, $? );
 
   -- if nothing went wrong, then save the backups

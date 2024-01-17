@@ -22,11 +22,11 @@ begin
      command_line.set_exit_status( 192 );
      return;
   end if;
-  -- Our firewall should be stopped also
+  -- Our ssds firewall should be stopped also
   tmp := `ps -ef;`;
   tmp := `echo "$tmp" | fgrep "sshd_blocker" | wc -l;`;
   if tmp = "1" then
-     put_line( "the firewall is running.  stop this first" );
+     put_line( "the ssds processes are running.  stop these first" );
      command_line.set_exit_status( 192 );
      return;
   end if;

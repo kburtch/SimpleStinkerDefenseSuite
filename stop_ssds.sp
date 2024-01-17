@@ -4,14 +4,16 @@
 
 TMP : string;
 
-TMP := `ps -ef`;
+loop
+   TMP := `ps -ef`;
 
--- Do not stop if washed_blocked is running
+   -- Do not stop if washed_blocked is running
 
-if strings.index( TMP, "wash_blocked.sp" ) > 0 then
+   exit when strings.index( TMP, "wash_blocked.sp" ) = 0;
    ? "wash_blocked is running.  Wait until it is finished";
-   command_line.set_exit_status(192);
-end if;
+   delay 60.0;
+   --   command_line.set_exit_status(192);
+end loop;
 
 -- Stop each of the log readers
 

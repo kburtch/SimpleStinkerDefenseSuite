@@ -431,6 +431,21 @@ begin
      shutdownWorld;
      return;
   end if;
+
+  -- Our ssds firewall should be stopped also
+
+  declare
+    tmp : string;
+  begin
+    tmp := `ps -ef;`;
+    tmp := `echo "$tmp" | fgrep "sshd_blocker";`;
+    if tmp = "" then
+       put_line( "the ssds processes are not running.  wash will not start" );
+       command_line.set_exit_status( 192 );
+       return;
+    end if;
+  end;
+
   logs.info( "preparing to wash" );
 
   this_run_on := get_timestamp;
